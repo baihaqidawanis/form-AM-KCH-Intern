@@ -1,0 +1,19 @@
+services:
+  web-app:
+    # Perintahkan docker untuk membaca Dockerfile yang ada di folder ini (titik .)
+    build: .
+
+    # Kasih nama containernya biar gampang dicari
+    container_name: form-am-dockerfile
+
+    # Hubungkan port Server (Kiri) ke port Container (Kanan)
+    ports:
+      - "80:80"
+
+    # Ambil kredensial DB dkk dari .env di host (gak ikut ke-bake ke image,
+    # cuma di-inject pas container jalan). File .env harus ada di server sebelum `docker compose up`.
+    env_file:
+      - .env
+
+    # Biar kalau server mati/restart, containernya otomatis nyala lagi
+    restart: always

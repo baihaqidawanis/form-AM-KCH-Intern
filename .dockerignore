@@ -1,0 +1,6 @@
+.env
+.git
+*.sql
+logs/*
+uploads/*
+DOCS_MD/

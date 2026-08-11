@@ -1,0 +1,1191 @@
+<?php 
+
+/**
+ * SharedController Controller
+ * @category  Controller / Model
+ */
+class SharedController extends BaseController{
+	
+	/**
+     * rvs_Line_option_list Model Action
+     * @return array
+     */
+	function sig_Line_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value, nama_mesin AS label FROM mesin ORDER BY label ASC;";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * rvs_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function sig_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , kategori_tag AS label FROM tag ORDER BY id ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * rvs_korelasi_tag_option_list Model Action
+     * @return array
+     */
+	function sig_korelasi_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT  DISTINCT id AS value,nama AS label FROM korelasi ORDER BY id ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * rvs_korelasi_tag_option_list Model Action
+     * @return array
+     */
+	function sig_klasifikasi_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT  DISTINCT id AS value,nama AS label FROM klasifikasi ORDER BY id ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * rvs_kategori_ketidaksesuaian_option_list Model Action
+     * @return array
+     */
+	function sig_kategori_ketidaksesuaian_option_list($lookup_korelasi_tag){
+		$db = $this->GetModel();
+		$sqltext = "SELECT id AS value, kategori AS label FROM kategori WHERE korelasi_id = ? "     ;
+		$queryparams = array($lookup_korelasi_tag);
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * toyo_line_mesin_option_list Model Action
+     * @return array
+     */
+	function toyo_line_mesin_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE id IN (9) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * toyo_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function toyo_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , kategori_tag AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * toyo_korelasi_tag_option_list Model Action
+     * @return array
+     */
+	function toyo_korelasi_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT  DISTINCT id AS value,nama AS label FROM new_breakdown_management_2.korelasi ORDER BY nama ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * toyo_kategori_ketidaksesuaian_option_list Model Action
+     * @return array
+     */
+	function toyo_kategori_ketidaksesuaian_option_list($lookup_korelasi_tag){
+		$db = $this->GetModel();
+		$sqltext = "SELECT id AS value, kategori AS label FROM new_breakdown_management_2.kategori WHERE korelasi_id = ? "       ;
+		$queryparams = array($lookup_korelasi_tag);
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * pampac_line_option_list Model Action
+     * @return array
+     */
+	function pampac_line_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE area_id IN (2) AND id NOT IN (13, 33, 39, 44, 45) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * pampac_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function pampac_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jinsung_c_line_option_list Model Action
+     * @return array
+     */
+	function jinsung_c_line_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT  DISTINCT id AS value,line_name AS label FROM line WHERE id = 13";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jinsung_c_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function jinsung_c_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * chimei_line_option_list Model Action
+     * @return array
+     */
+	function chimei_line_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE ID IN (2, 8, 26, 29, 31, 33, 39, 36, 38) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * chimei_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function chimei_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * stv_line_mesin_option_list Model Action
+     * @return array
+     */
+	function stv_line_mesin_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value, line_name AS label 
+FROM line 
+WHERE area_id = 2 AND id IN (13, 14, 15, 18, 20, 22, 24) 
+ORDER BY label ASC;
+";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * stv_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function stv_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jih_cheng_line_jihcheng_option_list Model Action
+     * @return array
+     */
+	function jih_cheng_line_jihcheng_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE id IN (39) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jih_cheng_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function jih_cheng_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , kategori_tag AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * pallet_mover_lokasi_pallet_mover_option_list Model Action
+     * @return array
+     */
+	function pallet_mover_lokasi_pallet_mover_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value, area_name AS label 
+FROM new_breakdown_management_2.areas WHERE id NOT IN (3)
+";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * pallet_mover_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function pallet_mover_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jinsung_n_line_jinsung_option_list Model Action
+     * @return array
+     */
+	function jinsung_n_line_jinsung_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE id IN (33) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * jinsung_n_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function jinsung_n_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , kategori_tag AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * mf_line_mf_option_list Model Action
+     * @return array
+     */
+	function mf_line_mf_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , line_name AS label FROM line WHERE area_id = 2 AND id NOT IN (44, 45) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * mf_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function mf_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_docking_station_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_docking_station_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_k1r1_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_k1r1_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_k1r2_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_k1r2_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_k1r3_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_k1r3_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_k1r4_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_k1r4_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_k1r8_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_k1r8_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_conveyor_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_conveyor_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt4_milling_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt4_milling_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r1_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r1_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r2_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r2_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r3_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r3_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r4_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r4_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r6_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r6_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r7_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r7_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt3_k1r8_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt3_k1r8_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_discharge_station_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_discharge_station_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_ibc_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_ibc_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_ibc_korelasi_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_ibc_korelasi_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT  DISTINCT id AS value,nama AS label FROM new_breakdown_management_2.korelasi ORDER BY nama ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_ibc_kategori_ketidaksesuaian_option_list Model Action
+     * @return array
+     */
+	function lt2_ibc_kategori_ketidaksesuaian_option_list($lookup_korelasi_tag){
+		$db = $this->GetModel();
+		$sqltext = "SELECT id AS value, kategori AS label FROM new_breakdown_management_2.kategori WHERE korelasi_id = ? "        ;
+		$queryparams = array($lookup_korelasi_tag);
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_moduwash_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_moduwash_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_fbd_no_fbd_option_list Model Action
+     * @return array
+     */
+	function lt2_fbd_no_fbd_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , machine_name AS label FROM new_breakdown_management_2.machine_list WHERE id IN (18, 19) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_fbd_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_fbd_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_blender_no_blender_option_list Model Action
+     * @return array
+     */
+	function lt2_blender_no_blender_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , machine_name AS label FROM new_breakdown_management_2.machine_list WHERE id IN (6, 10) ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_blender_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_blender_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * lt2_track_motion_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function lt2_track_motion_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * users_user_role_id_option_list Model Action
+     * @return array
+     */
+	function users_user_role_id_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT role_id AS value, role_name AS label FROM roles";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * users_email_value_exist Model Action
+     * @return array
+     */
+	function users_email_value_exist($val){
+		$db = $this->GetModel();
+		$db->where("email", $val);
+		$exist = $db->has("users");
+		return $exist;
+	}
+
+	/**
+     * users_username_value_exist Model Action
+     * @return array
+     */
+	function users_username_value_exist($val){
+		$db = $this->GetModel();
+		$db->where("username", $val);
+		$exist = $db->has("users");
+		return $exist;
+	}
+
+	/**
+     * tatung_kategori_tag_option_list Model Action
+     * @return array
+     */
+	function tatung_kategori_tag_option_list(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT DISTINCT id AS value , id AS label FROM tag ORDER BY label ASC";
+		$queryparams = null;
+		$arr = $db->rawQuery($sqltext, $queryparams);
+		return $arr;
+	}
+
+	/**
+     * getcount_mf Model Action
+     * @return Value
+     */
+	function getcount_mf(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM mf WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_rvs Model Action
+     * @return Value
+     */
+	function getcount_sig(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM sig WHERE DATE(created_at) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_toyo Model Action
+     * @return Value
+     */
+	function getcount_toyo(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM toyo WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_stv Model Action
+     * @return Value
+     */
+	function getcount_stv(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM stv WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_pampac Model Action
+     * @return Value
+     */
+	function getcount_pampac(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM pampac WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_chimei Model Action
+     * @return Value
+     */
+	function getcount_chimei(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM chimei WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_jinsungc Model Action
+     * @return Value
+     */
+	function getcount_jinsungc(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM jinsung_c WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_jinsungn Model Action
+     * @return Value
+     */
+	function getcount_jinsungn(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM jinsung_n WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_palletmover Model Action
+     * @return Value
+     */
+	function getcount_palletmover(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM pallet_mover WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_jihcheng Model Action
+     * @return Value
+     */
+	function getcount_jihcheng(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM jih_cheng WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_ibc Model Action
+     * @return Value
+     */
+	function getcount_ibc(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt2_ibc WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_fbd Model Action
+     * @return Value
+     */
+	function getcount_fbd(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt2_fbd WHERE DATE(date_create) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_blender Model Action
+     * @return Value
+     */
+	function getcount_blender(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt2_blender WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_moduwash Model Action
+     * @return Value
+     */
+	function getcount_moduwash(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt2_moduwash WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_dischargestation Model Action
+     * @return Value
+     */
+	function getcount_dischargestation(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt2_discharge_station WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_agv Model Action
+     * @return Value
+     */
+	function getcount_agv(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM agv WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r1p01smp Model Action
+     * @return Value
+     */
+	function getcount_l3k1r1p01smp(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r1 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r2p01camilk Model Action
+     * @return Value
+     */
+	function getcount_l3k1r2p01camilk(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r2 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r3p01sodbic Model Action
+     * @return Value
+     */
+	function getcount_l3k1r3p01sodbic(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r3 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r4p01minor Model Action
+     * @return Value
+     */
+	function getcount_l3k1r4p01minor(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r4 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r6p01sugar Model Action
+     * @return Value
+     */
+	function getcount_l3k1r6p01sugar(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r6 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r7p01citric Model Action
+     * @return Value
+     */
+	function getcount_l3k1r7p01citric(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r7 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3k1r8p01minor Model Action
+     * @return Value
+     */
+	function getcount_l3k1r8p01minor(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_k1r8 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l3dockingstation Model Action
+     * @return Value
+     */
+	function getcount_l3dockingstation(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt3_docking_station WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4k1r1p01smp Model Action
+     * @return Value
+     */
+	function getcount_l4k1r1p01smp(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_k1r1 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4k1r2p01camilk Model Action
+     * @return Value
+     */
+	function getcount_l4k1r2p01camilk(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_k1r2 WHERE DATE(date_created) = DATE(NOW())"
+;
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4k1r3p01hoppersodbic Model Action
+     * @return Value
+     */
+	function getcount_l4k1r3p01hoppersodbic(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_k1r3 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4k1r4p01minor Model Action
+     * @return Value
+     */
+	function getcount_l4k1r4p01minor(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_k1r4 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4k1r8p01hm1sugar Model Action
+     * @return Value
+     */
+	function getcount_l4k1r8p01hm1sugar(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_k1r8 WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4milling Model Action
+     * @return Value
+     */
+	function getcount_l4milling(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_milling WHERE DATE(date_created) = DATE(NOW())"
+;
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_l4conveyor Model Action
+     * @return Value
+     */
+	function getcount_l4conveyor(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM lt4_conveyor WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_tatung_2 Model Action
+     * @return Value
+     */
+	function getcount_tatung_2(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM tatung WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+	/**
+     * getcount_mesinsealer_2 Model Action
+     * @return Value
+     */
+	function getcount_mesinsealer_2(){
+		$db = $this->GetModel();
+		$sqltext = "SELECT COUNT(*) AS num FROM mesin_sealer WHERE DATE(date_created) = DATE(NOW())";
+		$queryparams = null;
+		$val = $db->rawQueryValue($sqltext, $queryparams);
+		
+		if(is_array($val)){
+			return $val[0];
+		}
+		return $val;
+	}
+
+}

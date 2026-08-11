@@ -1,0 +1,6 @@
+vendor/
+uploads/
+logs/
+.env
+*.sql
+node_modules/
