@@ -53,7 +53,7 @@ $redirect_to = $this->redirect_to;
                                             </div>
                                             <div class="col-sm-8">
                                                 <div class="">
-                                                    <input id="ctrl-username"  value="<?php  echo $data['username']; ?>" type="text" placeholder="Enter Username"  required="" name="username"  data-url="api/json/account_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
+                                                    <input id="ctrl-username"  value="<?php  echo $data['username']; ?>" type="text" placeholder="Enter Username"  required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
                                                         <div class="check-status"></div> 
                                                     </div>
                                                 </div>

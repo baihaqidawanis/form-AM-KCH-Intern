@@ -1,0 +1,46 @@
+# Requirements — Form AM (buat jalanin app + test)
+#
+# Ini BUKAN Python requirements.txt (project ini PHP + JS, gak ada Python sama
+# sekali) -- format .txt dipilih biar gampang dibaca siapapun, isinya daftar
+# software & versi yang dibutuhin buat nge-run aplikasi & test suite-nya.
+# Dependency PHP/JS yang sebenarnya (versi persis tiap library) ada di
+# composer.lock & package-lock.json -- file ini cuma buat manusia yang setup
+# environment dari nol.
+
+## Wajib buat jalanin aplikasi
+
+PHP            >= 8.2          (dites di 8.2.12; extension wajib: pdo_pgsql, pgsql, zip, mbstring, gd)
+PostgreSQL     17               (database utama -- lihat DOCS_MD/DEPLOYMENT.md soal status migrasi production)
+Apache         2.4+             (web server, mod_rewrite aktif -- lihat .htaccess)
+Composer       2.x              (dependency manager PHP -- https://getcomposer.org)
+
+## Wajib buat jalanin test otomatis (opsional buat sekadar pakai aplikasinya)
+
+Composer dev-dependency (otomatis ke-install lewat `composer install`):
+  - phpunit/phpunit   ^10.0
+  - guzzlehttp/guzzle  *
+
+Node.js        >= 18            (dites di v22.19.0 -- buat Playwright)
+npm            >= 9             (dites di 11.6.0)
+
+npm dev-dependency (otomatis ke-install lewat `npm install`):
+  - @playwright/test  ^1.62.1
+
+Browser Playwright (sekali install): `npx playwright install chromium`
+
+## Opsional
+
+Docker + Docker Compose   (kalau mau jalanin via container -- lihat Dockerfile/docker-compose.yml di root.
+                            CATATAN per 14 Agustus 2026: build Dockerfile sempat gak bisa diverifikasi
+                            selesai di jaringan kantor karena apt-get ke deb.debian.org kena 403 Forbidden
+                            dari Fastly CDN -- ini masalah environment/network, bukan masalah Dockerfile-nya
+                            sendiri, dibuktikan base image php:8.3-apache polos pun kena masalah yang sama.
+                            Coba dari jaringan lain kalau ketemu error serupa.)
+
+## Cara Cek Semua Sudah Terpasang
+
+php -v
+composer --version
+node --version
+npm --version
+psql --version   (atau cek service postgresql-x64-17 di Windows)

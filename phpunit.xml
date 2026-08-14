@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         stopOnFailure="false">
+    <testsuites>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- App HARUS udah jalan (Apache + Postgres up) sebelum jalanin test ini —
+             ini integration test HTTP-level, bukan unit test, karena app-nya PHP
+             native tanpa DI (lihat DOCS_MD/AUTOMATED_TESTING.md buat alasannya). -->
+        <env name="APP_BASE_URL" value="http://localhost/form-am"/>
+    </php>
+</phpunit>

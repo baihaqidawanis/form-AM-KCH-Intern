@@ -71,8 +71,9 @@ $redirect_to = $this->redirect_to;
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="Enter Username"  required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
-                                                            <div class="check-status"></div> 
+                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="NIK (angka saja, 8 digit)" pattern="[0-9]{8}" minlength="8" maxlength="8" required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
+                                                            <small class="form-text text-muted">Username wajib NIK (Nomor Induk Karyawan): angka saja, tepat 8 digit.</small>
+                                                            <div class="check-status"></div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -108,14 +109,15 @@ $redirect_to = $this->redirect_to;
                                                             </div>
                                                             <div class="col-sm-8">
                                                                 <div class="input-group">
-                                                                    <input id="ctrl-password"  value="<?php  echo $this->set_field_value('password',""); ?>" type="password" placeholder="Enter Password"  required="" name="password"  class="form-control  password password-strength" />
+                                                                    <input id="ctrl-password"  value="<?php  echo $this->set_field_value('password',""); ?>" type="password" placeholder="Enter Password"  required="" minlength="8" name="password"  class="form-control  password password-strength" />
                                                                         <div class="input-group-append cursor-pointer btn-toggle-password">
                                                                             <span class="input-group-text"><i class="fa fa-eye"></i></span>
                                                                         </div>
                                                                     </div>
                                                                     <div class="password-strength-msg">
                                                                         <small class="font-weight-bold">Should contain</small>
-                                                                        <small class="length chip">6 Characters minimum</small>
+                                                                        <small class="length chip">8 Characters minimum</small>
+                                                                        <small class="lower chip">Lowercase Letter</small>
                                                                         <small class="caps chip">Capital Letter</small>
                                                                         <small class="number chip">Number</small>
                                                                         <small class="special chip">Symbol</small>

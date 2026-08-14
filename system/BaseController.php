@@ -350,8 +350,8 @@ class BaseController{
      * @return null
      */
 	function set_page_error($page_error = null){
-		if(!empty($this->db->getLastError())){
-			$this->view->page_error[] = $this->db->getLastError(); 
+		if(!empty($this->db) && !empty($this->db->getLastError())){
+			$this->view->page_error[] = $this->db->getLastError();
 		}
 
 		if($page_error){

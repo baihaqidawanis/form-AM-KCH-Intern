@@ -21,9 +21,36 @@ class Menu
 			'label' => 'Compounding',
 			'icon' => '<i class="fa fa-gears "></i>',
 			'submenu' => array(
-				// Belum ada mesin pabrik kita yang dikerjain di kategori ini.
-				// Isi array ini pas mulai bikin mesin Compounding (ngikutin pola SIG,
-				// lihat DOCS_MD/FINAL_IMPROVEMENT.md bagian "FOKUS SAAT INI").
+				array(
+					'path' => 'cosmec',
+					'label' => 'Cosmec',
+					'icon' => ''
+				),
+				array(
+					'path' => 'fbd_jaw_chuan',
+					'label' => 'FBD Jaw Chuan',
+					'icon' => ''
+				),
+				array(
+					'path' => 'fbd_glatt',
+					'label' => 'FBD Glatt',
+					'icon' => ''
+				),
+				array(
+					'path' => 'supermixer',
+					'label' => 'Supermixer',
+					'icon' => ''
+				),
+				array(
+					'path' => 'storage_tank',
+					'label' => 'Storage Tank',
+					'icon' => ''
+				),
+				array(
+					'path' => 'mixing_tank',
+					'label' => 'Mixing Tank',
+					'icon' => ''
+				),
 			)
 		),
 
@@ -96,6 +123,12 @@ class Menu
 			'path' => 'users',
 			'label' => 'Users',
 			'icon' => '<i class="fa fa-users"></i>'
+		),
+
+		array(
+			'path' => 'audit_log',
+			'label' => 'Audit Trail',
+			'icon' => '<i class="fa fa-history"></i>'
 		),
 
 		array(

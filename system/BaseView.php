@@ -367,14 +367,23 @@ class BaseView
 				'description'=>'string',
 				'tax'=>'[$$-1009]#,##0.00;[RED]-[$$-1009]#,##0.00',
 			  ); */
-			$arr_titles = array_keys(current($records));// get the table header from the record.
-			$headers = array_fill_keys($arr_titles, 'string'); //setting all headers to cell type of string
-
+			// $records bisa kosong (misal mesin belum ada submission sama sekali) --
+			// current() balikin false, bukan array, jadi jangan dipaksa jadi header.
+			$first_record = current($records);
 			$writer = new XLSXWriter();
 			$writer->setAuthor(SITE_NAME);
-			$writer->writeSheetHeader($sheet_name, $headers);
-			foreach ($records as $row) {
-				$writer->writeSheetRow($sheet_name, $row);
+			if ($first_record !== false) {
+				$arr_titles = array_keys($first_record); // get the table header from the record.
+				$headers = array_fill_keys($arr_titles, 'string'); //setting all headers to cell type of string
+				$writer->writeSheetHeader($sheet_name, $headers);
+				foreach ($records as $row) {
+					$writer->writeSheetRow($sheet_name, $row);
+				}
+			} else {
+				// writeSheetHeader() gak bikin sheet kalau header-nya kosong -- tanpa
+				// ini XLSXWriter nolak nulis file sama sekali ("no worksheets defined").
+				$writer->writeSheetHeader($sheet_name, array('Keterangan' => 'string'));
+				$writer->writeSheetRow($sheet_name, array('Belum ada data'));
 			}
 			$writer->writeToStdOut();
 			//$writer->writeToFile('example.xlsx');//to save locally
@@ -465,7 +474,7 @@ class BaseView
 	{
 		if ($this->format == "html"){
 			$qs = parse_url($url, PHP_URL_QUERY);
-			parse_str($qs, $get);
+			parse_str((string) $qs, $get);
 			$request = array();
 			if (!empty($get)) { //build new $_GET array from the url query string 
 				foreach ($get as $key => $val) {

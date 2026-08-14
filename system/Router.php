@@ -201,12 +201,18 @@ class Router
 						if (!empty($current_url )) {
 							set_session("login_redirect_url", $current_url);
 						}
+						if (get_session("session_timed_out") == true) {
+							clear_session("session_timed_out");
+							$controller->set_page_error("Anda kehabisan waktu. Silahkan login ulang!");
+						}
 						$controller->render_view("index/login.php", null, "main_layout.php");
 					}
 					elseif($controller->status == FORBIDDEN){
+						http_response_code(403);
 						$controller->render_view("errors/forbidden.php", null, "info_layout.php");
 					}
 					elseif($controller->status == NOROLE){
+						http_response_code(403);
 						$controller->render_view("errors/error_no_permission.php", null, "info_layout.php");
 					}
 				} else {

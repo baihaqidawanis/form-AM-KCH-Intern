@@ -39,6 +39,11 @@ $current_page = $this->set_current_page_link();
                                         Packaging
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page3" role="tab" aria-selected="true">
+                                        Compounding
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                         <div class="card-body">
@@ -94,6 +99,34 @@ $current_page = $this->set_current_page_link();
                                                 </div>
                                             </div>
                                             <h4 class="value"><strong><?php echo $pm['count']; ?></strong></h4>
+                                        </div>
+                                    </a>
+                                    <?php } ?>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page3" role="tabpanel">
+                                    <?php
+                                    $compounding_machines = array(
+                                        array('path' => 'cosmec', 'label' => 'Cosmec', 'count' => $comp_model->getcount_cosmec()),
+                                        array('path' => 'fbd_jaw_chuan', 'label' => 'FBD Jaw Chuan', 'count' => $comp_model->getcount_fbd_jaw_chuan()),
+                                        array('path' => 'fbd_glatt', 'label' => 'FBD Glatt', 'count' => $comp_model->getcount_fbd_glatt()),
+                                        array('path' => 'supermixer', 'label' => 'Supermixer', 'count' => $comp_model->getcount_supermixer()),
+                                        array('path' => 'storage_tank', 'label' => 'Storage Tank', 'count' => $comp_model->getcount_storage_tank()),
+                                        array('path' => 'mixing_tank', 'label' => 'Mixing Tank', 'count' => $comp_model->getcount_mixing_tank()),
+                                    );
+                                    foreach ($compounding_machines as $cm) {
+                                    ?>
+                                    <a class="animated zoomIn record-count card bg-light text-dark"  href="<?php print_link($cm['path'] . "/") ?>">
+                                        <div class="row">
+                                            <div class="col-2">
+                                                <i class="fa fa-globe"></i>
+                                            </div>
+                                            <div class="col-10">
+                                                <div class="flex-column justify-content align-center">
+                                                    <div class="title"><?php echo $cm['label']; ?></div>
+                                                    <small class=""></small>
+                                                </div>
+                                            </div>
+                                            <h4 class="value"><strong><?php echo $cm['count']; ?></strong></h4>
                                         </div>
                                     </a>
                                     <?php } ?>

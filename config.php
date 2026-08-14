@@ -17,13 +17,14 @@ if (is_readable($envFile)) {
 		}
 	}
 }
-function env($key, $default = null){
+function env($key, $default = null)
+{
 	$value = getenv($key);
 	return $value === false ? $default : $value;
 }
 
 define("DEFAULT_TIMEZONE", "Asia/Jakarta"); // set php date functions timezone
-define("DEVELOPMENT_MODE" , true);// set to false when in production
+define("DEVELOPMENT_MODE", env("DEVELOPMENT_MODE", "true") === "true"); // set DEVELOPMENT_MODE=false di .env production
 
 // return full path of application directory
 define("ROOT", str_replace("\\", "/", dirname(__FILE__)) . "/");
@@ -55,8 +56,8 @@ define("NOROLE", 404);
 define("FORBIDDEN", 403);
 
 // Application Files and Directories 
-define("IMG_DIR",  "assets/images/");
-define("FONTS_DIR",  "assets/fonts/");
+define("IMG_DIR", "assets/images/");
+define("FONTS_DIR", "assets/fonts/");
 define("SITE_FAVICON", IMG_DIR . "favicon.png");
 define("SITE_LOGO", IMG_DIR . "logo.png");
 
@@ -96,7 +97,7 @@ define("META_VIEWPORT", "width=device-width, initial-scale=1.0");
 define("PAGE_CHARSET", "UTF-8");
 
 // Email Configuration Default Settings
-define("USE_SMTP",false);
+define("USE_SMTP", false);
 define("SMTP_USERNAME", "");
 define("SMTP_PASSWORD", "");
 define("SMTP_HOST", "");
@@ -118,8 +119,17 @@ define("DB_CHARSET", env("DB_CHARSET", "utf8"));
 define("MAX_RECORD_COUNT", 20); //Default Max Records to Retrieve  per Page
 define("ORDER_TYPE", "DESC");  //Default Order Type
 
+// URS 1.3: session berakhir setelah 30 menit idle (mouse/keyboard/touch).
+// Bisa di-override lewat .env KHUSUS buat automated testing (Playwright, tests/e2e/)
+// biar gak perlu nunggu 30 menit beneran tiap jalanin test -- JANGAN di-set di
+// .env production, defaultnya tetap 30 menit kalau env var-nya gak ada.
+define("SESSION_TIMEOUT_SECONDS", intval(env("SESSION_TIMEOUT_SECONDS", 30 * 60)));
+
 // Active User Profile Details
-define('USER_ID',(isset($_SESSION[APP_ID.'user_data']) ? $_SESSION[APP_ID.'user_data']['id_user'] : null ));
-define('USER_NAME',(isset($_SESSION[APP_ID.'user_data']) ? $_SESSION[APP_ID.'user_data']['username'] : null ));
-define('USER_EMAIL',(isset($_SESSION[APP_ID.'user_data']) ? $_SESSION[APP_ID.'user_data']['email'] : null ));
+define('USER_ID', (isset($_SESSION[APP_ID . 'user_data']) ? $_SESSION[APP_ID . 'user_data']['id_user'] : null));
+define('USER_NAME', (isset($_SESSION[APP_ID . 'user_data']) ? $_SESSION[APP_ID . 'user_data']['username'] : null));
+define('USER_EMAIL', (isset($_SESSION[APP_ID . 'user_data']) ? $_SESSION[APP_ID . 'user_data']['email'] : null));
+// role_id user aktif (1=Administrator, 2=Manager, 3=Supervisor, 4=Staff/Operator).
+// Dipakai ACL (libs/ACL.php) untuk role-gating menu & rute sesuai matrix akses URS.
+define('USER_ROLE', (isset($_SESSION[APP_ID . 'user_data']) ? intval($_SESSION[APP_ID . 'user_data']['user_role_id']) : null));
 

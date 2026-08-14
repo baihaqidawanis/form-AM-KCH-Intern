@@ -24,8 +24,9 @@ class TagController extends SecureController{
 		//search table record
 		if(!empty($request->search)){
 			$text = trim($request->search); 
+			// id integer -- Postgres gak izinin LIKE ke integer tanpa CAST (Round 31/37).
 			$search_condition = "(
-				tag.id LIKE ? OR 
+				CAST(tag.id AS VARCHAR) LIKE ? OR
 				tag.kategori_tag LIKE ?
 			)";
 			$search_params = array(
@@ -90,7 +91,6 @@ class TagController extends SecureController{
 		}
 		$record = $db->getOne($tablename, $fields );
 		if($record){
-			$this->write_to_log("view", "true");
 			$page_title = $this->view->page_title = "View  Tag";
 		$this->view->report_filename = date('Y-m-d') . '-' . $page_title;
 		$this->view->report_title = $page_title;

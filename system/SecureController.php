@@ -18,8 +18,9 @@ class SecureController extends BaseController{
 			$page = "$controller/$action";
 			if(!in_array($page , $exclude_pages)){
 				if($this->authenticate_user()){
-					
-					$this->status = AUTHORIZED; 
+					// Role-based page access control sesuai matrix akses URS (libs/ACL.php)
+					$access = ACL::GetPageAccess($page);
+					$this->status = ($access == AUTHORIZED) ? AUTHORIZED : $access; // FORBIDDEN atau NOROLE kalau role tidak diizinkan
 
 				}
 				else{
@@ -46,6 +47,20 @@ class SecureController extends BaseController{
 					set_session("user_data", $user);
 				}
 			}
+		}
+		//URS 1.3: session timeout 30 menit idle. Ini backstop server-side --
+		//pengecekan utama (deteksi idle + peringatan) jalan di sisi client lewat
+		//assets/js/idle-timeout.js, ini cuma jaga-jaga kalau JS gak jalan/nonaktif.
+		if (user_login_status() == true) {
+			$last_activity = get_session("last_activity");
+			if (!empty($last_activity) && (time() - $last_activity) > SESSION_TIMEOUT_SECONDS) {
+				clear_session("user_data");
+				clear_session("last_activity");
+				clear_cookie("login_session_key");
+				set_session("session_timed_out", true);
+				return false;
+			}
+			set_session("last_activity", time());
 		}
 		return user_login_status();
 	}

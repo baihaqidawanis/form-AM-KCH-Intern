@@ -5,6 +5,24 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
+$image_names = array(
+  'sealing_horizontal' => 'sealing horizontal',
+  'sealing_vertikal' => 'sealing vertikal',
+  'body_mesin' => 'body mesin',
+  'roller_foil_film' => 'roller foil film',
+  'position_indicator_sealing_vertical' => 'position indicator sealing vertical',
+  'vacum_sliter' => 'vacum sliter',
+  'alarm_temperature' => 'alarm temperature',
+  'piston_pengisian' => 'piston pengisian',
+  'pneumatic_valves_pengisian' => 'pneumatic valves pengisian',
+  'baut_sealing_vertikal' => 'baut sealing vertikal',
+  'rubber_penarik_foil' => 'rubber penarik foil',
+  'sensor_eyemark_dan_sambungan_foil' => 'sensor eyemark dan sambungan foil',
+  'guarding_mesin' => 'guarding mesin',
+  'pressure_blow_sealing_vertical' => 'pressure blow sealing vertical',
+  'inkjet' => 'inkjet',
+  'pengunci_nozzle_pengisian' => 'pengunci nozzle pengisian'
+);
 
 $sections = array(
   'STANDAR PEMBERSIHAN (CLEANING)' => array(
@@ -37,7 +55,7 @@ $rec_id = !empty($data['id_illapak_3_12']) ? $data['id_illapak_3_12'] : null;
     <div class="bg-light p-3 animated fadeIn page-content">
       <table class="table table-bordered table-sm mb-3">
         <tr><th width="20%">Nama Mesin</th><td><?php echo $data['nm_mesin'] ?: '-'; ?></td></tr>
-        <tr><th>Dibuat</th><td><?php echo $data['created_at']; ?> oleh <?php echo $data['user_create']; ?></td></tr>
+        <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="illapak_3_12-edit-data-form" class="form page-form needs-validation"
         action="<?php print_link("illapak_3_12/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post">
@@ -55,10 +73,15 @@ $rec_id = !empty($data['id_illapak_3_12']) ? $data['id_illapak_3_12'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
+              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
+              $image_path = 'assets/images/illapak_3_12/illapak_3_12 ' . $img_key . '.png';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">
                   <div class="row">
+                    <div class="col-md-3">
+                      <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>" alt="<?php echo $label; ?>" onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span style="display:none">Gambar belum diunggah</span></div>
+                    </div>
                     <div class="col-md-4">
                       <label class="d-block"><?php echo $label; ?> <span class="text-danger">*</span></label>
                       <?php foreach (Menu::$Kondisi_Harian as $option) { ?>
@@ -75,7 +98,7 @@ $rec_id = !empty($data['id_illapak_3_12']) ? $data['id_illapak_3_12'] : null;
                   <div class="kendala-box border-top mt-3 pt-3" style="<?php echo $is_nok ? '' : 'display:none'; ?>">
                     <h6>Kendala selama AM</h6>
                     <textarea name="kendala_<?php echo $field; ?>" class="form-control mb-2"
-                      placeholder="Jelaskan kendala" <?php echo $is_nok ? 'required' : ''; ?>><?php echo $abn ? $abn['kendala'] : ''; ?></textarea>
+                      placeholder="Jelaskan kendala" <?php echo $is_nok ? 'required' : ''; ?>><?php echo htmlspecialchars($abn ? $abn['kendala'] : ''); ?></textarea>
                     <div class="row">
                       <div class="col-md-3"><label>Kategori Tag</label>
                         <select name="kategori_tag_<?php echo $field; ?>" class="custom-select">

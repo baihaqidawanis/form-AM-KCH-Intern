@@ -228,6 +228,106 @@ $show_pagination = $this->show_pagination;
                             </div>
                         </div>
                     </div>
+
+                    <h4 ><div class="alert">
+                        <strong>Compounding</strong>
+                    </div>
+                    <style>
+                        .alert {
+                        padding: 20px;
+                        background-color: DodgerBlue;
+                        color: white;
+                        text-align: center;
+                        }
+                    </style></h4>
+                    <div class="card ">
+                        <div class="card-header p-0 pt-2 px-2">
+                            <ul class="nav  nav-tabs   ">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-toggle="tab" href="#TabPage-4-Page1" role="tab" aria-selected="true">
+                                        Cosmec
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page2" role="tab" aria-selected="true">
+                                        FBD Jaw Chuan
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page3" role="tab" aria-selected="true">
+                                        FBD Glatt
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page4" role="tab" aria-selected="true">
+                                        Supermixer
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page5" role="tab" aria-selected="true">
+                                        Storage Tank
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page6" role="tab" aria-selected="true">
+                                        Mixing Tank
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <div class="tab-pane show active fade" id="TabPage-4-Page1" role="tabpanel">
+                                    <h4 >Cosmec</h4>
+                                    <div class=" ">
+                                        <?php
+                                        $this->render_page("cosmec/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page2" role="tabpanel">
+                                    <h4 >FBD Jaw Chuan</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("fbd_jaw_chuan/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page3" role="tabpanel">
+                                    <h4 >FBD Glatt</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("fbd_glatt/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page4" role="tabpanel">
+                                    <h4 >Supermixer</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("supermixer/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page5" role="tabpanel">
+                                    <h4 >Storage Tank</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("storage_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page6" role="tabpanel">
+                                    <h4 >Mixing Tank</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("mixing_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

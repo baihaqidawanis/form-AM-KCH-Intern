@@ -59,11 +59,7 @@ $show_export_btn = $this->show_export_btn;
                                     </tr>
                                     <tr  class="td-Action">
                                         <th class="title"> Action: </th>
-                                        <td class="value">
-                                            <a size="sm" class="btn btn-sm btn-primary page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['id_log'])) ?>">
-                                                <i class="fa fa-eye"></i> <?php echo $data['Action'] ?>
-                                            </a>
-                                        </td>
+                                        <td class="value"> <?php echo $data['Action']; ?></td>
                                     </tr>
                                     <tr  class="td-TableName">
                                         <th class="title"> Tablename: </th>

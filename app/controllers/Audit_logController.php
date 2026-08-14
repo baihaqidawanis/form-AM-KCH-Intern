@@ -18,29 +18,31 @@ class Audit_logController extends SecureController{
 		$request = $this->request;
 		$db = $this->GetModel();
 		$tablename = $this->tablename;
-		$fields = array("log_id", 
-			"Timestamp", 
-			"Action", 
-			"TableName", 
-			"UserID");
+		$fields = array("log_id",
+			'"Timestamp"',
+			'"Action"',
+			'"TableName"',
+			'"UserID"');
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); // get current pagination e.g array(page_number, page_limit)
 		//search table record
 		if(!empty($request->search)){
-			$text = trim($request->search); 
-			$search_condition = "(
-				audit_log.log_id LIKE ? OR 
-				audit_log.Timestamp LIKE ? OR 
-				audit_log.id_log LIKE ? OR 
-				audit_log.Action LIKE ? OR 
-				audit_log.TableName LIKE ? OR 
-				audit_log.UserID LIKE ? OR 
-				audit_log.SQLQuery LIKE ? OR 
-				audit_log.ServerIP LIKE ? OR 
-				audit_log.RequestURL LIKE ? OR 
-				audit_log.RequestData LIKE ? OR 
-				audit_log.RequestCompleted LIKE ? OR 
-				audit_log.RequestMsg LIKE ?
-			)";
+			$text = trim($request->search);
+			// Kolom audit_log huruf besar (peninggalan MySQL yang gak peduli besar-kecil huruf kolom) --
+			// wajib di-quote di Postgres, kalau enggak otomatis di-lowercase-in dan gagal match kolom asli.
+			$search_condition = '(
+				CAST(audit_log.log_id AS VARCHAR) LIKE ? OR
+				audit_log."Timestamp" LIKE ? OR
+				audit_log.id_log LIKE ? OR
+				audit_log."Action" LIKE ? OR
+				audit_log."TableName" LIKE ? OR
+				audit_log."UserID" LIKE ? OR
+				audit_log."SQLQuery" LIKE ? OR
+				audit_log."ServerIP" LIKE ? OR
+				audit_log."RequestURL" LIKE ? OR
+				audit_log."RequestData" LIKE ? OR
+				audit_log."RequestCompleted" LIKE ? OR
+				audit_log."RequestMsg" LIKE ?
+			)';
 			$search_params = array(
 				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"
 			);
@@ -48,6 +50,18 @@ class Audit_logController extends SecureController{
 			$db->where($search_condition, $search_params);
 			 //template to use when ajax search
 			$this->view->search_template = "audit_log/search.php";
+		}
+		if(!empty($request->action_filter)){
+			$db->where('audit_log."Action"', trim($request->action_filter));
+		}
+		if(!empty($request->table_filter)){
+			$db->where('audit_log."TableName"', trim($request->table_filter));
+		}
+		if(!empty($request->date_from)){
+			$db->where('audit_log."Timestamp"', trim($request->date_from) . " 00:00:00", ">=");
+		}
+		if(!empty($request->date_to)){
+			$db->where('audit_log."Timestamp"', trim($request->date_to) . " 23:59:59", "<=");
 		}
 		if(!empty($request->orderby)){
 			$orderby = $request->orderby;
@@ -71,6 +85,8 @@ class Audit_logController extends SecureController{
 		$data->record_count = $records_count;
 		$data->total_records = $total_records;
 		$data->total_page = $total_pages;
+		$table_rows = $db->rawQuery('SELECT DISTINCT "TableName" FROM audit_log WHERE "TableName" IS NOT NULL AND "TableName" <> \'\' ORDER BY "TableName"');
+		$data->table_options = array_column($table_rows, 'TableName');
 		if($db->getLastError()){
 			$this->set_page_error();
 		}
@@ -93,18 +109,18 @@ class Audit_logController extends SecureController{
 		$db = $this->GetModel();
 		$rec_id = $this->rec_id = urldecode($rec_id);
 		$tablename = $this->tablename;
-		$fields = array("log_id", 
-			"Timestamp", 
-			"id_log", 
-			"Action", 
-			"TableName", 
-			"UserID", 
-			"SQLQuery", 
-			"ServerIP", 
-			"RequestURL", 
-			"RequestData", 
-			"RequestCompleted", 
-			"RequestMsg");
+		$fields = array("log_id",
+			'"Timestamp"',
+			"id_log",
+			'"Action"',
+			'"TableName"',
+			'"UserID"',
+			'"SQLQuery"',
+			'"ServerIP"',
+			'"RequestURL"',
+			'"RequestData"',
+			'"RequestCompleted"',
+			'"RequestMsg"');
 		if($value){
 			$db->where($rec_id, urldecode($value)); //select record based on field name
 		}

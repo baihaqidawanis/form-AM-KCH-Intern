@@ -31,15 +31,18 @@ class UsersController extends SecureController{
 		//search table record
 		if(!empty($request->search)){
 			$text = trim($request->search); 
+			// id_user & user_role_id integer -- Postgres gak izinin LIKE ke integer
+			// tanpa CAST eksplisit (beda dari MySQL yang izinin implicit), sama
+			// kelas bug yang ketemu di audit_log.log_id (Round 31).
 			$search_condition = "(
-				users.id_user LIKE ? OR 
-				users.nama LIKE ? OR 
-				users.email LIKE ? OR 
-				users.username LIKE ? OR 
-				users.area LIKE ? OR 
+				CAST(users.id_user AS VARCHAR) LIKE ? OR
+				users.nama LIKE ? OR
+				users.email LIKE ? OR
+				users.username LIKE ? OR
+				users.area LIKE ? OR
 				users.mesin LIKE ? OR
 				users.account_status LIKE ? OR
-				users.user_role_id LIKE ? OR
+				CAST(users.user_role_id AS VARCHAR) LIKE ? OR
 				users.pict LIKE ?
 			)";
 			$search_params = array(
@@ -111,7 +114,6 @@ class UsersController extends SecureController{
 		}
 		$record = $db->getOne($tablename, $fields );
 		if($record){
-			$this->write_to_log("view", "true");
 			$page_title = $this->view->page_title = "View  Users";
 		$this->view->report_filename = date('Y-m-d') . '-' . $page_title;
 		$this->view->report_title = $page_title;
@@ -171,6 +173,13 @@ class UsersController extends SecureController{
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$password_text = $modeldata['password'];
+			//URS: username akun baru wajib format NIK, password wajib kompleksitas tertentu
+			if (!empty($modeldata['username']) && !is_valid_nik_username($modeldata['username'])) {
+				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan), angka saja, tepat 8 digit.";
+			}
+			if (!empty($password_text) && !is_valid_password_complexity($password_text)) {
+				$this->view->page_error[] = "Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.";
+			}
 			//update modeldata with the password hash
 			$modeldata['password'] = $this->modeldata['password'] = password_hash($password_text , PASSWORD_DEFAULT);
 			//Check if Duplicate Record Already Exit In The Database
@@ -182,7 +191,7 @@ class UsersController extends SecureController{
 			$db->where("username", $modeldata['username']);
 			if($db->has($tablename)){
 				$this->view->page_error[] = $modeldata['username']." Already exist!";
-			} 
+			}
 			if($this->validated()){
 				$rec_id = $this->rec_id = $db->insert($tablename, $modeldata);
 				if($rec_id){

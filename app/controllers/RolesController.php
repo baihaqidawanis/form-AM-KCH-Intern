@@ -24,8 +24,9 @@ class RolesController extends SecureController{
 		//search table record
 		if(!empty($request->search)){
 			$text = trim($request->search); 
+			// role_id integer -- Postgres gak izinin LIKE ke integer tanpa CAST (Round 31/37).
 			$search_condition = "(
-				roles.role_id LIKE ? OR 
+				CAST(roles.role_id AS VARCHAR) LIKE ? OR
 				roles.role_name LIKE ?
 			)";
 			$search_params = array(
@@ -90,7 +91,6 @@ class RolesController extends SecureController{
 		}
 		$record = $db->getOne($tablename, $fields );
 		if($record){
-			$this->write_to_log("view", "true");
 			$page_title = $this->view->page_title = "View  Roles";
 		$this->view->report_filename = date('Y-m-d') . '-' . $page_title;
 		$this->view->report_title = $page_title;

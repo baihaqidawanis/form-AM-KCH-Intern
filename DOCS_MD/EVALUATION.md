@@ -1,8 +1,33 @@
 # ✅ Form AM — Evaluation Log
 
-> Dokumen ini isinya **cuma yang udah dikerjain** — checklist eksekusi + evaluasi/detail tiap fix. Rencana yang **belum** dikerjain ada di [FINAL_IMPROVEMENT.md](./FINAL_IMPROVEMENT.md). Context ringkas project ada di [CLAUDE.md](../CLAUDE.md).
+> Dokumen ini isinya **cuma yang udah dikerjain** — checklist eksekusi + evaluasi/detail tiap fix (per-sesi, kronologis, teknis). Item yang **belum** dikerjain ada di [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md) bagian "Known Gaps". Context ringkas project ada di [CLAUDE.md](../CLAUDE.md).
 >
-> Setiap item bernomor (`#1`, `#8`, dst) merujuk ke nomor temuan yang sama di `FINAL_IMPROVEMENT.md` / [ANALYSIS.md](./ANALYSIS.md) (arsip).
+> Buat ringkasan non-teknis (bahan presentasi/meeting), lihat bagian **"Ringkasan Eksekutif"** tepat di bawah ini dulu — detail per-round teknis lengkap ada di bawahnya.
+
+---
+
+## 📢 Ringkasan Eksekutif (Non-Teknis)
+
+> Ringkasan status terkini buat audiens non-teknis (atasan/stakeholder). Detail teknis per-temuan ada di section "Ringkasan Cepat" dan log per-round di bawah.
+
+**Status per 14 Agustus 2026:**
+
+| # | Area | Status |
+|---|---|---|
+| 1 | Kategori **Filling** (5 mesin: SIG, Joeya, Illapak 1-2, Illapak 3-12, Unifill B) | ✅ 100% selesai, teruji end-to-end |
+| 2 | Kategori **Packaging** (6 mesin: Chimei, Temach, Jihcheng, Jinsung 1-4, Jinsung 5, Best Pack) | ✅ 100% selesai, teruji end-to-end |
+| 3 | Kategori **Compounding** (6 mesin: Cosmec, FBD Jaw Chuan, FBD Glatt, Supermixer, Storage Tank, Mixing Tank) | ✅ 100% selesai, teruji end-to-end |
+| 4 | **Total 17 modul mesin**, semua satu kerangka kode (`BaseMachineController`) | ✅ Refactor besar selesai — bug fix/fitur baru cukup 1 kali, otomatis berlaku ke semua 17 mesin |
+| 5 | Export PDF/Word/CSV/Excel | ✅ Semua format jalan di semua modul (bug crash saat list kosong ditemukan & diperbaiki) |
+| 6 | Kepatuhan URS (Rank I — Penting) | ✅ Semua item yang ranahnya development selesai — lihat `KEPATUHAN_URS.md` |
+| 7 | RBAC 4 role (Administrator/Manager/Supervisor/Staff-Operator) | ✅ Sesuai matrix URS, teruji otomatis |
+| 8 | Testing otomatis | ✅ 38 test PHPUnit + 1 e2e Playwright, plus checklist manual — lihat `TESTING.md` |
+| 9 | Migrasi database ke PostgreSQL | ✅ Selesai di lingkungan development — **belum dieksekusi di server production**, lihat `DEPLOYMENT.md` |
+| 10 | Konten part Illapak 1-12 & Unifill B (nama part asli, gambar, SOP) | 🟡 Masih placeholder, menunggu data dari user |
+
+**Pencapaian besar:** dari titik awal (1 mesin — SIG — dengan kode duplikat 56×), sekarang **17 mesin lengkap** di 3 kategori, semua dengan kode terpusat, RBAC sesuai standar GMP/URS, dan testing otomatis. Sisa pekerjaan besar yang belum selesai murni **konten** (isi form part untuk beberapa mesin) dan **deployment ke production** (belum dieksekusi, perlu keputusan bisnis soal migrasi data & role — lihat `DEPLOYMENT.md`).
+
+**Bug signifikan yang ditemukan & diperbaiki sepanjang project** (kategori terbesar): masalah rendering PDF (library usang, sudah diupgrade), race condition data tagging, celah RBAC (Operator/Manager gak sesuai matrix URS), stored-XSS di form kendala, dan yang terbaru — 3 bug ditemukan lewat proses menulis test otomatis (export crash saat data kosong, search crash di beberapa halaman admin, auto-logout yang secara diam-diam gak beneran mengakhiri sesi).
 
 ---
 
@@ -30,7 +55,7 @@
 | — | 6 gap fungsionalitas Joeya vs SIG (`edit_data`, `editfield`, search, dll) | ✅ Selesai | [Round 11](#round-11--audit-fungsionalitas-joeya-vs-sig-2026-08-07) |
 | — | Dynamic property deprecated di `BaseController.php` (semua controller kena) | ✅ Selesai | [Round 11](#round-11--audit-fungsionalitas-joeya-vs-sig-2026-08-07) |
 
-Item **belum** dikerjain (`#8`, `#9`, `#11`, dan roadmap lain): lihat [FINAL_IMPROVEMENT.md](./FINAL_IMPROVEMENT.md).
+Item **belum** dikerjain: lihat [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md) bagian "Known Gaps" dan "Roadmap Opsional".
 
 ---
 

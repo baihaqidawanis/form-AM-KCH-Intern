@@ -1,5 +1,14 @@
 {
     "require": {
-        "dompdf/dompdf": "^0.8.3"
+        "dompdf/dompdf": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "guzzlehttp/guzzle": "*"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
     }
 }

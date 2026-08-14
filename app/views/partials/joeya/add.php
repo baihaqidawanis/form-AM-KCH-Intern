@@ -191,8 +191,7 @@ $page_element_id = 'joeya-add-' . random_str();
                       <h5><?php echo $label; ?></h5>
                       <div class="row">
                         <div class="col-md-3">
-                          <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>"
-                              target="_blank"><img class="img-fluid" src="<?php print_link($image_path); ?>"
+                          <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>"
                                 alt="<?php echo $label; ?>"
                                 onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span
                               style="display:none">Gambar belum diunggah</span></div>

@@ -56,8 +56,12 @@ function arr_to_csv($data)
 {
 	# Generate CSV data from array
 	$fh = fopen('php://temp', 'rw'); # don't create a file, attempt # to use memory instead
-	# write out the headers
-	fputcsv($fh, array_keys(current($data)));
+	# write out the headers (kalau $data kosong -- misal mesin belum ada submission
+	# sama sekali -- current() balikin false, bukan array, jadi jangan dipaksa jadi header)
+	$first = current($data);
+	if ($first !== false) {
+		fputcsv($fh, array_keys($first));
+	}
 	# write out the data
 	foreach ($data as $row) {
 		fputcsv($fh, $row);
@@ -453,6 +457,45 @@ function relative_date($date)
 	return "$difference $periods[$j] {$tense}";
 }
 
+
+/**
+ * Format a date/timestamp as DD/MM/YYYY HH:MM:SS per URS requirement (ALCOA "Contemporaneous").
+ * @return  string
+ */
+function format_am_date($date)
+{
+	if (empty($date)) {
+		return "-";
+	}
+	$unix_date = is_numeric($date) ? $date : strtotime($date);
+	if (empty($unix_date)) {
+		return "-";
+	}
+	return date("d/m/Y H:i:s", $unix_date);
+}
+
+/**
+ * URS: username akun baru wajib format NIK. NIK di sini = Nomor Induk
+ * Karyawan pabrik (bukan NIK KTP 16 digit) -- dikonfirmasi user: full angka,
+ * tepat 8 digit. Cuma dipakai buat akun BARU (register/add user), gak
+ * diterapin retroaktif ke akun lama yang usernamenya bukan format ini (misal
+ * 'superadmin', atau akun dummy testing kayak 'MANAGE01') -- validasi ini
+ * cuma jalan di add(), gak pernah di-recheck pas login/edit akun existing.
+ * @return bool
+ */
+function is_valid_nik_username($username)
+{
+	return (bool) preg_match('/^[0-9]{8}$/', (string) $username);
+}
+
+/**
+ * URS: password wajib huruf kapital, huruf kecil, angka, karakter spesial, minimal 8 karakter.
+ * @return bool
+ */
+function is_valid_password_complexity($password)
+{
+	return (bool) preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/', (string) $password);
+}
 
 /**
  * Parse Date Or Timestamp Object into Human Readable Date (e.g. 26th of March 2016)

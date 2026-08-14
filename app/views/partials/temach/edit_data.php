@@ -5,6 +5,17 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
+$image_names = array(
+  'conveyor_produk' => 'conveyor produk',
+  'pusher_pendorong_pack' => 'pusher pendorong pack',
+  'turet' => 'turet',
+  'cam' => 'cam',
+  'lubrikasi_bearing_konveyor' => 'lubrikasi bearing konveyor',
+  'jalur_compressed_air' => 'jalur compressed air',
+  'air_regulator' => 'air regulator',
+  'heater_a_f' => 'heater a f',
+  'baut_turet' => 'baut turet'
+);
 
 $sections = array(
   'STANDAR PEMBERSIHAN (CLEANING)' => array(
@@ -37,7 +48,7 @@ $rec_id = !empty($data['id_temach']) ? $data['id_temach'] : null;
     <div class="bg-light p-3 animated fadeIn page-content">
       <table class="table table-bordered table-sm mb-3">
         <tr><th width="20%">Nama Mesin</th><td><?php echo $data['nm_mesin'] ?: '-'; ?></td></tr>
-        <tr><th>Dibuat</th><td><?php echo $data['created_at']; ?> oleh <?php echo $data['user_create']; ?></td></tr>
+        <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="temach-edit-data-form" class="form page-form needs-validation" novalidate
         action="<?php print_link("temach/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post">
@@ -55,10 +66,15 @@ $rec_id = !empty($data['id_temach']) ? $data['id_temach'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
+              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
+              $image_path = 'assets/images/temach/temach ' . $img_key . '.png';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">
                   <div class="row">
+                    <div class="col-md-3">
+                      <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>" alt="<?php echo $label; ?>" onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span style="display:none">Gambar belum diunggah</span></div>
+                    </div>
                     <div class="col-md-4">
                       <label class="d-block"><?php echo $label; ?> <span class="text-danger">*</span></label>
                       <?php foreach (Menu::$Kondisi_Harian as $option) { ?>
@@ -75,7 +91,7 @@ $rec_id = !empty($data['id_temach']) ? $data['id_temach'] : null;
                   <div class="kendala-box border-top mt-3 pt-3" style="<?php echo $is_nok ? '' : 'display:none'; ?>">
                     <h6>Kendala selama AM</h6>
                     <textarea name="kendala_<?php echo $field; ?>" class="form-control mb-2"
-                      placeholder="Jelaskan kendala" <?php echo $is_nok ? 'required' : ''; ?>><?php echo $abn ? $abn['kendala'] : ''; ?></textarea>
+                      placeholder="Jelaskan kendala" <?php echo $is_nok ? 'required' : ''; ?>><?php echo htmlspecialchars($abn ? $abn['kendala'] : ''); ?></textarea>
                     <div class="row">
                       <div class="col-md-3"><label>Kategori Tag</label>
                         <select name="kategori_tag_<?php echo $field; ?>" class="custom-select">

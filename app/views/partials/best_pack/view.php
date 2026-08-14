@@ -15,7 +15,7 @@ $current_page = $this->set_current_page_link();
         <div id="page-report-body">
           <table class="table table-bordered">
             <tr><th width="25%">Nama Mesin</th><td><?php echo $data['nm_mesin'] ?: '-'; ?></td></tr>
-            <tr><th>Tanggal</th><td><?php echo $data['created_at']; ?></td></tr>
+            <tr><th>Tanggal</th><td><?php echo format_am_date($data["created_at"]); ?></td></tr>
             <tr><th>Pembuat</th><td><?php echo $data['user_create']; ?></td></tr>
           </table>
           <div class="table-responsive">
@@ -26,7 +26,7 @@ $current_page = $this->set_current_page_link();
                   <tr>
                     <th><?php echo $label; ?></th>
                     <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } else { echo '-'; } ?></td>
-                    <td><?php echo $abn['kendala'] ?? '-'; ?></td>
+                    <td><?php echo htmlspecialchars($abn['kendala'] ?? '-'); ?></td>
                     <td><?php echo $abn['teks_kategori'] ?? '-'; ?></td>
                     <td><?php echo $abn['teks_korelasi'] ?? '-'; ?></td>
                     <td><?php echo $abn['teks_klasifikasi'] ?? '-'; ?></td>
@@ -41,8 +41,8 @@ $current_page = $this->set_current_page_link();
         <?php
         $current_user = USER_NAME;
         $user_role = get_active_user('user_role_id');
-        $izinKhusus = [25, 13, 17, 26];
-        $admin_roles = [16, 23, 22, 10];
+        $izinKhusus = [2]; // Role Manager (URS: approval, tidak full CRUD)
+        $admin_roles = [1, 3]; // Role Administrator dan Supervisor (URS: full akses AM)
         $can_approve = (in_array($user_role, $izinKhusus) || in_array($user_role, $admin_roles));
         $can_edit = ($current_user == $data['user_create'] || in_array($user_role, $admin_roles));
         $can_delete = in_array($user_role, $admin_roles);

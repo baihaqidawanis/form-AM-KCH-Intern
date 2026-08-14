@@ -23,7 +23,7 @@
         </div>
         <div class="tab-content">
             <div class="tab-pane fade show active show" id="audit_log_users_List_<?php echo $page_id ?>" role="tabpanel">
-                <?php $this->render_page("users/list/nama/$field_value"); ?>
+                <?php $this->render_page("users/list/id_user/$field_value", array('show_header' => false)); ?>
             </div>
             <div class="tab-pane fade show " id="audit_log_users_View_<?php echo $page_id ?>" role="tabpanel">
                 <?php $this->render_page("users/view/$field_value"); ?>

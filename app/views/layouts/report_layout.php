@@ -250,7 +250,7 @@
 		?>
 	</div>
 	<div id="report-footer">
-		<div class="footer-left">Dokumen ini digenerate otomatis oleh sistem.</div>
+		<div class="footer-left">Printed by: <?php echo USER_NAME ? USER_NAME : '-'; ?></div>
 		<div class="footer-right"><?php echo  human_datetime(time()); ?></div>
 		<div style="clear: both;"></div>
 	</div>

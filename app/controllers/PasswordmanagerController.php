@@ -66,7 +66,15 @@ class PasswordmanagerController extends BaseController{
 					if(!empty($_POST['password'])){
 						$password = $_POST["password"]; 
 						$cpassword = $_POST["cpassword"];
-						if($password == $cpassword){
+						if($password != $cpassword){
+							$this->set_page_error("Your password confirmation is not consistent");
+							$this->render_view("passwordmanager/password_reset_form.php", null, "info_layout.php");
+						}
+						else if(!is_valid_password_complexity($password)){
+							$this->set_page_error("Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.");
+							$this->render_view("passwordmanager/password_reset_form.php", null, "info_layout.php");
+						}
+						else{
 							$new_password_hash = password_hash($password , PASSWORD_DEFAULT);
 							$new_date_to_expire = format_date("3 months");
 							$new_password_data = array(
@@ -82,10 +90,6 @@ class PasswordmanagerController extends BaseController{
 							else{
 								$this->render_view("passwordmanager/password_reset_error.php", null, "info_layout.php");
 							}
-						}
-						else{
-							$this->set_page_error("Your password confirmation is not consistent");
-							$this->render_view("passwordmanager/password_reset_form.php", null, "info_layout.php");
 						}
 					}
 					else{

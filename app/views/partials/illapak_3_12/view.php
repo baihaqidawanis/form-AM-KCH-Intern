@@ -10,15 +10,15 @@ $current_page = $this->set_current_page_link();
 <div class="container-fluid"><?php $this::display_page_errors(); ?>
 <?php if ($id) { ?>
 <div id="page-report-body">
-<div class="card mb-3"><div class="card-body"><div class="row"><div class="col-md-3"><strong>Mesin:</strong> <?php echo $data['nm_mesin'] ?? '-'; ?></div><div class="col-md-3"><strong>Pembuat:</strong> <?php echo $data['user_create'] ?? '-'; ?></div><div class="col-md-3"><strong>Waktu:</strong> <?php echo $data['created_at'] ?? '-'; ?></div><div class="col-md-3"><strong>Approval:</strong> <?php echo $data['approval'] ?? '-'; ?> (<?php echo $data['user_approve'] ?? '-'; ?>)</div></div></div></div>
+<div class="card mb-3"><div class="card-body"><div class="row"><div class="col-md-3"><strong>Mesin:</strong> <?php echo $data['nm_mesin'] ?? '-'; ?></div><div class="col-md-3"><strong>Pembuat:</strong> <?php echo $data['user_create'] ?? '-'; ?></div><div class="col-md-3"><strong>Waktu:</strong> <?php echo format_am_date($data["created_at"]) ?? '-'; ?></div><div class="col-md-3"><strong>Approval:</strong> <?php echo $data['approval'] ?? '-'; ?> (<?php echo $data['user_approve'] ?? '-'; ?>)</div></div></div></div>
 <div class="card mb-3"><div class="card-body"><h5>Ringkasan Hasil Inspeksi Part</h5><table class="table table-bordered table-sm"><thead><tr><th>Nama Part</th><th>Status Kondisi</th><th>Kendala / Tagging</th></tr></thead><tbody><?php foreach ($parts as $field => $label) { $val = isset($data[$field]) ? $data[$field] : '-'; $ab = isset($abnormal[$field]) ? $abnormal[$field] : null; ?><tr><td><strong><?php echo $label; ?></strong></td><td><?php if ($val==='OK') echo '<span class="badge badge-success">OK</span>'; elseif ($val==='NOK') echo '<span class="badge badge-danger">NOK</span>'; else echo '-'; ?></td><td><?php if ($ab) { echo '<div><strong>Kendala:</strong> ' . htmlspecialchars($ab['kendala'] ?? '-') . '</div>'; echo '<div><small>Tag: ' . htmlspecialchars($ab['teks_kategori'] ?? '-') . ' | Korelasi: ' . htmlspecialchars($ab['teks_korelasi'] ?? '-') . ' | Klasifikasi: ' . htmlspecialchars($ab['teks_klasifikasi'] ?? '-') . ' | Ketidaksesuaian: ' . htmlspecialchars($ab['teks_ketidaksesuaian'] ?? '-') . '</small></div>'; } else echo '-'; ?></td></tr><?php } ?></tbody></table></div></div>
 </div>
 <?php
 // Hak akses tombol aksi - pola sama persis kayak joeya/sig view.php
 $current_user = USER_NAME;
 $user_role = get_active_user('user_role_id');
-$izinKhusus = [25, 13, 17, 26]; // Role Supervisor ke atas
-$admin_roles = [16, 23, 22, 10]; // Role Admin
+$izinKhusus = [2]; // Role Manager (URS: approval, tidak full CRUD)
+$admin_roles = [1, 3]; // Role Administrator dan Supervisor (URS: full akses AM)
 $can_approve = (in_array($user_role, $izinKhusus) || in_array($user_role, $admin_roles));
 $can_edit = ($current_user == ($data['user_create'] ?? null) || in_array($user_role, $admin_roles));
 $can_delete = in_array($user_role, $admin_roles);

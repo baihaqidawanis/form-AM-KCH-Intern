@@ -89,12 +89,19 @@
 	// Application Core Files
 	require(SYSTEM_DIR . 'BaseController.php');
 	require(SYSTEM_DIR . 'SecureController.php');
+	require(SYSTEM_DIR . 'BaseMachineController.php');
 	require(SYSTEM_DIR . 'BaseView.php');
 	require(SYSTEM_DIR . 'Router.php');
 	
 	//display page with the exceptions
 	function exception_handler($exception){
 		$view = new BaseView();
+		// BaseView::__construct baca ulang $_GET['format'] dari request yang lagi
+		// crash (pdf/word/csv/excel/dst) -- kalau dibiarkan, render() di bawah bakal
+		// nyoba nge-export $exception (bukan data beneran) pakai format itu, jadi
+		// crash kedua yang lebih membingungkan daripada error aslinya. Halaman error
+		// harus SELALU html apapun format request aslinya.
+		$view->format = 'html';
 		$view->render("errors/error_server.php", $exception, "info_layout.php");
 		exit;
 	}

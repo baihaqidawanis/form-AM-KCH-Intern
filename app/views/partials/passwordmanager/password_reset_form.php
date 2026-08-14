@@ -11,7 +11,8 @@
 				?>
 				<div class="form-group">
 					<label>New Password</label>
-					<input placeholder="Your New Password" required value="" class="form-control default" name="password" id="txtpass" type="password" />
+					<input placeholder="Your New Password" required minlength="8" value="" class="form-control default" name="password" id="txtpass" type="password" />
+					<small class="form-text text-muted">Minimal 8 karakter, harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.</small>
 				</div>
 				<div class="form-group">
 					<label>Confirm new password</label>

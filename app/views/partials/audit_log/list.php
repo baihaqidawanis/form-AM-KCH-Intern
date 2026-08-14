@@ -14,6 +14,8 @@ $view_title = $this->view_title;
 $show_header = $this->show_header;
 $show_footer = $this->show_footer;
 $show_pagination = $this->show_pagination;
+$table_options = isset($view_data->table_options) ? $view_data->table_options : array();
+$action_options = array('add', 'edit', 'edit_data', 'delete');
 ?>
 <section class="page" id="<?php echo $page_element_id; ?>" data-page-type="list"  data-display-type="table" data-page-url="<?php print_link($current_page); ?>">
     <?php
@@ -24,22 +26,49 @@ $show_pagination = $this->show_pagination;
             <div class="row ">
                 <div class="col ">
                     <h4 class="record-title">Audit Log</h4>
+                    <small class="text-muted">Log ini digenerate otomatis oleh sistem tiap ada perubahan data — tidak bisa ditambah manual.</small>
                 </div>
-                <div class="col-sm-3 ">
-                    <a  class="btn btn btn-primary my-1" href="<?php print_link("audit_log/add") ?>">
-                        <i class="fa fa-plus"></i>                              
-                        Add New Audit Log 
-                    </a>
-                </div>
-                <div class="col-sm-4 ">
-                    <form  class="search" action="<?php print_link('audit_log'); ?>" method="get">
-                        <div class="input-group">
-                            <input value="<?php echo get_value('search'); ?>" class="form-control" type="text" name="search"  placeholder="Search" />
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary"><i class="fa fa-search"></i></button>
-                                </div>
+                <div class="col-sm-12 mt-2">
+                    <form class="filter-form" action="<?php print_link('audit_log'); ?>" method="get">
+                        <div class="form-row align-items-end">
+                            <div class="col-md-2 form-group mb-2">
+                                <label class="small text-muted mb-1" for="filter-table">Modul / Tabel</label>
+                                <select class="custom-select custom-select-sm" id="filter-table" name="table_filter">
+                                    <option value="">Semua Modul</option>
+                                    <?php foreach ($table_options as $t) { $selected = (get_value('table_filter') == $t) ? 'selected' : ''; ?>
+                                    <option <?php echo $selected; ?> value="<?php echo $t; ?>"><?php echo $t; ?></option>
+                                    <?php } ?>
+                                </select>
                             </div>
-                        </form>
+                            <div class="col-md-2 form-group mb-2">
+                                <label class="small text-muted mb-1" for="filter-action">Action</label>
+                                <select class="custom-select custom-select-sm" id="filter-action" name="action_filter">
+                                    <option value="">Semua Action</option>
+                                    <?php foreach ($action_options as $a) { $selected = (get_value('action_filter') == $a) ? 'selected' : ''; ?>
+                                    <option <?php echo $selected; ?> value="<?php echo $a; ?>"><?php echo ucfirst($a); ?></option>
+                                    <?php } ?>
+                                </select>
+                            </div>
+                            <div class="col-md-2 form-group mb-2">
+                                <label class="small text-muted mb-1" for="filter-date_from">Tanggal Dari</label>
+                                <input value="<?php echo get_value('date_from'); ?>" class="form-control form-control-sm" type="date" id="filter-date_from" name="date_from" />
+                            </div>
+                            <div class="col-md-2 form-group mb-2">
+                                <label class="small text-muted mb-1" for="filter-date_to">Tanggal Sampai</label>
+                                <input value="<?php echo get_value('date_to'); ?>" class="form-control form-control-sm" type="date" id="filter-date_to" name="date_to" />
+                            </div>
+                            <div class="col-md-3 form-group mb-2">
+                                <label class="small text-muted mb-1" for="filter-search">Pencarian</label>
+                                <input value="<?php echo get_value('search'); ?>" class="form-control form-control-sm" type="text" id="filter-search" name="search" placeholder="Cari user, URL, dll..." />
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="col-12 text-right">
+                                <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-filter"></i> Terapkan Filter</button>
+                                <a href="<?php print_link('audit_log'); ?>" class="btn btn-sm btn-outline-secondary"><i class="fa fa-times"></i> Reset</a>
+                            </div>
+                        </div>
+                    </form>
                     </div>
                     <div class="col-md-12 comp-grid">
                         <div class="">

@@ -2,5 +2,8 @@ vendor/
 uploads/
 logs/
 .env
-*.sql
 node_modules/
+playwright-report/
+test-results/
+.phpunit.result.cache
+error.log

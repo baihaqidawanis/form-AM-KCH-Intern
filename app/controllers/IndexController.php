@@ -30,15 +30,26 @@ class IndexController extends BaseController
 		$tablename = $this->tablename;
 		$user = $db->getOne($tablename);
 		if (!empty($user)) {
+			//Akun yang sudah diblokir (3x gagal login) ditolak duluan sebelum cek password,
+			//sesuai URS: "silakan menghubungi administrator" -- gak ada auto-unblock berbasis waktu,
+			//cuma Administrator/Supervisor yang bisa buka lewat halaman Users.
+			$user_status = strtolower($user['account_status']);
+			if ($user_status == "blocked") {
+				return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi administrator.");
+			}
 			//Verify User Password Text With DB Password Hash Value.
 			//Uses PHP password_verify() function with default options
 			$password_hash = $user['password'];
 			$this->modeldata['password'] = $password_hash; //update the modeldata with the password hash
 			if (password_verify($password_text, $password_hash)) {
 				//check if user account has been activated by administrator
-				$user_status = strtolower($user['account_status']);
 				if ($user_status != "active") {
 					return $this->login_fail("Your account is not active. Please contact system administrator for more information");
+				}
+				//Password benar -- reset counter gagal login
+				if (!empty($user['failed_login_attempts'])) {
+					$db->where("id_user", $user['id_user']);
+					$db->update($tablename, array("failed_login_attempts" => 0));
 				}
 				unset($user['password']); //Remove user password. No need to store it in the session
 				set_session("user_data", $user); // Set active user data in a sessions
@@ -63,7 +74,17 @@ class IndexController extends BaseController
 					return $this->redirect(HOME_PAGE);
 				}
 			} else {
-				//password is not correct
+				//password salah -- naikkan counter, blokir akun kalau udah 3x
+				$attempts = intval($user['failed_login_attempts']) + 1;
+				$update = array("failed_login_attempts" => $attempts);
+				if ($attempts >= 3) {
+					$update["account_status"] = "Blocked";
+				}
+				$db->where("id_user", $user['id_user']);
+				$db->update($tablename, $update);
+				if ($attempts >= 3) {
+					return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi administrator.");
+				}
 				return $this->login_fail("Username or password not correct");
 			}
 		} else {
@@ -138,6 +159,13 @@ class IndexController extends BaseController
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$password_text = $modeldata['password'];
+			//URS: username akun baru wajib format NIK, password wajib kompleksitas tertentu
+			if (!empty($modeldata['username']) && !is_valid_nik_username($modeldata['username'])) {
+				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan), angka saja, tepat 8 digit.";
+			}
+			if (!empty($password_text) && !is_valid_password_complexity($password_text)) {
+				$this->view->page_error[] = "Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.";
+			}
 			//update modeldata with the password hash
 			$modeldata['password'] = $this->modeldata['password'] = password_hash($password_text, PASSWORD_DEFAULT);
 			$modeldata['account_status'] = "Pending";
