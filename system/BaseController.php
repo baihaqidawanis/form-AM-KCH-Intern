@@ -157,9 +157,10 @@ class BaseController{
 			"filesize" => "3",
 			"returnfullpath" => false,
 			"filenameprefix" => "",
-			"uploadDir" => "uploads/files/"
+			"uploadDir" => "uploads/files/",
+			"perms" => 0644 // file yang keupload jangan world-writable
 		);
-		
+
 		$this->file_upload_settings['pict'] = array(
 			"title" => "{{random}}",
 			"extensions" => ".jpg,.jpeg,.png,.gif,.webp",
@@ -167,7 +168,8 @@ class BaseController{
 			"filesize" => "3",
 			"returnfullpath" => true,
 			"filenameprefix" => "",
-			"uploadDir" => "uploads/files/"
+			"uploadDir" => "uploads/files/",
+			"perms" => 0644 // file yang keupload jangan world-writable
 		);
 	
 

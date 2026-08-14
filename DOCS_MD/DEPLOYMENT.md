@@ -34,6 +34,7 @@ Saya bagi jadi lima fase. Fase 0 bisa dikerjakan kapan saja sebelum hari-H, tida
 ### Fase 0 — Persiapan
 
 - [ ] Backup penuh database production MySQL yang sekarang — dump lengkap, dan kalau memungkinkan snapshot filenya juga. Ini dilakukan **sebelum** menyentuh apapun.
+- [ ] Backup folder `uploads/` juga (foto profil user, dll) — foto disimpan sebagai file biasa di disk lokal server (bukan S3/MinIO, cukup buat skala internal ini), jadi **gak ikut ke-backup otomatis lewat dump database**. Kalau cuma database yang di-backup, semua foto profil bakal hilang kalau server production nanti crash/reinstall.
 - [ ] Pasang PostgreSQL 17 di server production (atau di server database terpisah kalau memang begitu arsitekturnya).
 - [ ] Pasang PHP 8.2 beserta extension yang dibutuhkan (`pdo_pgsql`, `pgsql`, dan `zip` — yang terakhir ini dibutuhkan supaya export ke Excel bisa jalan, detailnya ada di `TECHNICAL_OVERVIEW.md`).
 - [ ] (Opsional, hati-hati) OPcache bisa dicoba diaktifkan untuk performa, tapi di lingkungan development (Windows) ternyata bikin Apache tidak stabil (`VirtualProtect() failed` di log, request gagal random) — masalah yang dikenal terjadi antara OPcache dan Windows. Kalau server production Linux, kemungkinan besar tidak akan mengalami masalah yang sama, tapi tetap **uji stabilitasnya dulu** sebelum diaktifkan permanen (submit beberapa form berturut-turut, cek log error) — jangan langsung diaktifkan tanpa dicek.
