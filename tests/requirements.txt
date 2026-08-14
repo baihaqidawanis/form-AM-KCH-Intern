@@ -31,11 +31,14 @@ Browser Playwright (sekali install): `npx playwright install chromium`
 ## Opsional
 
 Docker + Docker Compose   (kalau mau jalanin via container -- lihat Dockerfile/docker-compose.yml di root.
-                            CATATAN per 14 Agustus 2026: build Dockerfile sempat gak bisa diverifikasi
-                            selesai di jaringan kantor karena apt-get ke deb.debian.org kena 403 Forbidden
-                            dari Fastly CDN -- ini masalah environment/network, bukan masalah Dockerfile-nya
-                            sendiri, dibuktikan base image php:8.3-apache polos pun kena masalah yang sama.
-                            Coba dari jaringan lain kalau ketemu error serupa.)
+                            STATUS per 14 Agustus 2026: build SUDAH diverifikasi sukses end-to-end
+                            (docker build + docker run + extension pdo_pgsql/mysqli/zip kekonfirmasi
+                            ke-load + Apache serve HTTP 200). Sempat gagal duluan karena apt-get ke
+                            deb.debian.org kena 403 Forbidden -- ternyata bukan mirror-nya yang nolak
+                            total, tapi request HTTP POLOS yang di-intercept jaringan (HTTPS ke host
+                            yang sama jalan normal). Fixed: Dockerfile maksa apt sources pakai https://
+                            sebelum apt-get update. Kalau ketemu 403 serupa di jaringan lain, coba cek
+                            ini duluan sebelum nyerah.)
 
 ## Cara Cek Semua Sudah Terpasang
 

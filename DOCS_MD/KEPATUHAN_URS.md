@@ -1,7 +1,7 @@
 # ✅ Kesesuaian Program dengan URS — Form Autonomous Maintenance
 
 > Cross-check langsung ke kode — setiap baris di bawah dites live (curl/Playwright, akun sungguhan, query database), bukan dibaca dari dokumentasi. Dibandingkan terhadap [URS Form Autonomous Maintenance](<./URS_Form%20Autonomous%20Maintenance%20(1).md>) (dokumen GMP resmi, ditandatangani 23 Juni 2026, approved 10 Agustus 2026, mengacu CPOB 2024 Aneks 7 & CPOTB 2021 Bab 5.26 soal *Computerized System Validation*).
->
+
 > Requirement bertanda **Rank: I (Penting)** artinya "ketersediaan fitur tersebut dapat mempengaruhi keberlangsungan/kelancaran proses bisnis" — beda kelas dari sekadar "kurang fitur". Ini yang biasa jadi temuan kalau app-nya diaudit tim QA/regulator.
 >
 > **Update terakhir: 14 Agustus 2026**
@@ -77,6 +77,7 @@ Pembatasan "punya sendiri" dicek di level controller (`user_create` record diban
 |---|---|---|
 | Semua part OK → otomatis approved by system | ✅ | Berlaku di 17/17 modul termasuk SIG. Diverifikasi otomatis (`tests/Feature/MachineCrudTest.php`, `ApprovalFlowTest.php`) |
 | Ada kendala (NOK) → tidak auto-approve, wajib approval manual | ✅ | Diverifikasi otomatis: submit 1 part NOK → status tetap kosong menunggu approval manual sesuai role berwenang, approve/reject manual keduanya dites |
+| Kolom "User Approve" (siapa/apa yang approve) tampil terpisah di list, sesuai referensi URS (Gambar 23) | ✅ | **Gap ditemukan & difix**: kolom "Approval Oleh" sebelumnya gak ditampilkan di `list2.php` (datanya udah ke-fetch dari awal, cuma gak dirender) — ditambahin ke 17/17 modul, diverifikasi live nunjukin "System" buat record auto-approve |
 
 ---
 

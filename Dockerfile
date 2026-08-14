@@ -7,7 +7,14 @@ FROM php:8.3-apache
 # Postgres (DB_TYPE=pgsql di .env), tapi production belum dimigrasi dan masih
 # MySQL, jadi image ini harus bisa jalan ke DB tipe manapun sesuai .env
 # (lihat DOCS_MD/DEPLOYMENT.md). `zip` wajib buat export Excel (system/BaseView.php).
-RUN apt-get update && apt-get install -y libpq-dev libzip-dev \
+#
+# Paksa apt sources pakai HTTPS -- di beberapa jaringan (termasuk yang dipakai
+# buat build ini), request HTTP polos ke deb.debian.org di-intercept/ditolak
+# (403 Forbidden) walau HTTPS ke host yang sama jalan normal. Diverifikasi
+# manual: apt-get update gagal total pakai source bawaan (http://), sukses
+# begitu di-force https://.
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/*.sources \
+    && apt-get update && apt-get install -y libpq-dev libzip-dev \
     && docker-php-ext-install mysqli pdo pdo_mysql pdo_pgsql pgsql zip \
     && a2enmod rewrite \
     && sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf

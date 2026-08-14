@@ -32,6 +32,11 @@ class ApprovalFlowTest extends TestCase
             // "Approval"), jadi dicek dari list2.php yang punya kolom Approval.
             $list = (string) $client->get(self::MACHINE)->getBody();
             $this->assertStringContainsString('Approved', $list);
+            // Regresi guard: kolom "Approval Oleh" (user_approve) sempat gak
+            // ditampilkan sama sekali di list2.php walau datanya udah ke-fetch
+            // (gap vs URS Gambar 23, difix di semua 17 modul).
+            $this->assertStringContainsString('Approval Oleh', $list);
+            $this->assertStringContainsString('>superadmin<', $list, 'Kolom Approval Oleh gak nunjukin siapa yang approve manual');
         } finally {
             $client->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
         }

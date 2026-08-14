@@ -1,64 +1,79 @@
-# 🚀 Deployment ke Production
+# 🚀 Rencana Deployment ke Production
 
-> **Status saat ini (14 Agustus 2026): BELUM di-deploy.** Semua kerjaan sejak migrasi Postgres (RBAC 4-role, `BaseMachineController`, 16 mesin baru, dst) baru ada di **Postgres lokal** di komputer development. Server production (`10.167.170.71`) masih di kondisi **sebelum migrasi** — MySQL/MariaDB, kemungkinan besar masih skema lama (13 role, mungkin masih ada sisa struktur mesin lama dari sebelum restrukturisasi kategori). Dokumen ini rencana buat nyambungin dua dunia itu.
+**Status saat ini (14 Agustus 2026): aplikasi belum di-deploy ke server production.** Semua yang sudah dikerjakan — migrasi ke PostgreSQL, sistem role 4-tingkat, penyatuan kode 17 modul mesin, dan seterusnya — baru berjalan di database lokal komputer development. Server production (`10.167.170.71`) masih dalam kondisi sebelum migrasi: masih MySQL/MariaDB, dan kemungkinan besar masih memakai skema data serta struktur role yang lama. Dokumen ini adalah rencana untuk menyambungkan dua kondisi tersebut.
 
-## Kenapa Ini BUKAN "Tinggal Upload File"
+**Instalasi ke server tidak perlu Docker.** Rencana di dokumen ini murni instalasi langsung (Apache + PHP + PostgreSQL terpasang di server, seperti setup XAMPP tapi versi production) — bukan lewat container. Ada `Dockerfile` di root project sebagai opsi cadangan yang sudah teruji bisa jalan, tapi itu bukan bagian dari rencana ini. Untuk skala aplikasi ini (internal perusahaan, satu server, dipakai puluhan sampai ratusan operator), instalasi langsung lebih sederhana dan lebih mudah dirawat dibanding menambah lapisan container yang sebenarnya tidak dibutuhkan di sini.
 
-Kalau cuma nyalin kode PHP ke server production terus jalanin, **aplikasinya bakal langsung rusak total**, karena:
+## Kenapa Ini Bukan Sekadar "Upload File, Selesai"
 
-1. **Skema database beda total.** Kode sekarang expect skema Postgres yang sudah direstruktur (RBAC 4-role, `BaseMachineController`, kolom lowercase konsisten). Production masih MySQL skema lama.
-2. **Data production itu REAL**, bukan data dummy. Puluhan mesin, histori submission operator sepanjang waktu app ini jalan — gak boleh hilang.
-3. **Akun user production itu REAL orang**, dengan role lama — perlu dipetakan ulang ke 4 role baru (Administrator/Manager/Supervisor/Staff-Operator), ini keputusan bisnis, bukan keputusan teknis.
-4. **Server komputasi beda** — production kemungkinan belum punya PHP 8.2/`pdo_pgsql` extension/Postgres, perlu setup infra dulu.
+Kalau kode di komputer development ini langsung disalin ke server production dan dijalankan begitu saja, aplikasinya akan langsung rusak. Ada empat alasan:
 
-## Keputusan yang Harus Diambil Tim/Pemilik Sistem Dulu
+1. **Skemanya sudah berubah total.** Kode sekarang mengharapkan struktur database Postgres yang sudah dirapikan (role 4-tingkat, satu kerangka kode untuk semua mesin, nama kolom yang konsisten huruf kecil). Server production masih memakai skema MySQL yang lama.
+2. **Data di production itu data sungguhan.** Bukan data uji coba — ada histori pengisian form dari operator yang sudah berjalan sekian lama, dan itu tidak boleh hilang begitu saja saat proses migrasi.
+3. **Akun-akun di production itu orang sungguhan**, dengan sistem role yang lama. Memetakan role lama ke 4 role baru (Administrator/Manager/Supervisor/Staff-Operator) itu keputusan bisnis — siapa jadi apa — bukan sesuatu yang bisa saya putuskan sendiri dari kode.
+4. **Server production kemungkinan belum siap secara teknis** — versi PHP-nya mungkin belum sesuai, extension yang dibutuhkan (`pdo_pgsql`, dst) mungkin belum terpasang, dan seterusnya.
 
-1. **Production ikut pindah ke Postgres, atau tetap MySQL?**
-   **Rekomendasi: pindah ke Postgres.** Semua kerjaan yang sudah ditest berbulan-bulan ini pakai Postgres. Kalau production tetap MySQL, semua fix Postgres-specific jadi gak relevan, TAPI kode sekarang **konsisten lowercase** (gak ada capitalized column lagi seperti skema MySQL lama) — jadi walaupun tetap MySQL, skema tabelnya **tetap harus di-rename ulang**. Baik pindah Postgres maupun tetap MySQL, skema tetap harus dimigrasi; kalau sudah harus migrasi skema, sekalian pindah ke Postgres jauh lebih masuk akal (lebih modern, sudah full-tested).
-2. **Mesin lama yang bukan bagian dari 17 mesin sekarang** (kalau ada di data production lama) — datanya mau diapakan? Kalau memang bukan mesin pabrik ini, kemungkinan besar gak perlu dimigrasi ke sistem baru (arsip terpisah, gak muncul lagi di app). Perlu konfirmasi eksplisit sebelum data itu "ditinggal".
-3. **Mapping role lama → 4 role baru** — siapa masuk role apa. Keputusan bisnis, bukan hal yang bisa ditebak dari data.
-4. **Jendela downtime** — migrasi data + testing butuh waktu app gak bisa dipakai operator. Kapan window yang paling gak mengganggu (shift kosong/weekend)?
+## Hal yang Perlu Diputuskan Dulu (Bukan oleh Saya)
 
-## Rencana Kerja (Kalau Keputusan #1 = Pindah ke Postgres)
+Sebelum proses deployment bisa dimulai, ada beberapa hal yang perlu disepakati oleh tim atau pemilik sistem:
 
-### Fase 0 — Persiapan (bisa dikerjakan sebelum window downtime)
-- [ ] **Backup penuh** database production MySQL saat ini (dump lengkap + snapshot file server kalau bisa) — sebelum menyentuh apapun.
-- [ ] Setup PostgreSQL 17 di server production (atau server baru khusus DB) — install, buat user/db, `pdo_pgsql` extension di PHP server.
-- [ ] Setup PHP 8.2 + extension yang dibutuhkan (`pdo_pgsql`, `pgsql`, `zip` — Excel export butuh ini, lihat `TECHNICAL_OVERVIEW.md`), kalau versi PHP production lebih lama.
-- [ ] **Aktifkan OPcache** di `php.ini` server production (`zend_extension=opcache` + `opcache.enable=1`) — zero-cost, langsung kerasa dampaknya ke performa. Cek `php -m | grep -i opcache` buat konfirmasi aktif.
-- [ ] **Composer & npm install di server production** — cek dulu server itu bisa akses `packagist.org`/`github.com`/`registry.npmjs.org`. Kalau server production gak ada akses internet sama sekali, `vendor/`+`node_modules/` harus ditransfer manual dari komputer yang bisa akses.
-- [ ] Siapkan `.env` production (`DB_HOST`/`DB_USERNAME`/`DB_PASSWORD`/`DB_NAME`/`DB_TYPE=pgsql`/`DB_PORT=5432`, **`DEVELOPMENT_MODE=false`** — WAJIB, jangan sampai kelupaan, ini pernah kejadian dan bocorin stack trace + path server ke request yang belum login sekalipun).
+**1. Apakah production ikut pindah ke PostgreSQL, atau tetap di MySQL?**
 
-### Fase 1 — Migrasi Skema & Data
-- [ ] Generate skema Postgres dari skema production yang sebenarnya (bukan cuma dari lokal — production mungkin punya kolom/tabel yang lokal sudah gak punya) + seluruh `database/migrations/*.sql`.
-- [ ] **Data SIG** (kemungkinan satu-satunya mesin yang punya histori REAL dari production lama, karena 16 mesin lain baru dibuat) — export dari MySQL production, convert ke skema Postgres baru (field lowercase, kolom `value_tekanan_angin` dst harus ada).
-- [ ] **16 mesin lainnya** — TIDAK ADA data lama untuk dimigrasi. Mulai dari 0 record, itu normal.
-- [ ] **Data user** — export akun production, mapping ke 4 role baru sesuai keputusan tim, import ke skema `users` baru.
-- [ ] **Data master** (`tag`, `korelasi`, `klasifikasi`, `kategori`, `mesin`) — cek isi production, sesuaikan.
+Saran saya: pindah ke Postgres. Alasannya, semua pekerjaan yang sudah diuji berbulan-bulan ini memang dibangun di atas Postgres. Tapi ada satu hal yang perlu dipahami: mau pindah ke Postgres atau tetap di MySQL, skema tabelnya **tetap harus dimigrasi/disesuaikan** — karena kode sekarang konsisten pakai nama kolom huruf kecil, sementara skema MySQL lama masih ada beberapa kolom yang capitalized. Jadi kalau proses migrasi skema toh harus dilakukan, sekalian pindah ke Postgres jauh lebih masuk akal, karena itu yang sudah benar-benar teruji.
+
+**2. Kalau di data production lama ada mesin di luar 17 mesin yang sekarang ada di aplikasi — datanya mau diapakan?** Kalau memang bukan mesin dari pabrik ini, kemungkinan besar tidak perlu ikut dimigrasi (cukup diarsipkan terpisah). Tapi ini perlu dikonfirmasi eksplisit dulu, jangan sampai data itu "ditinggal begitu saja" tanpa ada yang tahu.
+
+**3. Siapa masuk role apa?** Ini pemetaan dari sistem role lama ke 4 role baru — murni keputusan bisnis, bukan sesuatu yang bisa ditebak dari data.
+
+**4. Kapan waktu yang paling pas untuk proses migrasi?** Prosesnya butuh waktu di mana aplikasi tidak bisa dipakai operator — perlu dicari jendela waktu yang paling tidak mengganggu (misalnya pergantian shift atau akhir pekan).
+
+## Rencana Kerja (dengan Asumsi Pindah ke Postgres)
+
+Saya bagi jadi lima fase. Fase 0 bisa dikerjakan kapan saja sebelum hari-H, tidak perlu menunggu jendela downtime.
+
+### Fase 0 — Persiapan
+
+- [ ] Backup penuh database production MySQL yang sekarang — dump lengkap, dan kalau memungkinkan snapshot filenya juga. Ini dilakukan **sebelum** menyentuh apapun.
+- [ ] Pasang PostgreSQL 17 di server production (atau di server database terpisah kalau memang begitu arsitekturnya).
+- [ ] Pasang PHP 8.2 beserta extension yang dibutuhkan (`pdo_pgsql`, `pgsql`, dan `zip` — yang terakhir ini dibutuhkan supaya export ke Excel bisa jalan, detailnya ada di `TECHNICAL_OVERVIEW.md`).
+- [ ] (Opsional, hati-hati) OPcache bisa dicoba diaktifkan untuk performa, tapi di lingkungan development (Windows) ternyata bikin Apache tidak stabil (`VirtualProtect() failed` di log, request gagal random) — masalah yang dikenal terjadi antara OPcache dan Windows. Kalau server production Linux, kemungkinan besar tidak akan mengalami masalah yang sama, tapi tetap **uji stabilitasnya dulu** sebelum diaktifkan permanen (submit beberapa form berturut-turut, cek log error) — jangan langsung diaktifkan tanpa dicek.
+- [ ] Install dependency lewat Composer dan npm di server. Sebelum itu, cek dulu apakah server bisa mengakses `packagist.org`, `github.com`, dan `registry.npmjs.org` — kalau server production tidak ada akses internet sama sekali, folder `vendor/` dan `node_modules/` perlu disalin manual dari komputer yang punya akses.
+- [ ] Siapkan file `.env` khusus production, isinya kredensial database production. Yang paling penting: pastikan `DEVELOPMENT_MODE=false`. Ini gampang sekali terlewat, tapi dampaknya cukup serius — kalau lupa, detail error PHP (termasuk path file di server) bisa muncul ke siapa saja yang mengakses, bahkan yang belum login.
+- [ ] Ganti kredensial SMTP di `.env` production ke akun email sungguhan (`USE_SMTP=true`, `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD`/dst milik perusahaan). File `.env` di komputer development ini isinya kredensial **Ethereal Email** (`smtp.ethereal.email`) — cuma akun tes gratis buat verifikasi alur reset-password, email yang "terkirim" tidak pernah sampai ke inbox sungguhan mana pun. Kalau file `.env` development ini ikut disalin ke production tanpa diganti, fitur reset password lewat email akan terlihat jalan (tidak error) tapi user tidak akan pernah menerima emailnya.
+
+### Fase 1 — Migrasi Skema dan Data
+
+- [ ] Bangun skema Postgres berdasarkan skema production yang sesungguhnya (bukan cuma dari yang ada di komputer development — production mungkin punya kolom atau tabel tambahan yang di lokal sudah tidak ada). Semua file migrasi ada di `database/migrations/`.
+- [ ] Migrasikan data SIG — ini kemungkinan satu-satunya mesin yang punya histori data sungguhan dari production lama, karena 16 mesin lainnya memang baru dibuat di aplikasi ini dan belum pernah ada datanya di production.
+- [ ] 16 mesin lainnya mulai dari nol record — itu memang wajar, bukan tanda ada yang salah.
+- [ ] Migrasikan data user, sambil memetakan ke role baru sesuai kesepakatan tim.
+- [ ] Cek dan sesuaikan data master (kategori tag, korelasi, klasifikasi, daftar mesin, dst).
 
 ### Fase 2 — Deploy Kode
-- [ ] Deploy kode dari repo (branch/commit yang sudah final & ditest) ke server production.
-- [ ] Copy `.env` production yang sudah disiapkan (Fase 0), **JANGAN** pakai `.env` development.
-- [ ] Restart Apache/PHP-FPM di server production biar `.env` kebaca fresh.
 
-### Fase 3 — Testing di Production (SEBELUM operator mulai pakai)
-- [ ] Jalankan `vendor/bin/phpunit --testdox` di server production (arahkan `APP_BASE_URL` ke domain production lewat `phpunit.xml`).
-- [ ] Jalankan `npm run test:e2e` (session-timeout & draft auto-save) — pastikan Chromium sudah ter-install (`npx playwright install chromium`).
-- [ ] Jalankan `TESTING.md` bagian manual checklist — login 4 role real (bukan dummy), submit form per kategori mesin, approval, export.
-- [ ] Cross-check jumlah record SIG yang termigrasi = jumlah record SIG di MySQL lama (sanity check tidak ada data hilang).
-- [ ] Cek `DEVELOPMENT_MODE=false` SEKALI LAGI sebelum membuka akses ke operator.
+- [ ] Deploy kode dari versi yang sudah final dan sudah diuji ke server production.
+- [ ] Pasang file `.env` production yang sudah disiapkan di Fase 0 — bukan file `.env` development.
+- [ ] Restart Apache supaya konfigurasi baru terbaca.
+
+### Fase 3 — Uji Coba di Production (Sebelum Operator Mulai Pakai)
+
+- [ ] Jalankan test otomatis (`vendor/bin/phpunit --testdox` dan `npm run test:e2e`) langsung di server production, arahkan ke domain production-nya.
+- [ ] Jalankan checklist manual di `TESTING.md` — login pakai 4 akun asli (bukan akun dummy), coba isi form tiap kategori mesin, coba approval, coba export.
+- [ ] Bandingkan jumlah record SIG yang berhasil dimigrasi dengan jumlah aslinya di MySQL lama — pastikan tidak ada yang hilang.
+- [ ] Cek sekali lagi `DEVELOPMENT_MODE=false` sebelum operator mulai diberi akses. Ini poin yang sama seperti di Fase 0, tapi cukup penting untuk dicek dua kali.
 
 ### Fase 4 — Go-Live
-- [ ] Umumkan ke operator: sistem baru, akun lama otomatis terpakai (username sama), kalau ada masalah lapor ke siapa.
-- [ ] Monitor error log (`error.log`, atau Audit Trail di app) lebih ketat beberapa hari pertama.
-- [ ] **Simpan backup MySQL lama minimal beberapa bulan** — jangan langsung dihapus walau sudah go-live, untuk jaga-jaga kalau ternyata ada data yang terlewat saat migrasi.
 
-## Rollback Plan
+- [ ] Informasikan ke operator bahwa sistemnya sudah baru, tapi akun lama tetap bisa dipakai (username sama), dan siapa yang bisa dihubungi kalau ada kendala.
+- [ ] Pantau log error dan Audit Trail lebih intensif di beberapa hari pertama.
+- [ ] Simpan backup MySQL lama minimal beberapa bulan — jangan langsung dihapus, untuk jaga-jaga kalau ternyata ada data yang terlewat saat migrasi.
 
-Backup MySQL lama (Fase 0) tetap disimpan — worst case bisa kembali ke sistem lama sementara sambil investigasi masalahnya. Karena `DB_TYPE`/kredensial semua di `.env` (bukan hardcode), secara teori bisa switch balik cukup ganti `.env` + restart web server — **TAPI** ini cuma valid kalau skema/data di sisi MySQL lama masih terpelihara utuh (jangan di-drop saat migrasi, minimal sampai beberapa minggu pasca go-live terbukti stabil).
+## Kalau Ada yang Tidak Beres (Rencana Rollback)
 
-## Di Luar Scope Dokumen Ini
+Backup MySQL lama dari Fase 0 tetap disimpan, jadi kalau terjadi masalah serius, masih memungkinkan untuk sementara kembali ke sistem lama sambil masalahnya diselidiki. Karena semua kredensial dan tipe database diatur lewat file `.env` (bukan ditulis langsung di kode), secara teknis proses kembali ini cukup dengan mengganti `.env` dan restart web server. Catatan pentingnya: ini hanya berlaku selama skema dan data di sisi MySQL lama masih dijaga utuh — jangan dihapus saat migrasi, setidaknya sampai beberapa minggu setelah go-live terbukti stabil.
 
-- Jadwal window downtime — keputusan operasional, koordinasi dengan pihak pabrik.
-- Approval/sign-off perubahan sistem produksi (biasanya butuh proses change-management internal untuk sistem GMP).
-- Training ulang operator kalau ada perubahan UI/UX signifikan dari sistem lama (kemungkinan banyak, karena 16 dari 17 mesin baru sama sekali).
+## Yang Di Luar Cakupan Dokumen Ini
+
+- Penjadwalan waktu downtime — ini keputusan operasional yang perlu dikoordinasikan dengan pihak pabrik.
+- Proses approval/sign-off perubahan sistem produksi — biasanya ada proses change-management tersendiri untuk sistem yang terkait GMP.
+- Training ulang operator kalau ada perubahan tampilan yang cukup signifikan — kemungkinan ini akan cukup banyak, mengingat 16 dari 17 mesin memang benar-benar baru dibanding sistem yang lama.

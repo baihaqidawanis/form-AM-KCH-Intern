@@ -96,16 +96,21 @@ define("META_KEYWORDS", "");
 define("META_VIEWPORT", "width=device-width, initial-scale=1.0");
 define("PAGE_CHARSET", "UTF-8");
 
-// Email Configuration Default Settings
-define("USE_SMTP", false);
-define("SMTP_USERNAME", "");
-define("SMTP_PASSWORD", "");
-define("SMTP_HOST", "");
-define("SMTP_PORT", "");
+// Email Configuration -- dibaca dari .env biar kredensial SMTP gak perlu
+// ditulis langsung di file yang ke-track git (sebelumnya hardcode kosong di
+// sini, jadi satu-satunya cara isi kredensial produksi adalah edit config.php
+// langsung -- gak ideal buat secret). Default tetap kosong/false kalau .env
+// gak isi apa-apa, behaviour lama gak berubah.
+define("USE_SMTP", env("USE_SMTP", "false") === "true");
+define("SMTP_USERNAME", env("SMTP_USERNAME", ""));
+define("SMTP_PASSWORD", env("SMTP_PASSWORD", ""));
+define("SMTP_HOST", env("SMTP_HOST", ""));
+define("SMTP_PORT", env("SMTP_PORT", ""));
+define("SMTP_SECURE", env("SMTP_SECURE", "ssl")); // 'ssl' (port 465) atau 'tls' (port 587)
 
 //Default Email Sender Details. Please set this even if you are not using SMTP
-define("DEFAULT_EMAIL", "");
-define("DEFAULT_EMAIL_ACCOUNT_NAME", "");
+define("DEFAULT_EMAIL", env("DEFAULT_EMAIL", ""));
+define("DEFAULT_EMAIL_ACCOUNT_NAME", env("DEFAULT_EMAIL_ACCOUNT_NAME", ""));
 
 // Database Configuration Settings
 define("DB_HOST", env("DB_HOST", "localhost"));
