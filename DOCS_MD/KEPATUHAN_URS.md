@@ -87,6 +87,7 @@ Pembatasan "punya sendiri" dicek di level controller (`user_create` record diban
 | Export PDF dengan histori lengkap | ✅ | PDF asli (`%PDF-1.7`) di semua 17 modul (dompdf v3, di-upgrade dari versi 2020 yang gak kompatibel PHP 8.2) |
 | "Printed by" sesuai akun yang mencetak | ✅ | Footer laporan bersama (`report_layout.php`), berlaku otomatis ke semua modul |
 | Export Word/CSV/Excel | ✅ | **Bug ditemukan & difix**: CSV & Excel export CRASH TOTAL kalau list mesin lagi kosong (0 record) — `current(array())` balikin `false`, `array_keys(false)` meledak di PHP 8. Ke-cascade lebih parah karena halaman error-nya sendiri ikut nyoba re-export. Fixed + extension PHP `zip` yang ternyata gak aktif dari awal (Excel gak akan pernah jalan) diaktifkan. Diverifikasi otomatis (`tests/Feature/ExportFormatsTest.php`) |
+| "Report bulanan" (URS bagian Interfaces) | ✅ (lebih fleksibel) | URS nulis data "menjadi report bulanan". Implementasi sekarang gak dibatasi bulanan — filter `date_from`/`date_to` bebas rentang tanggal apapun (termasuk 1 bulan penuh) baru di-export, jadi requirement-nya tetap terpenuhi (bisa generate laporan bulanan) plus lebih fleksibel dari yang diminta |
 
 ---
 
@@ -95,7 +96,8 @@ Pembatasan "punya sendiri" dicek di level controller (`user_create` record diban
 | Requirement | Status | Bukti |
 |---|---|---|
 | Attributable — jejak audit tercatat otomatis | ✅ | Audit Trail mencatat setiap aksi CRUD (add/edit/edit_data/delete — `view`/`list` sengaja tidak dicatat, noise reduction) |
-| Contemporaneous — tanggal/jam gak bisa diubah, format DD/MM/YYYY konsisten | ✅ | `created_at` selalu diisi server, format DD/MM/YYYY merata di 17/17 modul |
+| Legible — tampilan jelas, gak ambigu | ✅ | Kualitatif (bukan sesuatu yang dicek otomatis lewat test) — badge warna OK/NOK, label Indonesia yang jelas per field, form tervalidasi (`novalidate`+custom validation) biar user gak submit data ambigu/kosong |
+| Contemporaneous — tanggal/jam gak bisa diubah, format DD/MM/YYYY konsisten, timezone GMT+7 | ✅ | `created_at` selalu diisi server, format DD/MM/YYYY merata di 17/17 modul. Timezone `Asia/Jakarta` (GMT+7) di-set eksplisit (`DEFAULT_TIMEZONE` di `config.php`), bukan default server yang bisa beda-beda |
 | Original — laporan gak bisa diedit, tercantum waktu & pencetak | ✅ | Export PDF read-only by design |
 | Accurate — teks kendala operator gak boleh berubah/rusak pas ditampilkan | ✅ | **Stored-XSS ditemukan & difix**: teks kendala di-echo mentah tanpa `htmlspecialchars()` di 14/17 `view.php` + semua `edit_data.php` — user internal manapun (termasuk Staff/Operator lewat form isian normal) bisa nyuntik `<script>` yang tereksekusi buat siapapun yang buka record itu. Diverifikasi otomatis (`tests/Feature/XssEscapingTest.php`) |
 | Accurate — search & data master gak boleh error | ✅ | **Bug ditemukan & difix**: search di halaman Users/Roles/Tag/Approval CRASH (Error 500) — kolom integer (`id_user`, `user_role_id`, dst) di-`LIKE` tanpa `CAST`, Postgres gak izinin implisit (beda dari MySQL) |

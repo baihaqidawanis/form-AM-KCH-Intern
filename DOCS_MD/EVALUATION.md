@@ -1,6 +1,6 @@
 # ✅ Form AM — Evaluation Log
 
-> Dokumen ini isinya **cuma yang udah dikerjain** — checklist eksekusi + evaluasi/detail tiap fix (per-sesi, kronologis, teknis). Item yang **belum** dikerjain ada di [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md) bagian "Known Gaps". Context ringkas project ada di [CLAUDE.md](../CLAUDE.md).
+> Dokumen ini isinya **cuma yang udah dikerjain** — checklist eksekusi + evaluasi/detail tiap fix (per-sesi, kronologis, teknis). Item yang **belum** dikerjain ada di [TECHNICAL_OVERVIEW.md](./TECHNICAL_OVERVIEW.md) bagian "Known Gaps".
 >
 > Buat ringkasan non-teknis (bahan presentasi/meeting), lihat bagian **"Ringkasan Eksekutif"** tepat di bawah ini dulu — detail per-round teknis lengkap ada di bawahnya.
 

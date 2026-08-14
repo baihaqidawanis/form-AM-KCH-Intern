@@ -36,8 +36,6 @@ Semua dokumentasi detail ada di folder [DOCS_MD/](./DOCS_MD/):
 | [EVALUATION.md](./DOCS_MD/EVALUATION.md) | Log evaluasi/histori pengembangan — ringkasan eksekutif di bagian atas, detail teknis per-sesi di bawahnya |
 | [PANDUAN_PRESENTASI.md](./DOCS_MD/PANDUAN_PRESENTASI.md) | Outline untuk membuat presentasi/PPT tentang project ini |
 
-`CLAUDE.md` di root berisi context kerja untuk sesi AI-assisted development — bisa diabaikan kalau tidak relevan.
-
 ## Untuk yang Mengambil Alih (Handover)
 
 1. Baca `README.md` ini dulu, lalu `TECHNICAL_OVERVIEW.md` untuk paham arsitektur.
