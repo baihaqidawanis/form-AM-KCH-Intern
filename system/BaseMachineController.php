@@ -86,6 +86,15 @@ abstract class BaseMachineController extends SecureController
 			$this->fields = $fields;
 			$postdata = $this->format_request_data($formdata); $this->rules_array = array(); $this->sanitize_array = array();
 			foreach ($fields as $field) { $this->rules_array[$field] = 'required'; $this->sanitize_array[$field] = 'sanitize_string'; }
+			// extraFields (misal 'value_tekanan_angin' punya SIG) kolomnya numeric di DB --
+			// tanpa validasi ini, isian kayak "5 bar" lolos ke query INSERT dan bikin
+			// PDOException mentah (Error 500 generik) alih-alih pesan validasi yang jelas.
+			// Koma diterima juga (kebiasaan penulisan desimal Indonesia, "1,5") lalu
+			// dinormalisasi ke titik sebelum divalidasi/disimpan.
+			foreach ($this->extraFields as $ef) {
+				if (isset($postdata[$ef]) && is_string($postdata[$ef])) { $postdata[$ef] = str_replace(',', '.', trim($postdata[$ef])); }
+				$this->rules_array[$ef] = 'required|numeric';
+			}
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$modeldata['created_at'] = datetime_now(); $modeldata['user_create'] = USER_NAME;
 			$all_ok = true;
@@ -174,6 +183,12 @@ abstract class BaseMachineController extends SecureController
 			$this->rules_array = array('perubahan' => 'required');
 			$this->sanitize_array = array('perubahan' => 'sanitize_string');
 			foreach (array_merge($this->part_fields(), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
+			// Lihat catatan sama di add(): extraFields kolomnya numeric di DB, jadi
+			// perlu divalidasi + koma dinormalisasi ke titik di sini juga.
+			foreach ($this->extraFields as $ef) {
+				if (isset($postdata[$ef]) && is_string($postdata[$ef])) { $postdata[$ef] = str_replace(',', '.', trim($postdata[$ef])); }
+				$this->rules_array[$ef] = 'required|numeric';
+			}
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$modeldata['updated_at'] = datetime_now(); $modeldata['user_perubah'] = USER_NAME;
 			if ($this->validated()) {

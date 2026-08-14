@@ -90,8 +90,8 @@ $rec_id = !empty($data['id_sig']) ? $data['id_sig'] : null;
                       <?php if ($field === 'tekanan_angin_suplai') { ?>
                         <div class="form-group mt-2">
                           <div class="input-group">
-                            <input type="text" placeholder="Tekanan Angin Pemakaian" required name="value_tekanan_angin"
-                              value="<?php echo $data['value_tekanan_angin'] ?? ''; ?>" class="form-control" />
+                            <input type="text" inputmode="decimal" placeholder="Angka saja, cth: 1.2" required name="value_tekanan_angin"
+                              value="<?php echo isset($data['value_tekanan_angin']) ? rtrim(rtrim($data['value_tekanan_angin'], '0'), '.') : ''; ?>" class="form-control" />
                             <div class="input-group-append"><span class="input-group-text">BAR</span></div>
                           </div>
                         </div>

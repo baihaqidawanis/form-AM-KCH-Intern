@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS "sig" (
   "antistatic" varchar(255) DEFAULT NULL,
   "vacuum_hood" varchar(255) DEFAULT NULL,
   "tekanan_angin_suplai" varchar(255) DEFAULT NULL,
-  "value_tekanan_angin" integer DEFAULT NULL,
+  "value_tekanan_angin" numeric(4,2) DEFAULT NULL,
   "jarak_slider_dengan_nozzle" varchar(255) DEFAULT NULL,
   "rol_penarik_sachet_dan_foil_slitting_shim" varchar(255) DEFAULT NULL,
   "pisau_belah" varchar(255) DEFAULT NULL,
