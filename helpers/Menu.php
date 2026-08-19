@@ -71,7 +71,7 @@ class Menu
 				),
 				array('path' => 'illapak_1_2',  'label' => 'Illapak 1 - 2',  'icon' => ''),
 				array('path' => 'illapak_3_12', 'label' => 'Illapak 3 - 12', 'icon' => ''),
-				array('path' => 'unifill_b',     'label' => 'Unifill B',     'icon' => '')
+				array('path' => 'unifill_b',     'label' => 'Unifill',     'icon' => '')
 			)
 		),
 

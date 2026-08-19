@@ -1,5 +1,6 @@
 <?php
 $model = new SharedController;
+$machine_options = $model->sig_Line_option_list();
 $tag_options = $model->sig_kategori_tag_option_list();
 $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
@@ -81,7 +82,14 @@ $page_element_id = 'sig-add-' . random_str();
           <?php $this::display_page_errors(); ?>
           <form id="sig-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("sig/add?csrf_token=$csrf_token") ?>" method="post">
-            <input type="hidden" name="mesin" value="4">
+            <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select
+                required id="ctrl-mesin" name="mesin" class="custom-select">
+                <option value="" disabled selected>Pilih nama mesin ...</option>
+                <?php foreach ($machine_options as $option) {
+                  if (in_array(strtolower($option['label']), array('sig 5', 'sig 6'))) { ?>
+                    <option value="<?php echo $option['value']; ?>"><?php echo $option['label']; ?></option><?php }
+                } ?>
+              </select></div>
 
             <?php foreach ($sections as $section_title => $section_fields) { ?>
               <div class="section-block mb-4">

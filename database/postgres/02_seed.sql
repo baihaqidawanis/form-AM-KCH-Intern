@@ -32,7 +32,10 @@ INSERT INTO "mesin" ("id", "nama_mesin") OVERRIDING SYSTEM VALUE VALUES
   ('43', 'FBD Glatt'),
   ('44', 'Supermixer'),
   ('45', 'Storage Tank'),
-  ('46', 'Mixing Tank')
+  ('46', 'Mixing Tank'),
+  ('47', 'SIG 5'),
+  ('48', 'SIG 6'),
+  ('49', 'Unifill A')
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"mesin"', 'id'), COALESCE((SELECT MAX("id") FROM "mesin"), 1));
 

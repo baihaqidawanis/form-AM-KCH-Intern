@@ -55,7 +55,7 @@ $current_page = $this->set_current_page_link();
                                         array('path' => 'joeya', 'label' => 'Joeya', 'count' => $comp_model->getcount_joeya()),
                                         array('path' => 'illapak_1_2', 'label' => 'Illapak 1 - 2', 'count' => $comp_model->getcount_illapak_1_2()),
                                         array('path' => 'illapak_3_12', 'label' => 'Illapak 3 - 12', 'count' => $comp_model->getcount_illapak_3_12()),
-                                        array('path' => 'unifill_b', 'label' => 'Unifill B', 'count' => $comp_model->getcount_unifill_b()),
+                                        array('path' => 'unifill_b', 'label' => 'Unifill', 'count' => $comp_model->getcount_unifill_b()),
                                     );
                                     foreach ($filling_machines as $fm) {
                                     ?>
