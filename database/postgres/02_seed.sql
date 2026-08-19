@@ -77,50 +77,6 @@ INSERT INTO "tag" ("id", "kategori_tag") OVERRIDING SYSTEM VALUE VALUES
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"tag"', 'id'), COALESCE((SELECT MAX("id") FROM "tag"), 1));
 
--- line (39 baris)
-INSERT INTO "line" ("id", "line_name", "area_id") OVERRIDING SYSTEM VALUE VALUES
-  ('1', 'Line_A', '1'),
-  ('2', 'Line_B', '2'),
-  ('3', 'Compounding', '3'),
-  ('4', 'Minor', '3'),
-  ('5', 'Others', '3'),
-  ('6', 'Sodbic', '3'),
-  ('7', 'Line_B', '1'),
-  ('8', 'Line_A', '2'),
-  ('9', 'Line_C', '1'),
-  ('12', 'Line_D', '1'),
-  ('13', 'Line_C', '2'),
-  ('14', 'Line_D', '2'),
-  ('15', 'Line_E', '2'),
-  ('16', 'Line_E', '1'),
-  ('17', 'Line_F', '1'),
-  ('18', 'Line_F', '2'),
-  ('19', 'Line_G', '1'),
-  ('20', 'Line_G', '2'),
-  ('21', 'Line_H', '1'),
-  ('22', 'Line_H', '2'),
-  ('23', 'Line_J', '1'),
-  ('24', 'Line_J', '2'),
-  ('26', 'Line_K', '2'),
-  ('27', 'Line_K', '1'),
-  ('28', 'Line_L', '1'),
-  ('29', 'Line_L', '2'),
-  ('30', 'Line_M', '1'),
-  ('31', 'Line_M', '2'),
-  ('32', 'Line_N', '1'),
-  ('33', 'Line_N', '2'),
-  ('35', 'Line_S', '1'),
-  ('36', 'Line_S', '2'),
-  ('37', 'Line_T', '1'),
-  ('38', 'Line_T', '2'),
-  ('39', 'Line_R', '2'),
-  ('43', 'None', '1'),
-  ('44', 'Kemas 1', '2'),
-  ('45', 'Kemas 2', '2'),
-  ('46', 'Filling', '1')
-ON CONFLICT DO NOTHING;
-SELECT setval(pg_get_serial_sequence('"line"', 'id'), COALESCE((SELECT MAX("id") FROM "line"), 1));
-
 -- 4 role sesuai URS poin 2.1 (Administrator, Manager, Supervisor, Staff/Operator)
 INSERT INTO "roles" ("role_id", "role_name") OVERRIDING SYSTEM VALUE VALUES
   (1, 'Administrator'),

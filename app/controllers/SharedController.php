@@ -31,7 +31,8 @@ class SharedController extends BaseController{
      */
 	private function _count_today($table, $dateColumn){
 		$db = $this->GetModel();
-		$sql = "SELECT COUNT(*) AS num FROM {$table} WHERE DATE({$dateColumn}) = DATE(NOW())";
+		$sqlTable = 'tb_mesin_' . $table;
+		$sql = "SELECT COUNT(*) AS num FROM {$sqlTable} WHERE DATE({$dateColumn}) = DATE(NOW())";
 		$val = $db->rawQueryValue($sql, null);
 		if(is_array($val)){
 			return $val[0];
