@@ -17,7 +17,7 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
                             <span class="avatar-icon"><i class="fa fa-user"></i></span> 
-                            <span>Hi <?php echo ucwords(USER_NAME); ?> !</span>
+                            <span>Hi <?php echo ucwords(get_active_user('nama', USER_NAME)); ?> !</span>
                         </a>
                         <ul class="dropdown-menu">
                             <a class="dropdown-item" href="<?php print_link('account') ?>"><i class="fa fa-user"></i> My Account</a>
@@ -40,8 +40,8 @@
                 <a class="avatar" href="<?php print_link('account') ?>">
                     <span class="avatar-icon"><i class="fa fa-user"></i></span>
                 </a>
-                <h5 class="user-name">Hi 
-                    <?php echo ucwords(USER_NAME); ?>
+                <h5 class="user-name">Hi
+                    <?php echo ucwords(get_active_user('nama', USER_NAME)); ?>
                 </h5>
                 <div class="dropdown menu-dropdown">
                     <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -5,29 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'body_mesin' => 'body mesin',
-  'panel_fbd' => 'panel fbd',
-  'hmi_panel_fbd' => 'hmi panel fbd',
-  'seal_bagtight' => 'seal bagtight',
-  'container_up_down' => 'container up down',
-  'shaking' => 'shaking',
-  'pressure_gauge_damper' => 'pressure gauge damper',
-  'seal_container' => 'seal container',
-  'guarding_pengunci_kontainer' => 'guarding pengunci kontainer',
-  'container_mesh_dan_roda' => 'container mesh dan roda',
-  'filter_dan_bag_tight' => 'filter dan bag tight'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_mesin', 'panel_fbd'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'hmi_panel_fbd', 'seal_bagtight', 'container_up_down', 'shaking', 'pressure_gauge_damper', 'seal_container', 'guarding_pengunci_kontainer', 'container_mesh_dan_roda', 'filter_dan_bag_tight'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'fbd_glatt')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'fbd_glatt-edit-data-' . random_str();
 $rec_id = !empty($data['id_fbd_glatt']) ? $data['id_fbd_glatt'] : null;
@@ -65,8 +54,7 @@ $rec_id = !empty($data['id_fbd_glatt']) ? $data['id_fbd_glatt'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/fbd_glatt/fbd_glatt ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

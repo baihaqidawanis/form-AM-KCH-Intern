@@ -46,8 +46,10 @@ class AccountController extends SecureController{
 		$db = $this->GetModel();
 		$rec_id = $this->rec_id = USER_ID;
 		$tablename = $this->tablename;
-		 //editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id","pict");
+		 //editable fields -- account_status & user_role_id SENGAJA tidak termasuk:
+		 //user gak boleh naikkan role/aktivasi akun sendiri, itu wewenang
+		 //Administrator lewat menu Users (UsersController::edit()).
+		$fields = $this->fields = array("id_user","nama","username","area","mesin","pict");
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
@@ -55,8 +57,6 @@ class AccountController extends SecureController{
 				'username' => 'required',
 				'area' => 'required',
 				'mesin' => 'required',
-				'account_status' => 'required',
-				'user_role_id' => 'required',
 				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
@@ -64,8 +64,6 @@ class AccountController extends SecureController{
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
-				'account_status' => 'sanitize_string',
-				'user_role_id' => 'sanitize_string',
 				'pict' => 'sanitize_string',
 			);
 			$modeldata = $this->modeldata = $this->validate_form($postdata);

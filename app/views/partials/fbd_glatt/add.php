@@ -5,109 +5,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_mesin' => 'body mesin',
-  'panel_fbd' => 'panel fbd',
-  'hmi_panel_fbd' => 'hmi panel fbd',
-  'seal_bagtight' => 'seal bagtight',
-  'container_up_down' => 'container up down',
-  'shaking' => 'shaking',
-  'pressure_gauge_damper' => 'pressure gauge damper',
-  'seal_container' => 'seal container',
-  'guarding_pengunci_kontainer' => 'guarding pengunci kontainer',
-  'container_mesh_dan_roda' => 'container mesh dan roda',
-  'filter_dan_bag_tight' => 'filter dan bag tight'
-);
-
-$part_details = array(
-  'body_mesin' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Selang, Wiper Lantai, Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "10'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'panel_fbd' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall lembab dengan Alkohol 70%',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'hmi_panel_fbd' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Layar/display merespons ketika disentuh',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'seal_bagtight' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Mengembang',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'container_up_down' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Kontainer dapat naik dan turun',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'shaking' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Filter bag bergerak kanan dan kiri',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'pressure_gauge_damper' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => '4-6 bar',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'seal_container' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada kerusakan/robek/gompal/bocor',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'guarding_pengunci_kontainer' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Pengunci tidak kendor',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'container_mesh_dan_roda' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => "Mesh normal tidak sobek\nRoda normal tidak macet/rusak",
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'filter_dan_bag_tight' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => "Filter tidak sobek\nSeal tidak bocor",
-    'durasi' => "10'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_mesin', 'panel_fbd'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'hmi_panel_fbd', 'seal_bagtight', 'container_up_down', 'shaking', 'pressure_gauge_damper', 'seal_container', 'guarding_pengunci_kontainer', 'container_mesh_dan_roda', 'filter_dan_bag_tight'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'fbd_glatt')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'fbd_glatt-add-' . random_str();
 ?>
@@ -160,16 +71,15 @@ $page_element_id = 'fbd_glatt-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/fbd_glatt/fbd_glatt ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

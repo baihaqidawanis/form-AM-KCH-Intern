@@ -110,7 +110,8 @@ $current_page = $this->set_current_page_link();
                                         array('path' => 'fbd_jaw_chuan', 'label' => 'FBD Jaw Chuan', 'count' => $comp_model->getcount_fbd_jaw_chuan()),
                                         array('path' => 'fbd_glatt', 'label' => 'FBD Glatt', 'count' => $comp_model->getcount_fbd_glatt()),
                                         array('path' => 'supermixer', 'label' => 'Supermixer', 'count' => $comp_model->getcount_supermixer()),
-                                        array('path' => 'storage_tank', 'label' => 'Storage Tank', 'count' => $comp_model->getcount_storage_tank()),
+                                        array('path' => 'storage_tank', 'label' => 'Storage Tank Silverson', 'count' => $comp_model->getcount_storage_tank()),
+                                        array('path' => 'storage_tank_tetrapak', 'label' => 'Storage Tank Tetrapak', 'count' => $comp_model->getcount_storage_tank_tetrapak()),
                                         array('path' => 'mixing_tank', 'label' => 'Mixing Tank', 'count' => $comp_model->getcount_mixing_tank()),
                                     );
                                     foreach ($compounding_machines as $cm) {

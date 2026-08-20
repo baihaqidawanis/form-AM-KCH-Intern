@@ -5,69 +5,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_best_pack' => 'body best pack',
-  'konveyor_best_pack' => 'konveyor best pack',
-  'print_head_inkjet' => 'print head inkjet',
-  'belt_conveyor_best_pack' => 'belt conveyor best pack',
-  'pisau_best_pack' => 'pisau best pack',
-  'selang_angin_best_pack' => 'selang angin best pack'
-);
-
-$part_details = array(
-  'body_best_pack' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan Air',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'konveyor_best_pack' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan Air',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'print_head_inkjet' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan Cleaner',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'belt_conveyor_best_pack' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak sobek',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'pisau_best_pack' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Manual',
-    'standard' => 'Tidak tumpul dan bisa memotong',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'selang_angin_best_pack' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Manual',
-    'standard' => 'Angin keluar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_best_pack', 'konveyor_best_pack', 'print_head_inkjet'
-  ),
-  'STANDAR PENGECEKAN (INSPECTION)' => array(
-    'belt_conveyor_best_pack', 'pisau_best_pack', 'selang_angin_best_pack'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'best_pack')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'best_pack-add-' . random_str();
 ?>
@@ -120,16 +71,15 @@ $page_element_id = 'best_pack-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/best_pack/best pack ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

@@ -6,44 +6,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'sealing_cross_dan_vertikal' => 'sealing cross',
-  'guarding_akrilik' => 'akrilik',
-  'jalur_conveyor' => 'conveyor',
-  'vacuum_hood' => 'vacuum hood',
-  'antistatic' => 'antistatic',
-  'tekanan_angin_suplai' => 'pressure',
-  'jarak_slider_dengan_nozzle' => 'slider nozzle',
-  'rol_penarik_sachet_dan_foil_slitting_shim' => 'roll penarik &slitting shim',
-  'pisau_belah' => 'pisau belah',
-  'modul_pisau' => 'modul pisau',
-  'inkjet' => 'inkjet',
-);
-
-$part_details = array(
-  'sealing_cross_dan_vertikal' => array('metode' => 'Disikat', 'alat' => 'Sikat Kawat', 'standard' => 'Bersih dari kotoran', 'durasi' => "5'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'guarding_akrilik' => array('metode' => 'Dilap', 'alat' => 'Quiltec', 'standard' => 'Bersih dari kotoran', 'durasi' => "2'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'jalur_conveyor' => array('metode' => 'Dilap', 'alat' => 'Quiltec', 'standard' => 'Bersih dari kotoran', 'durasi' => "2'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'vacuum_hood' => array('metode' => 'Disemprot angin dan sistem filtrasi by SMC', 'alat' => 'Air Gun', 'standard' => 'Bersih dari kotoran', 'durasi' => "6'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'antistatic' => array('metode' => 'Dilap', 'alat' => 'Quiltec', 'standard' => 'Bersih dari kotoran', 'durasi' => "6'", 'pelaksanaan' => 'Bulanan (Setiap W1 Senin Shift 1)'),
-  'tekanan_angin_suplai' => array('metode' => 'Dicek, disetting', 'alat' => 'Visual', 'standard' => 'Tekanan angin 0.8 - 1.5 bar', 'durasi' => "1'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'jarak_slider_dengan_nozzle' => array('metode' => 'Dicek', 'alat' => 'Filler Gauge', 'standard' => 'Filler gauge 0.2 tidak ada bulk yang keluar', 'durasi' => "5'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'rol_penarik_sachet_dan_foil_slitting_shim' => array('metode' => 'Dicek', 'alat' => 'Visual', 'standard' => 'Tidak aus, tidak ada cacat, berfungsi, dan kondisi blade tidak melengkung', 'durasi' => "1'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'pisau_belah' => array('metode' => 'Dicek', 'alat' => 'Visual', 'standard' => 'Kondisi pisau tidak geripis', 'durasi' => "1'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'modul_pisau' => array('metode' => 'Dicek', 'alat' => 'Visual', 'standard' => 'Inject grease secukupnya', 'durasi' => "1'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-  'inkjet' => array('metode' => 'Tes Fungsi', 'alat' => 'Visual Control', 'standard' => 'Tidak bleber & hasil coding tidak pudar', 'durasi' => "6'", 'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'),
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'sealing_cross_dan_vertikal', 'guarding_akrilik', 'jalur_conveyor', 'vacuum_hood', 'antistatic'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'tekanan_angin_suplai', 'jarak_slider_dengan_nozzle', 'rol_penarik_sachet_dan_foil_slitting_shim',
-    'pisau_belah', 'modul_pisau', 'inkjet'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'sig')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'sig-add-' . random_str();
 ?>
@@ -103,17 +79,16 @@ $page_element_id = 'sig-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/sig/sig ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
                   $kondisi_options = ($field === 'antistatic') ? Menu::$antistatic : Menu::$Kondisi_Harian;
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

@@ -5,25 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'body_storage_tank' => 'body storage tank',
-  'jalur_pipa_storage_tank' => 'jalur pipa storage tank',
-  'motor_dan_gearbox' => 'motor dan gearbox',
-  'baling_baling_agitator' => 'baling baling agitator',
-  'seal_mainhole' => 'seal mainhole',
-  'pengunci_tutup_mainhole' => 'pengunci tutup mainhole',
-  'clamp_ferrule' => 'clamp ferrule'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_storage_tank', 'jalur_pipa_storage_tank'
-  ),
-  'STANDAR PENGECEKAN (INSPECTION)' => array(
-    'motor_dan_gearbox', 'baling_baling_agitator', 'seal_mainhole', 'pengunci_tutup_mainhole', 'clamp_ferrule'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'storage_tank')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'storage_tank-edit-data-' . random_str();
 $rec_id = !empty($data['id_storage_tank']) ? $data['id_storage_tank'] : null;
@@ -31,7 +24,7 @@ $rec_id = !empty($data['id_storage_tank']) ? $data['id_storage_tank'] : null;
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Edit Data AM Storage Tank</h4>
+      <h4 class="record-title">Edit Data AM Storage Tank Silverson</h4>
       <div>No: CR-PR-PR-1203.00 (25 Okt 2021)</div>
     </div>
   </div>
@@ -61,8 +54,7 @@ $rec_id = !empty($data['id_storage_tank']) ? $data['id_storage_tank'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/storage_tank/storage_tank ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

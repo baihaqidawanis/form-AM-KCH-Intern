@@ -49,7 +49,7 @@ $redirect_to = $this->redirect_to;
                                     <div class="form-group ">
                                         <div class="row">
                                             <div class="col-sm-4">
-                                                <label class="control-label" for="username">Username <span class="text-danger">*</span></label>
+                                                <label class="control-label" for="username">NIK <span class="text-danger">*</span></label>
                                             </div>
                                             <div class="col-sm-8">
                                                 <div class="">
@@ -83,32 +83,19 @@ $redirect_to = $this->redirect_to;
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <!-- Account Status & User Role Id SENGAJA read-only di sini -- itu wewenang
+                                                     Administrator lewat menu Users, bukan sesuatu yang user boleh ubah
+                                                     sendiri (kalau bisa, itu privilege escalation: user tinggal ganti
+                                                     dropdown ini jadi Administrator/Active tanpa approval siapapun). -->
                                                 <div class="form-group ">
                                                     <div class="row">
                                                         <div class="col-sm-4">
-                                                            <label class="control-label" for="account_status">Account Status <span class="text-danger">*</span></label>
+                                                            <label class="control-label">Account Status</label>
                                                         </div>
                                                         <div class="col-sm-8">
                                                             <div class="">
-                                                                <select required=""  id="ctrl-account_status" name="account_status"  placeholder="Select a value ..."    class="custom-select" >
-                                                                    <option value="">Select a value ...</option>
-                                                                    <?php
-                                                                    $account_status_options = Menu :: $account_status;
-                                                                    $field_value = $data['account_status'];
-                                                                    if(!empty($account_status_options)){
-                                                                    foreach($account_status_options as $option){
-                                                                    $value = $option['value'];
-                                                                    $label = $option['label'];
-                                                                    $selected = ( $value == $field_value ? 'selected' : null );
-                                                                    ?>
-                                                                    <option <?php echo $selected ?> value="<?php echo $value ?>">
-                                                                        <?php echo $label ?>
-                                                                    </option>                                   
-                                                                    <?php
-                                                                    }
-                                                                    }
-                                                                    ?>
-                                                                </select>
+                                                                <input type="text" class="form-control" value="<?php echo $data['account_status']; ?>" disabled readonly />
+                                                                <small class="form-text text-muted">Hubungi Administrator kalau perlu aktivasi/ubah status akun.</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -116,29 +103,18 @@ $redirect_to = $this->redirect_to;
                                                 <div class="form-group ">
                                                     <div class="row">
                                                         <div class="col-sm-4">
-                                                            <label class="control-label" for="user_role_id">User Role Id <span class="text-danger">*</span></label>
+                                                            <label class="control-label">User Role Id</label>
                                                         </div>
                                                         <div class="col-sm-8">
                                                             <div class="">
-                                                                <select required=""  id="ctrl-user_role_id" name="user_role_id"  placeholder="Select a value ..."    class="custom-select" >
-                                                                    <option value="">Select a value ...</option>
-                                                                    <?php
-                                                                    $rec = $data['user_role_id'];
-                                                                    $user_role_id_options = $comp_model -> users_user_role_id_option_list();
-                                                                    if(!empty($user_role_id_options)){
-                                                                    foreach($user_role_id_options as $option){
-                                                                    $value = (!empty($option['value']) ? $option['value'] : null);
-                                                                    $label = (!empty($option['label']) ? $option['label'] : $value);
-                                                                    $selected = ( $value == $rec ? 'selected' : null );
-                                                                    ?>
-                                                                    <option 
-                                                                        <?php echo $selected; ?> value="<?php echo $value; ?>"><?php echo $label; ?>
-                                                                    </option>
-                                                                    <?php
-                                                                    }
-                                                                    }
-                                                                    ?>
-                                                                </select>
+                                                                <?php
+                                                                $role_label = $data['user_role_id'];
+                                                                foreach ($comp_model->users_user_role_id_option_list() as $option) {
+                                                                  if ($option['value'] == $data['user_role_id']) { $role_label = $option['label']; break; }
+                                                                }
+                                                                ?>
+                                                                <input type="text" class="form-control" value="<?php echo $role_label; ?>" disabled readonly />
+                                                                <small class="form-text text-muted">Hubungi Administrator kalau perlu ubah role.</small>
                                                             </div>
                                                         </div>
                                                     </div>

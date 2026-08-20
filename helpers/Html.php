@@ -27,20 +27,32 @@ class Html
 	public static function page_css($arg)
 	{
 	?>
-		<link rel="stylesheet" href="<?php print_link(CSS_DIR . $arg); ?>" />
+		<link rel="stylesheet" href="<?php print_link(CSS_DIR . $arg . self::asset_version('css/' . $arg)); ?>" />
 	<?php
 	}
 
 	/**
 	 * Link To Js File From JS Dir
-	 * NB -- Pass only The Js File Name-- (eg. script.js) 
+	 * NB -- Pass only The Js File Name-- (eg. script.js)
 	 * @return Html
 	 */
 	public static function page_js($arg)
 	{
 	?>
-		<script type="text/javascript" src="<?php print_link(JS_DIR . $arg); ?>"></script>
+		<script type="text/javascript" src="<?php print_link(JS_DIR . $arg . self::asset_version('js/' . $arg)); ?>"></script>
 		<?php
+	}
+
+	/**
+	 * Cache-busting query string berdasarkan filemtime, biar browser gak nyimpen
+	 * cache lama pas file JS/CSS diedit -- sebelum ini gak ada versioning sama
+	 * sekali, jadi user harus hard-refresh manual tiap kali ada perubahan.
+	 * @return string
+	 */
+	private static function asset_version($relative_path)
+	{
+		$full_path = ROOT . 'assets/' . $relative_path;
+		return file_exists($full_path) ? ('?v=' . filemtime($full_path)) : '';
 	}
 
 	/**

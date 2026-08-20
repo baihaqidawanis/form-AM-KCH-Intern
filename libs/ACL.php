@@ -25,7 +25,7 @@ class ACL
 		3 => array(
 			'sig' => '*', 'joeya' => '*', 'illapak_1_2' => '*', 'illapak_3_12' => '*', 'unifill_b' => '*',
 			'chimei' => '*', 'temach' => '*', 'jihcheng' => '*', 'jinsung_1_4' => '*', 'jinsung_5' => '*', 'best_pack' => '*',
-			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'storage_tank' => '*', 'mixing_tank' => '*',
+			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
 			'approval' => '*',
 			'users' => '*',
 			'roles' => '*', 'tag' => '*',
@@ -49,6 +49,7 @@ class ACL
 			'fbd_glatt' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'supermixer' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'storage_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
+			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'mixing_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'approval' => '*',
 		),
@@ -71,6 +72,7 @@ class ACL
 			'fbd_glatt' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'supermixer' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'storage_tank' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
+			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'mixing_tank' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 		),
 	);

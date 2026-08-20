@@ -5,77 +5,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_mesin' => 'body mesin',
-  'pressure_gauge' => 'pressure gauge',
-  'timer' => 'timer',
-  'chopper' => 'chopper',
-  'agitator' => 'agitator',
-  'valve_hopper' => 'valve hopper',
-  'discharge_valve' => 'discharge valve'
-);
-
-$part_details = array(
-  'body_mesin' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Selang, Wiper Lantai, Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "10'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'pressure_gauge' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tekanan 5 - 6 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'timer' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Berfungsi normal',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'chopper' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak retak',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'agitator' => array(
-    'metode' => 'Manual',
-    'alat' => 'Audio Control',
-    'standard' => 'Tidak bergesek',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'valve_hopper' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Valve tertutup rapat',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  ),
-  'discharge_valve' => array(
-    'metode' => 'Dicek, kencangkan bila perlu',
-    'alat' => 'Visual Control',
-    'standard' => 'Klem kencang, tidak ada kebocoran',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap akhir Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_mesin'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'pressure_gauge', 'timer', 'chopper', 'agitator', 'valve_hopper', 'discharge_valve'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'supermixer')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'supermixer-add-' . random_str();
 ?>
@@ -128,16 +71,15 @@ $page_element_id = 'supermixer-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/supermixer/supermixer ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

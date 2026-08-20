@@ -5,61 +5,24 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_mixing_tank' => 'body mixing tank',
-  'jalur_pipa_mixing_tank' => 'jalur pipa mixing tank',
-  'body_panel_hmi' => 'body panel hmi',
-  'agitator' => 'agitator',
-  'seal_mainhole' => 'seal mainhole'
-);
+// 4 unit fisik Mixing Tank (MT Silverson, MT Tetrapak 1-3), tiap unit punya
+// nomor seri sendiri -- lihat database/migrations/2026-08-20_add_mixing_tank_units.sql
+$unit_options = $model->GetModel()->where('nama_mesin', 'MT %', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
 
-$part_details = array(
-  'body_mixing_tank' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "15'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'jalur_pipa_mixing_tank' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "10'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'body_panel_hmi' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall lembab dengan Alkohol 70%',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'agitator' => array(
-    'metode' => 'Test Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Berfungsi normal',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1) *note: dilakukaan jika ada proses'
-  ),
-  'seal_mainhole' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak sobek',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1) *note: dilakukaan jika ada proses'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_mixing_tank', 'jalur_pipa_mixing_tank', 'body_panel_hmi'
-  ),
-  'STANDAR PENGECEKAN (INSPECTION)' => array(
-    'agitator', 'seal_mainhole'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'mixing_tank')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'mixing_tank-add-' . random_str();
 ?>
@@ -98,7 +61,15 @@ $page_element_id = 'mixing_tank-add-' . random_str();
           <?php $this::display_page_errors(); ?>
           <form id="mixing_tank-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("mixing_tank/add?csrf_token=$csrf_token") ?>" method="post">
-            <input type="hidden" name="mesin" value="46">
+            <div class="form-group col-md-6 px-0">
+              <label class="d-block" for="ctrl-mesin">Mesin <span class="text-danger">*</span></label>
+              <select required class="custom-select" id="ctrl-mesin" name="mesin">
+                <option value="" disabled selected>Pilih ...</option>
+                <?php foreach ($unit_options as $u) { ?>
+                  <option value="<?php echo $u['id']; ?>"><?php echo htmlspecialchars($u['nama_mesin']); ?></option>
+                <?php } ?>
+              </select>
+            </div>
 
             <?php foreach ($sections as $section_title => $section_fields) { ?>
               <div class="section-block mb-4">
@@ -112,16 +83,15 @@ $page_element_id = 'mixing_tank-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/mixing_tank/mixing_tank ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

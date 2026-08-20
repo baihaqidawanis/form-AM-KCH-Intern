@@ -5,30 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'conveyor_produk' => 'conveyor produk',
-  'pusher_pendorong_pack' => 'pusher pendorong pack',
-  'turet' => 'turet',
-  'cam' => 'cam',
-  'lubrikasi_bearing_konveyor' => 'lubrikasi bearing konveyor',
-  'jalur_compressed_air' => 'jalur compressed air',
-  'air_regulator' => 'air regulator',
-  'heater_a_f' => 'heater a f',
-  'baut_turet' => 'baut turet'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'conveyor_produk', 'pusher_pendorong_pack', 'turet'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'cam', 'lubrikasi_bearing_konveyor'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'jalur_compressed_air', 'air_regulator', 'heater_a_f', 'baut_turet'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'temach')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'temach-edit-data-' . random_str();
 $rec_id = !empty($data['id_temach']) ? $data['id_temach'] : null;
@@ -66,8 +54,7 @@ $rec_id = !empty($data['id_temach']) ? $data['id_temach'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/temach/temach ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

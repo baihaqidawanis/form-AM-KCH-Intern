@@ -68,6 +68,75 @@ class RbacTest extends TestCase
         }
     }
 
+    /**
+     * Regresi buat privilege-escalation yang ketemu 19 Agustus 2026:
+     * AccountController::edit() ("My Account -> Edit Account") dulu punya
+     * 'account_status' & 'user_role_id' di $fields yang bisa diedit user
+     * sendiri, tanpa approval siapapun -- Staff/Operator tinggal ganti
+     * dropdown itu jadi Administrator/Active lewat UI biasa. Fixed dengan
+     * hapus 2 field itu dari whitelist $fields di AccountController::edit().
+     */
+    public function test_operator_tidak_bisa_naikkan_role_sendiri_lewat_my_account(): void
+    {
+        $operator = (new ApiClient())->loginAs('operator');
+        $editPage = (string) $operator->get('account/edit')->getBody();
+
+        $current = array();
+        foreach (array('nama', 'username', 'area', 'mesin', 'pict') as $field) {
+            if (preg_match('/id="ctrl-' . $field . '"[^>]*value="([^"]*)"/', $editPage, $m)) {
+                $current[$field] = html_entity_decode($m[1]);
+            }
+        }
+        $this->assertArrayHasKey('username', $current, 'Gagal scrape data account/edit operator buat setup test');
+
+        // Coba tampering: kirim user_role_id=1 (Administrator) & account_status=Active
+        // bareng field lain yang dibiarkan sama persis (gak boleh ngerusak data asli).
+        $payload = array_merge($current, array(
+            'user_role_id' => '1',
+            'account_status' => 'Active',
+        ));
+        $operator->postWithCsrf('account/edit', $payload);
+
+        $admin = (new ApiClient())->loginAs('administrator');
+        $usersList = (string) $admin->get('users?search=' . $current['username'])->getBody();
+        $this->assertMatchesRegularExpression('#/users/view/(\d+)#', $usersList, 'Gagal cari akun operator test di menu Users');
+        preg_match('#/users/view/(\d+)#', $usersList, $m);
+        $view = (string) $admin->get('users/view/' . $m[1])->getBody();
+        $this->assertStringContainsString('data-value="4"', $view, 'Operator gak boleh berhasil naikkan role sendiri jadi Administrator lewat My Account');
+    }
+
+    /**
+     * Proteksi Super Admin (disetujui mentor, 20 Agustus 2026): cuma boleh ada
+     * 1 akun Super Admin (users.is_super_admin, unique di level DB), dan gak
+     * ada Administrator/Supervisor lain yang bisa ubah role/status/hapus akun
+     * ini -- sesama Administrator biasa tetap bebas saling kelola satu sama lain.
+     */
+    public function test_supervisor_tidak_bisa_edit_super_admin(): void
+    {
+        $supervisor = (new ApiClient())->loginAs('supervisor');
+        $usersList = (string) $supervisor->get('users?search=superadmin')->getBody();
+        $this->assertMatchesRegularExpression('#/users/view/(\d+)#', $usersList, 'Gagal cari akun superadmin di menu Users');
+        preg_match('#/users/view/(\d+)#', $usersList, $m);
+        $superAdminId = $m[1];
+
+        $resp = $supervisor->get("users/edit/$superAdminId");
+        $this->assertSame(403, $resp->getStatusCode(), 'Supervisor harusnya 403 buka halaman edit Super Admin');
+    }
+
+    public function test_supervisor_tidak_bisa_hapus_super_admin(): void
+    {
+        $supervisor = (new ApiClient())->loginAs('supervisor');
+        $usersList = (string) $supervisor->get('users?search=superadmin')->getBody();
+        preg_match('#/users/view/(\d+)#', $usersList, $m);
+        $superAdminId = $m[1];
+
+        $supervisor->deleteWithCsrf("users/view/$superAdminId", "users/delete/$superAdminId");
+
+        $admin = (new ApiClient())->loginAs('administrator');
+        $stillExists = (string) $admin->get('users?search=superadmin')->getBody();
+        $this->assertStringContainsString('superadmin', strtolower($stillExists), 'Akun Super Admin gak boleh berhasil terhapus oleh Supervisor');
+    }
+
     private function createRecord(ApiClient $client): string
     {
         $addPage = $client->get(self::MACHINE . '/add');

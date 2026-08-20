@@ -171,7 +171,23 @@ class BaseController{
 			"uploadDir" => "uploads/files/",
 			"perms" => 0644 // file yang keupload jangan world-writable
 		);
-	
+
+		// Foto part mesin (menu Master Data Part). Beda dari 'pict' cuma di
+		// returnfullpath=false -- path disimpan RELATIF ("uploads/files/x.png"),
+		// BUKAN absolut ("http://localhost/form-am/uploads/files/x.png").
+		// Kolom master_part.image_path dipakai bareng path bawaan
+		// "assets/images/{mesin}/..." yang juga relatif, dan yang absolut bakal
+		// rusak begitu aplikasi dipindah ke server lain (host-nya ikut kebawa).
+		$this->file_upload_settings['part_image'] = array(
+			"title" => "{{random}}",
+			"extensions" => ".jpg,.jpeg,.png,.gif,.webp",
+			"limit" => "1",
+			"filesize" => "3",
+			"returnfullpath" => false,
+			"filenameprefix" => "",
+			"uploadDir" => "uploads/files/",
+			"perms" => 0644
+		);
 
 		$this->status = AUTHORIZED;
 	}

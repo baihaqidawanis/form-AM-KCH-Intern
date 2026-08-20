@@ -265,7 +265,12 @@ $show_pagination = $this->show_pagination;
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page5" role="tab" aria-selected="true">
-                                        Storage Tank
+                                        Storage Tank Silverson
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page7" role="tab" aria-selected="true">
+                                        Storage Tank Tetrapak
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -310,10 +315,18 @@ $show_pagination = $this->show_pagination;
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-4-Page5" role="tabpanel">
-                                    <h4 >Storage Tank</h4>
+                                    <h4 >Storage Tank Silverson</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("storage_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-4-Page7" role="tabpanel">
+                                    <h4 >Storage Tank Tetrapak</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("storage_tank_tetrapak/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>

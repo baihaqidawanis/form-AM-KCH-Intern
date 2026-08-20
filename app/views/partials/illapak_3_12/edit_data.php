@@ -5,37 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'sealing_horizontal' => 'sealing horizontal',
-  'sealing_vertikal' => 'sealing vertikal',
-  'body_mesin' => 'body mesin',
-  'roller_foil_film' => 'roller foil film',
-  'position_indicator_sealing_vertical' => 'position indicator sealing vertical',
-  'vacum_sliter' => 'vacum sliter',
-  'alarm_temperature' => 'alarm temperature',
-  'piston_pengisian' => 'piston pengisian',
-  'pneumatic_valves_pengisian' => 'pneumatic valves pengisian',
-  'baut_sealing_vertikal' => 'baut sealing vertikal',
-  'rubber_penarik_foil' => 'rubber penarik foil',
-  'sensor_eyemark_dan_sambungan_foil' => 'sensor eyemark dan sambungan foil',
-  'guarding_mesin' => 'guarding mesin',
-  'pressure_blow_sealing_vertical' => 'pressure blow sealing vertical',
-  'inkjet' => 'inkjet',
-  'pengunci_nozzle_pengisian' => 'pengunci nozzle pengisian'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'sealing_horizontal', 'sealing_vertikal', 'body_mesin', 'roller_foil_film'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'position_indicator_sealing_vertical', 'vacum_sliter', 'alarm_temperature', 'piston_pengisian',
-    'pneumatic_valves_pengisian', 'baut_sealing_vertikal', 'rubber_penarik_foil',
-    'sensor_eyemark_dan_sambungan_foil', 'guarding_mesin', 'pressure_blow_sealing_vertical',
-    'inkjet', 'pengunci_nozzle_pengisian'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'illapak_3_12')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'illapak_3_12-edit-data-' . random_str();
 $rec_id = !empty($data['id_illapak_3_12']) ? $data['id_illapak_3_12'] : null;
@@ -73,8 +54,7 @@ $rec_id = !empty($data['id_illapak_3_12']) ? $data['id_illapak_3_12'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/illapak_3_12/illapak_3_12 ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

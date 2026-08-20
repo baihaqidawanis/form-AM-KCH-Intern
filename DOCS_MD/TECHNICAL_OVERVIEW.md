@@ -72,6 +72,68 @@ Pembatasan "cuma boleh edit data submission sendiri" (URS 3.1) gak bisa diekspre
 - Field nama part pakai snake_case, konsisten antara kolom DB, key `$parts`, dan `name` attribute HTML.
 - **Verifikasi wajib sebelum bilang selesai**: lint (`php -l`), submit form beneran (campuran OK + minimal 1 NOK), cek langsung ke DB, export PDF harus beneran `%PDF-1.7`, hapus lagi data uji coba, regression check modul lain yang udah ada.
 
+## Master Data Part (SEMUA 17 mesin) — 19-20 Agustus 2026
+
+Administrator sekarang bisa CRUD detail part mesin (foto, Metode, Alat, Standard, Durasi, Pelaksanaan, Section, Urutan, highlight warna Mingguan/Bulanan) lewat menu **Master Data Part** (`Master_partController` — perhatikan nama file/class `Master_partController.php`, BUKAN `MasterPartController`, karena `Router.php` cuma `ucfirst()` segmen URL apa adanya, gak convert underscore ke CamelCase — pola yang sama kayak `Jinsung_1_4Controller`), tanpa perlu edit kode.
+
+- **Tabel `master_part`** — 1 tabel master lintas-mesin (bukan per-mesin), kolom `machine_key`/`field_name`/`label`/`section`/`metode`/`alat`/`standard`/`durasi`/`pelaksanaan`/`highlight`/`image_path`/`urutan`. Unique constraint `(machine_key, field_name)`.
+- **`BaseMachineController::loadDynamicParts()`** (dipanggil di constructor) — override `$this->parts` dari `master_part` kalau mesin itu udah punya row di sana; kalau belum ada row sama sekali, fallback ke `$parts` hardcoded di subclass (jadi 16 mesin yang belum dimigrasikan gak kena dampak).
+- **Nambah part baru = otomatis `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`** ke tabel fisik mesinnya (dibungkus transaction bareng insert row `master_part`, jadi kalau ALTER gagal, insert-nya ikut rollback — gak ada state nyangkut). `machine_key` divalidasi whitelist, `field_name` divalidasi regex `^[a-z][a-z0-9_]*$` sebelum dipakai jadi identifier SQL mentah.
+- **Hapus part TIDAK drop kolom** (non-destruktif) — cuma hapus row `master_part`, kolom fisik & data historis tetap aman.
+- **⚠️ Operasional**: user database aplikasi (`DB_USERNAME` di `.env`) **wajib punya privilege `ALTER TABLE`** di server production, bukan cuma SELECT/INSERT/UPDATE/DELETE — kalau DBA kasih akses terbatas, fitur tambah-part-baru bakal gagal (tapi gagalnya "bersih" berkat transaction, bukan bikin data master_part nyangkut tanpa kolom fisik).
+
+### Rollout ke 17 mesin — SELESAI (20 Agustus 2026)
+
+Semua 17 mesin sudah baca dari `master_part`; array `$image_names`/`$part_details`/`$sections` yang dulu hardcoded di tiap `add.php`/`edit_data.php` **sudah dihapus total** (166 part: sig 11, joeya 12, illapak_1_2 15, illapak_3_12 16, unifill_b 13, chimei 9, temach 9, jihcheng 11, jinsung_1_4 8, jinsung_5 8, best_pack 6, cosmec 7, fbd_jaw_chuan 11, fbd_glatt 11, supermixer 7, storage_tank 7, mixing_tank 5).
+
+- **Migrasi data**: `database/migrations/2026-08-20_migrate_master_part_16_mesin.sql` — **digenerate otomatis** dari array asli di view + `$parts` controller (bukan transkripsi manual), jadi isinya dijamin identik. Ikut ditambahkan ke `02_seed.sql` buat fresh install.
+- **Kolom `highlight`** diisi dengan mereplikasi inference lama atas teks Pelaksanaan (38 `mingguan` + 7 `bulanan`, cocok persis dengan hitungan di source lama). Sekarang jadi kolom eksplisit — admin pilih lewat dropdown, gak lagi nebak dari string.
+- **`image_path`** disimpan utuh per part karena pola foldernya beda-beda tiap mesin (mis. `unifill_b` pakai folder `unifill/unifill `, `jinsung_1_4` pakai `jinsung 1-4 `, `best_pack` pakai `best pack `) — jangan diasumsikan seragam `{mesin}/{mesin} `.
+- **Bukti tidak ada regresi**: snapshot DOM ke-17 halaman `add` (section, label, metode/alat/standard/durasi/pelaksanaan, warna highlight, src gambar — 166 part) dibandingkan sebelum vs sesudah refactor → **identik 100%**.
+- **`loadDynamicParts()` fallback** ke `$parts` hardcoded di controller masih dipertahankan sebagai jaring pengaman kalau tabel `master_part` kosong buat suatu mesin (mis. lupa jalanin migration di server baru) — form tetap jalan, cuma tanpa detail foto/metode.
+
+## Proteksi Super Admin — 20 Agustus 2026 (disetujui mentor)
+
+Cuma boleh ada **1** akun Super Admin di seluruh sistem, dan gak ada Administrator/Supervisor lain yang bisa ubah role/status/hapus akun itu — tapi sesama Administrator biasa (non-super) tetap bebas saling kelola.
+
+- **`users.is_super_admin`** (boolean) + **partial unique index** (`WHERE is_super_admin = true`) — dijamin di level Postgres, bukan cuma diasumsikan di kode: gak mungkin ada 2 baris `true` sekaligus, walau di-insert manual lewat SQL.
+- **`is_super_admin_user($id_user)`** (`helpers/Functions.php`) — helper query, dipanggil di `UsersController::edit()`/`editfield()`/`delete()` buat nolak (403) kalau target row Super Admin dan yang minta bukan dia sendiri.
+- Delete Super Admin ditolak total, siapapun yang minta (termasuk dirinya sendiri) — akun ini permanen.
+- Reset password Super Admin **tetap lewat email** (`PasswordmanagerController`, sesuai URS baris ~306 & Gambar 22 "View Profile – Reset Password") — **bukan** fitur ganti-password manual, itu di luar scope URS. Kalau SMTP server belum dikonfigurasi, workaround: `UPDATE users SET password = <bcrypt hash> WHERE ...` manual lewat psql/pgAdmin.
+
+## UX Master Data Part: per-mesin + drag-and-drop urutan — 20 Agustus 2026
+
+- **Filter "Semua" dihapus** — list SELALU 1 mesin. Alasannya: part antar mesin gak ada hubungannya (nyampur bikin bingung) dan urutan drag-drop cuma masuk akal dalam 1 mesin. `index()` tanpa parameter default ke mesin pertama **yang sudah ada datanya** (bukan sekadar key pertama), biar gak mendarat di halaman kosong.
+- **Semua redirect jadi per-mesin**: simpan/batal/hapus balik ke `master_part/index/{machine_key}` asal, bukan ke mesin default. Tombol "Tambah Part" bawa machine_key lewat URL (`master_part/add/{key}`) buat preselect dropdown — `add()` punya guard kalau POST datang tanpa segmen mesin (Router naruh `$_POST` di argumen pertama, jadi digeser manual).
+- **Drag-and-drop urutan** pakai **HTML5 Drag & Drop API bawaan browser** — sengaja TANPA jQuery UI/library baru (project gak punya bundler, dan dipakai di jaringan internal yang belum tentu bisa ambil CDN). Endpoint `Master_partController::reorder()` nerima `ids` (dipisah koma, posisi array = urutan baru), CSRF check, validasi semua id ADA & satu `machine_key` yang sama (nolak reorder lintas mesin), dibungkus transaction, balikin JSON.
+- Urutan hasil drag langsung kepakai di form Add AM (`ORDER BY urutan`), sudah diverifikasi persist setelah reload.
+
+## Kolom "Tanggal Approval" di list2 — 20 Agustus 2026
+
+Semua 17 `list2.php` sekarang nampilin kolom **Tanggal Approval** (setelah "Approval Oleh", `colspan` empty-state naik dari 8 → 9). Datanya dari `tanggal_perubahan` yang sebenarnya **udah lama diisi** di `BaseMachineController::add()` (auto-approve) & `edit()` (approval manual) — cuma belum pernah ditampilkan di list. Kalau bikin mesin baru dan copy dari modul existing, kolom ini otomatis ikut.
+
+## Re-evaluate approval abis edit_data() — 20 Agustus 2026
+
+Gap yang ketemu user pas cek Cosmec: `edit_data()` (operator koreksi data submission sendiri) dulu **gak pernah nyentuh status `approval` sama sekali** — record yang tadinya auto-approved (semua OK) terus dikoreksi jadi ada NOK, tetap nampilin "Approved" di UI walau ada part bermasalah. Sebaliknya, record NOK yang dikoreksi jadi OK semua ya tetap nyangkut status lama, gak auto-approve ulang.
+
+**Fix di `BaseMachineController::edit_data()`**: abis `$modeldata` final (part-part udah kena update dari form), re-cek semua `part_fields()`:
+- **Semua OK** → `approval='Approved'`, `user_approve='System'`, `tanggal_perubahan=now()` (persis kayak logic auto-approve di `add()`).
+- **Ada yang NOK** → `approval`/`user_approve`/`tanggal_perubahan` di-reset ke `null` (BUKAN langsung "Not Approved") — record balik masuk antrian review manual supervisor/manager, konsisten sama gimana submission NOK baru diperlakukan.
+
+Ada juga kolom **"User Update"** baru di semua 17 `list2.php` (dari `user_perubah`) — biar keliatan langsung di overview siapa yang terakhir koreksi data, gak perlu buka View satu-satu. Test regresi: `ApprovalFlowTest::test_edit_data_ubah_ke_nok_reset_approval_ke_pending`.
+
+## Field approval/update tracking di halaman View — 20 Agustus 2026
+
+Ketemu gap: mockup UI resmi di URS (Gambar 9/10, "View Mesin – Edit Data") nunjukin halaman View seharusnya nampilin `User Approve`, `Approval`, `Tanggal Approve`, `User Update`, `Tanggal Update`, `Perubahan` (log catatan edit) -- tapi `view.php` di semua 17 mesin cuma nampilin Nama Mesin/Tanggal/Pembuat + tabel part, field lainnya kelewat sejak awal.
+
+- **`BaseMachineController::view()`** — query `$fields` ditambah `user_perubah`, `updated_at`, `perubahan` (sebelumnya cuma select `user_approve`, `approval`, `tanggal_perubahan` yang datanya ada tapi gak pernah ditampilkan).
+- **17 `view.php`** — 6 baris baru ditambahin ke tabel info atas, persis setelah baris "Pembuat": User Approve, Approval, Tanggal Approve (`tanggal_perubahan`), User Update (`user_perubah`), Tanggal Update (`updated_at`), Perubahan (`perubahan`, di-`nl2br`+`htmlspecialchars` karena isinya free-text catatan operator).
+- `updated_at`/`user_perubah`/`perubahan` cuma keisi kalau record pernah di-`edit_data()` (operator koreksi data sendiri) -- record yang belum pernah diedit nampilin `-` di 3 field itu, ini normal bukan bug.
+
+## Rename Tabel Mesin (`tb_mesin_*`) — 19 Agustus 2026
+
+17 tabel utama mesin (bukan `kendala_*`) di-rename dari nama polos (`chimei`, `sig`, dst) jadi prefix `tb_mesin_` (`tb_mesin_chimei`, `tb_mesin_sig`, dst). URL/routing/nama folder view/`machineKey` **TIDAK** ikut berubah — cuma nama tabel fisik. Dipisah lewat `BaseMachineController::sqlTable()` (nama tabel fisik) vs `$machineKey` (tetap dipakai buat URL/view/idColumn). Gak ada FK constraint di schema ini, jadi rename aman tanpa migrasi relasi.
+
 ## Known Gaps / Belum Selesai
 
 - **Illapak 1-12 & Unifill B** masih pakai part placeholder (generic, sama kayak Joeya) — user perlu ganti nama part sesuai spesifikasi mesin sebenarnya + upload gambar + isi Metode/Alat/Standard/Durasi/Pelaksanaan.

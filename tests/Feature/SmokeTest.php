@@ -16,7 +16,7 @@ class SmokeTest extends TestCase
     private const MACHINES = array(
         'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b',
         'chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5', 'best_pack',
-        'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer', 'storage_tank', 'mixing_tank',
+        'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer', 'storage_tank', 'storage_tank_tetrapak', 'mixing_tank',
     );
 
     private const INFRA_PAGES = array('Home', 'approval', 'users', 'roles', 'tag', 'audit_log', 'panduan_pengisian_am');

@@ -234,6 +234,14 @@ class SharedController extends BaseController{
 	}
 
 	/**
+     * getcount_storage_tank_tetrapak Model Action
+     * @return Value
+     */
+	function getcount_storage_tank_tetrapak(){
+		return $this->_count_today("storage_tank_tetrapak", "created_at");
+	}
+
+	/**
      * getcount_mixing_tank Model Action
      * @return Value
      */

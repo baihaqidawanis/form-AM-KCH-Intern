@@ -29,6 +29,26 @@ abstract class BaseMachineController extends SecureController
 	{
 		parent::__construct();
 		$this->tablename = $this->machineKey;
+		$this->loadDynamicParts();
+	}
+
+	/**
+	 * Kalau superadmin udah nambahin part lewat menu Master Data Part
+	 * (Master_partController) buat mesin ini, $parts di-override dari database
+	 * (urutan sesuai kolom urutan) -- kalau belum ada row master_part sama
+	 * sekali buat mesin ini, tetap pakai $parts hardcoded di subclass (mesin
+	 * yang belum dimigrasikan ke master data).
+	 */
+	private function loadDynamicParts()
+	{
+		$db = $this->GetModel();
+		$db->where('machine_key', $this->machineKey)->orderBy('urutan', 'ASC');
+		$rows = $db->get('master_part', null, array('field_name', 'label'));
+		if (!empty($rows)) {
+			$parts = array();
+			foreach ($rows as $row) { $parts[$row['field_name']] = $row['label']; }
+			$this->parts = $parts;
+		}
 	}
 
 	protected function idColumn() { return 'id_' . $this->machineKey; }
@@ -59,7 +79,7 @@ abstract class BaseMachineController extends SecureController
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$request = $this->request; $db = $this->GetModel();
-		$fields = array("$sql.$idcol", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan");
+		$fields = array("$sql.$idcol", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at");
 		foreach ($this->part_fields() as $part) { $fields[] = "$sql.$part"; }
 		if (!empty($request->search)) {
 			$like = '%' . trim($request->search) . '%';
@@ -125,7 +145,7 @@ abstract class BaseMachineController extends SecureController
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
-		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->part_fields(), $this->extraFields)));
+		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->part_fields(), $this->extraFields)));
 		if ($value) { $db->where($rec_id, urldecode($value)); } else { $db->where("$sql.$idcol", urldecode($rec_id)); }
 		$record = $db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->getOne($sql, $fields);
 		if ($record) {
@@ -193,6 +213,18 @@ abstract class BaseMachineController extends SecureController
 			}
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$modeldata['updated_at'] = datetime_now(); $modeldata['user_perubah'] = USER_NAME;
+			//Re-evaluate approval abis data dikoreksi -- jangan biarin status approval
+			//lama nyangkut gitu aja. Semua part OK lagi -> auto-approve lagi (sama
+			//persis kayak submission baru). Ada yang jadi NOK -> approval di-reset ke
+			//"belum di-approve" (BUKAN langsung "Not Approved"), balik masuk antrian
+			//review manual supervisor/manager -- konsisten sama alur submission NOK baru.
+			$all_ok = true;
+			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) !== 'OK') { $all_ok = false; break; } }
+			if ($all_ok) {
+				$modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now();
+			} else {
+				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
+			}
 			if ($this->validated()) {
 				$db->startTransaction();
 				$db->where($idcol, $rec_id);
@@ -275,9 +307,23 @@ abstract class BaseMachineController extends SecureController
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
 		$ids = array_map('trim', explode(',', $rec_id));
+		//Baris kendala (abnormalitas) anaknya WAJIB ikut dihapus -- gak ada FK
+		//ON DELETE CASCADE di skema ini, jadi kalau cuma hapus record induk,
+		//kendala-nya nyangkut jadi orphan selamanya (bikin DB numpuk & berisiko
+		//nempel ke record lain kalau id sempat kepakai ulang). Dibungkus
+		//transaction supaya gak bisa kejadian induk kehapus tapi anak ketinggalan.
+		$db->startTransaction();
+		$db->where('id_am', $ids, 'in');
+		$db->delete($this->kendalaTable());
 		$db->where($idcol, $ids, 'in');
-		if ($db->delete($sql)) { $this->write_to_log('delete', 'true'); $this->set_flash_msg('Record deleted successfully', 'success'); }
-		else { $this->set_flash_msg($db->getLastError(), 'danger'); }
+		if ($db->delete($sql)) {
+			$db->commit();
+			$this->write_to_log('delete', 'true');
+			$this->set_flash_msg('Record deleted successfully', 'success');
+		} else {
+			$db->rollback();
+			$this->set_flash_msg($db->getLastError(), 'danger');
+		}
 		return $this->redirect($table);
 	}
 }

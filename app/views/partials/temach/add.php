@@ -5,96 +5,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'conveyor_produk' => 'conveyor produk',
-  'pusher_pendorong_pack' => 'pusher pendorong pack',
-  'turet' => 'turet',
-  'cam' => 'cam',
-  'lubrikasi_bearing_konveyor' => 'lubrikasi bearing konveyor',
-  'jalur_compressed_air' => 'jalur compressed air',
-  'air_regulator' => 'air regulator',
-  'heater_a_f' => 'heater a f',
-  'baut_turet' => 'baut turet'
-);
-
-$part_details = array(
-  'conveyor_produk' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Lap basah',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'pusher_pendorong_pack' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Lap basah',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'turet' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Lap kering',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'cam' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Terlumasi, tidak kendur',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'lubrikasi_bearing_konveyor' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Lubrikasi oli',
-    'standard' => 'Terlumasi, tidak macet',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'jalur_compressed_air' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada kebocoran pada pneumatic, selang dan fitting. Pastikan tidak ada bunyi desis',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'air_regulator' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tekanan udara 4 - 6 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'heater_a_f' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada cacat pada kabel dan berfungsi normal',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'baut_turet' => array(
-    'metode' => 'Dicek, kencangkan bila perlu',
-    'alat' => 'Kunci L/Kunci Pas sesuai kebutuhan',
-    'standard' => 'Buat kencang, tidak aus, sesuai marka, berfungsi normal',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'conveyor_produk', 'pusher_pendorong_pack', 'turet'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'cam', 'lubrikasi_bearing_konveyor'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'jalur_compressed_air', 'air_regulator', 'heater_a_f', 'baut_turet'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'temach')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'temach-add-' . random_str();
 ?>
@@ -147,16 +71,15 @@ $page_element_id = 'temach-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/temach/temach ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

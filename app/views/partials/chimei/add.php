@@ -5,96 +5,24 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'conveyor_produk' => 'conveyor produk',
-  'roller_opp' => 'roller opp',
-  'rantai_opp' => 'rantai opp',
-  'bearing_break_opp' => 'bearing break opp',
-  'rantai_motor_utama_cam' => 'rantai motor utama cam',
-  'as_pendorong_pack' => 'as pendorong pack',
-  'jalur_compressed_air' => 'jalur compressed air',
-  'air_regulator' => 'air regulator',
-  'sensor_produk_opp_pack' => 'sensor produk opp pack'
-);
+// 8 unit fisik Chimei (Chimei 12A, 4B, 10A, dll), tiap unit punya nama sendiri
+// tanpa nomor seri -- lihat database/migrations/2026-08-20_add_chimei_units.sql
+$unit_options = $model->GetModel()->where('nama_mesin', 'Chimei %', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
 
-$part_details = array(
-  'conveyor_produk' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Lap basah',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'roller_opp' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Lap basah',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'rantai_opp' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Terlumasi, tidak kendur',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'bearing_break_opp' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Spray Lube',
-    'standard' => 'Pastikan Tidak Macet',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'rantai_motor_utama_cam' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Terlumasi, tidak kendur',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'as_pendorong_pack' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Pastikan Tidak Macet',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'jalur_compressed_air' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada kebocoran pada pneumatic, selang dan fitting. Pastikan tidak ada bunyi desis',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'air_regulator' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tekanan udara 4-6 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'sensor_produk_opp_pack' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Sensor berfungsi',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'conveyor_produk', 'roller_opp'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'rantai_opp', 'bearing_break_opp', 'rantai_motor_utama_cam', 'as_pendorong_pack'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'jalur_compressed_air', 'air_regulator', 'sensor_produk_opp_pack'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'chimei')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'chimei-add-' . random_str();
 ?>
@@ -133,7 +61,15 @@ $page_element_id = 'chimei-add-' . random_str();
           <?php $this::display_page_errors(); ?>
           <form id="chimei-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("chimei/add?csrf_token=$csrf_token") ?>" method="post">
-            <input type="hidden" name="mesin" value="31">
+            <div class="form-group col-md-6 px-0">
+              <label class="d-block" for="ctrl-mesin">Mesin <span class="text-danger">*</span></label>
+              <select required class="custom-select" id="ctrl-mesin" name="mesin">
+                <option value="" disabled selected>Pilih ...</option>
+                <?php foreach ($unit_options as $u) { ?>
+                  <option value="<?php echo $u['id']; ?>"><?php echo htmlspecialchars($u['nama_mesin']); ?></option>
+                <?php } ?>
+              </select>
+            </div>
 
             <?php foreach ($sections as $section_title => $section_fields) { ?>
               <div class="section-block mb-4">
@@ -147,16 +83,15 @@ $page_element_id = 'chimei-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/chimei/chimei ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

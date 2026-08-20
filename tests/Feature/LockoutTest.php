@@ -16,7 +16,7 @@ class LockoutTest extends TestCase
     public function test_3x_salah_password_mengunci_akun(): void
     {
         $admin = (new ApiClient())->loginAs('administrator');
-        $username = str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT); // NIK: 8 digit angka
+        $username = str_pad((string) random_int(0, 99999999999), 11, '0', STR_PAD_LEFT); // NIK: 11 digit angka
         $password = 'LockTest@1';
 
         $admin->postWithCsrf('users/add', array(

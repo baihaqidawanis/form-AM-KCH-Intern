@@ -3,7 +3,7 @@
 class Storage_tankController extends BaseMachineController
 {
 	protected $machineKey = 'storage_tank';
-	protected $displayName = 'Storage Tank';
+	protected $displayName = 'Storage Tank Silverson';
 	protected $parts = array(
 
 		'body_storage_tank' => 'Body Storage Tank',

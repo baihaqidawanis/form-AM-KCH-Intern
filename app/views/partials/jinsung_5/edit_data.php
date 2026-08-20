@@ -5,29 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'belt_conveyor_dan_pusher_pack' => 'belt conveyor dan pusher pack',
-  'pocket_pembawa_sachet' => 'pocket pembawa sachet',
-  'shaft_bushing_pusher_piston' => 'shaft bushing pusher piston',
-  'rantai_penggerak_utama_cartoning' => 'rantai penggerak utama cartoning',
-  'regulator_angin_conveyor_cartoning_check_weigher' => 'regulator angin conveyor cartoning check weigher',
-  'regulator_angin_chamber_hot_melt' => 'regulator angin chamber hot melt',
-  'sensor_sachet_pack_nozzle' => 'sensor sachet pack nozzle',
-  'timing_belt_conveyor' => 'timing belt conveyor'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'belt_conveyor_dan_pusher_pack', 'pocket_pembawa_sachet'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'shaft_bushing_pusher_piston', 'rantai_penggerak_utama_cartoning'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'regulator_angin_conveyor_cartoning_check_weigher', 'regulator_angin_chamber_hot_melt', 'sensor_sachet_pack_nozzle', 'timing_belt_conveyor'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'jinsung_5')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'jinsung_5-edit-data-' . random_str();
 $rec_id = !empty($data['id_jinsung_5']) ? $data['id_jinsung_5'] : null;
@@ -65,8 +54,7 @@ $rec_id = !empty($data['id_jinsung_5']) ? $data['id_jinsung_5'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/jinsung_5/jinsung_5 ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

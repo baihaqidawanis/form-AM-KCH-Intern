@@ -5,76 +5,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_panel_hmi' => 'body panel hmi',
-  'body_mesin' => 'body mesin',
-  'pengunci_bin' => 'pengunci bin',
-  'switch_rantai' => 'switch rantai',
-  'as_dan_flange_tumbler' => 'as dan flange tumbler',
-  'baut_dan_mur_pada_flange_shaft' => 'baut dan mur pada flange shaft',
-  'panel_pompa_hidrolik_mesin' => 'panel pompa hidrolik mesin'
-);
-
-$part_details = array(
-  'body_panel_hmi' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall lembab dengan Alkohol 70%',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'body_mesin' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall lembab dengan Alkohol 70%',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "10'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'pengunci_bin' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Kencang dan tidak oblak',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'switch_rantai' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Tombol start tidak aktif jika rantai tidak terpasang',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'as_dan_flange_tumbler' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada Retakan',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'baut_dan_mur_pada_flange_shaft' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Lengkap dan tidak ada yang retak/patah',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'panel_pompa_hidrolik_mesin' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada tetesan Oli',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_panel_hmi', 'body_mesin'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'pengunci_bin', 'switch_rantai', 'as_dan_flange_tumbler', 'baut_dan_mur_pada_flange_shaft', 'panel_pompa_hidrolik_mesin'
-  )
-);
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able superadmin lewat menu Master
+// Data Part), bukan hardcoded array lagi -- lihat MasterPartController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'cosmec')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 
 $csrf_token = Csrf::$token;
 $page_element_id = 'cosmec-add-' . random_str();
@@ -128,16 +72,15 @@ $page_element_id = 'cosmec-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/cosmec/cosmec ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi superadmin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

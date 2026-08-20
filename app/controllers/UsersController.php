@@ -173,9 +173,13 @@ class UsersController extends SecureController{
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$password_text = $modeldata['password'];
+			//NIK di-uppercase biar gak ada 2 akun beda cuma gara-gara huruf besar/kecil.
+			if (!empty($modeldata['username'])) {
+				$modeldata['username'] = $this->modeldata['username'] = strtoupper($modeldata['username']);
+			}
 			//URS: username akun baru wajib format NIK, password wajib kompleksitas tertentu
 			if (!empty($modeldata['username']) && !is_valid_nik_username($modeldata['username'])) {
-				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan), angka saja, tepat 8 digit.";
+				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan): huruf dan/atau angka, maksimal 11 karakter.";
 			}
 			if (!empty($password_text) && !is_valid_password_complexity($password_text)) {
 				$this->view->page_error[] = "Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.";
@@ -218,6 +222,13 @@ class UsersController extends SecureController{
 		$db = $this->GetModel();
 		$this->rec_id = $rec_id;
 		$tablename = $this->tablename;
+		//Super Admin cuma boleh diedit diri sendiri -- Administrator lain (termasuk
+		//sesama role_id=1) ditolak ubah apapun ke akun ini (URS-adjacent, disetujui
+		//mentor: satu Super Admin gak bisa "dijatuhkan" admin lain).
+		if (is_super_admin_user($rec_id) && intval($rec_id) !== intval(USER_ID)) {
+			http_response_code(403);
+			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
 		 //editable fields
 		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id","pict");
 		if($formdata){
@@ -289,6 +300,11 @@ class UsersController extends SecureController{
 		$db = $this->GetModel();
 		$this->rec_id = $rec_id;
 		$tablename = $this->tablename;
+		//Sama kayak edit() -- Super Admin cuma boleh diedit diri sendiri.
+		if (is_super_admin_user($rec_id) && intval($rec_id) !== intval(USER_ID)) {
+			render_error('Akun ini dilindungi -- cuma Super Admin sendiri yang boleh mengubahnya.');
+			return null;
+		}
 		//editable fields
 		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id","pict");
 		$page_error = null;
@@ -367,6 +383,14 @@ class UsersController extends SecureController{
 		$this->rec_id = $rec_id;
 		//form multiple delete, split record id separated by comma into array
 		$arr_rec_id = array_map('trim', explode(",", $rec_id));
+		//Super Admin gak boleh dihapus sama sekali (bahkan oleh dirinya sendiri) --
+		//akun ini permanen, satu-satunya "root" sistem.
+		foreach ($arr_rec_id as $one_id) {
+			if (is_super_admin_user($one_id)) {
+				$this->set_flash_msg('Akun Super Admin gak bisa dihapus.', 'danger');
+				return $this->redirect('users');
+			}
+		}
 		$db->where("users.id_user", $arr_rec_id, "in");
 		$bool = $db->delete($tablename);
 		if($bool){

@@ -43,7 +43,12 @@ class Menu
 				),
 				array(
 					'path' => 'storage_tank',
-					'label' => 'Storage Tank',
+					'label' => 'Storage Tank Silverson',
+					'icon' => ''
+				),
+				array(
+					'path' => 'storage_tank_tetrapak',
+					'label' => 'Storage Tank Tetrapak',
 					'icon' => ''
 				),
 				array(
@@ -129,6 +134,12 @@ class Menu
 			'path' => 'audit_log',
 			'label' => 'Audit Trail',
 			'icon' => '<i class="fa fa-history"></i>'
+		),
+
+		array(
+			'path' => 'master_part',
+			'label' => 'Master Data Part',
+			'icon' => '<i class="fa fa-wrench"></i>'
 		),
 
 		array(

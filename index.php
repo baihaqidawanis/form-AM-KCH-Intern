@@ -1,6 +1,19 @@
 <?php
+	// Pengerasan cookie sesi -- WAJIB di-set SEBELUM session_start().
+	// httponly : cookie sesi gak bisa dibaca JavaScript, jadi kalau suatu saat
+	//            ada celah XSS yang lolos, sesi login gak ikut kebajak.
+	// strict   : PHP nolak session id karangan dari luar (anti session fixation).
+	// samesite : cookie gak ikut terkirim di request lintas-situs (lapis tambahan CSRF).
+	// secure   : cuma diaktifkan kalau diakses lewat HTTPS -- kalau dipaksa ON di
+	//            server HTTP (kondisi sekarang), user malah gak akan bisa login.
+	ini_set('session.use_strict_mode', 1);
+	session_set_cookie_params(array(
+		'httponly' => true,
+		'samesite' => 'Lax',
+		'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+	));
 	session_start(); // Start or Resume Session
-	
+
 	require('config.php');
 	
 	//composer auto load libraries

@@ -6,121 +6,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'sealing_horizontal' => 'sealing horizontal',
-  'sealing_vertikal' => 'sealing vertikal',
-  'jalur_konveyor_sachet' => 'jalur konveyor sachet',
-  'collecting_plate_seluncuran_sachet' => 'collecting plate seluncuran sachet',
-  'roller_foil_film' => 'roller foil film',
-  'bearing_sealing' => 'bearing sealing',
-  'bearing_pisau_sachet_cutting' => 'bearing pisau sachet cutting',
-  'final_cutting' => 'final cutting',
-  'per_transmisi_sealing' => 'per transmisi sealing',
-  'filling_pump' => 'filling pump',
-  'bantalan_sealing' => 'bantalan sealing',
-  'isolasi_tahan_panas' => 'isolasi tahan panas'
-);
-
-$part_details = array(
-  'sealing_horizontal' => array(
-    'metode' => 'Dilap, disteam',
-    'alat' => 'sikat tembaga, Steam uap',
-    'standard' => 'bersih tidak ada sisa bulk/kerak',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'sealing_vertikal' => array(
-    'metode' => 'Dilap, disteam',
-    'alat' => 'sikat tembaga, Steam uap',
-    'standard' => 'bersih tidak ada sisa bulk/kerak',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'jalur_konveyor_sachet' => array(
-    'metode' => 'Dilap, disemprot',
-    'alat' => 'lap bebas serat, Compressed Air',
-    'standard' => 'bersih tidak ada sisa bulk/kerak',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'collecting_plate_seluncuran_sachet' => array(
-    'metode' => 'dilap',
-    'alat' => 'lap bebas serat/Wypall',
-    'standard' => 'bersih tidak ada sisa bulk/kerak',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'roller_foil_film' => array(
-    'metode' => 'dilap',
-    'alat' => 'lap bebas serat/Wypall',
-    'standard' => 'bersih tidak ada debu',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'bearing_sealing' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Kluber Lubrication',
-    'standard' => 'Terlumasi',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'bearing_pisau_sachet_cutting' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Kluber Lubrication',
-    'standard' => 'Terlumasi',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'final_cutting' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Kluber Lubrication',
-    'standard' => 'Terlumasi',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'per_transmisi_sealing' => array(
-    'metode' => 'cek visual',
-    'alat' => 'Visual Control',
-    'standard' => 'tidak putus',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'filling_pump' => array(
-    'metode' => 'Penggantian air',
-    'alat' => 'Visual Control',
-    'standard' => 'Air tidak keruh',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'bantalan_sealing' => array(
-    'metode' => 'cek visual',
-    'alat' => 'Visual Control',
-    'standard' => 'bantalan utuh/tidak sobek',
-    'durasi' => "1'",
-    'pelaksanaan' => '2 Mingguan (Setiap Senin Shift 1)'
-  ),
-  'isolasi_tahan_panas' => array(
-    'metode' => 'cek visual',
-    'alat' => 'Visual Control',
-    'standard' => 'bersih tidak ada sisa bulk/kerak, tidak sobek',
-    'durasi' => "6'",
-    'pelaksanaan' => '2 Mingguan (Setiap Senin Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'sealing_horizontal', 'sealing_vertikal', 'jalur_konveyor_sachet',
-    'collecting_plate_seluncuran_sachet', 'roller_foil_film'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'bearing_sealing', 'bearing_pisau_sachet_cutting', 'final_cutting'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'per_transmisi_sealing', 'filling_pump', 'bantalan_sealing', 'isolasi_tahan_panas'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'joeya')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'joeya-add-' . random_str();
 ?>
@@ -173,16 +72,15 @@ $page_element_id = 'joeya-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/joeya/joeya ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

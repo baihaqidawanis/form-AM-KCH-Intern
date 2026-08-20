@@ -5,32 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'konveyor_belt' => 'konveyor belt',
-  'flexible_konveyor_u' => 'flexible konveyor u',
-  'suction_cup' => 'suction cup',
-  'pocket_pembawa_tube_dan_pack' => 'pocket pembawa tube dan pack',
-  'shaft_dan_bushing_pusher' => 'shaft dan bushing pusher',
-  'bearing_rantai_tube_cam_pusher' => 'bearing rantai tube cam pusher',
-  'rantai_penggerak_utama_pocket_tube_pack' => 'rantai penggerak utama pocket tube pack',
-  'regulator_angin_utama' => 'regulator angin utama',
-  'regulator_angin_chamber_hot_melt' => 'regulator angin chamber hot melt',
-  'sensor_tube_pack_nozzle_lem' => 'sensor tube pack nozzle lem',
-  'pengecekan_tombol_emergency' => 'pengecekan tombol emergency'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'konveyor_belt', 'flexible_konveyor_u', 'suction_cup', 'pocket_pembawa_tube_dan_pack'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'shaft_dan_bushing_pusher', 'bearing_rantai_tube_cam_pusher', 'rantai_penggerak_utama_pocket_tube_pack'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'regulator_angin_utama', 'regulator_angin_chamber_hot_melt', 'sensor_tube_pack_nozzle_lem', 'pengecekan_tombol_emergency'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'jihcheng')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'jihcheng-edit-data-' . random_str();
 $rec_id = !empty($data['id_jihcheng']) ? $data['id_jihcheng'] : null;
@@ -68,8 +54,7 @@ $rec_id = !empty($data['id_jihcheng']) ? $data['id_jihcheng'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/jihcheng/jihcheng ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

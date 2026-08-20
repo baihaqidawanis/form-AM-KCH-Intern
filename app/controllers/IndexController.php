@@ -159,9 +159,14 @@ class IndexController extends BaseController
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$password_text = $modeldata['password'];
+			//NIK di-uppercase biar gak ada 2 akun beda cuma gara-gara huruf besar/kecil
+			//(NIK alfanumerik sekarang, beda sama waktu masih digit-murni yang gak ada isu case).
+			if (!empty($modeldata['username'])) {
+				$modeldata['username'] = $this->modeldata['username'] = strtoupper($modeldata['username']);
+			}
 			//URS: username akun baru wajib format NIK, password wajib kompleksitas tertentu
 			if (!empty($modeldata['username']) && !is_valid_nik_username($modeldata['username'])) {
-				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan), angka saja, tepat 8 digit.";
+				$this->view->page_error[] = "Username harus berupa NIK (Nomor Induk Karyawan): huruf dan/atau angka, maksimal 11 karakter.";
 			}
 			if (!empty($password_text) && !is_valid_password_complexity($password_text)) {
 				$this->view->page_error[] = "Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.";
@@ -169,6 +174,10 @@ class IndexController extends BaseController
 			//update modeldata with the password hash
 			$modeldata['password'] = $this->modeldata['password'] = password_hash($password_text, PASSWORD_DEFAULT);
 			$modeldata['account_status'] = "Pending";
+			//Self-register selalu jadi Staff/Operator (role_id 4) -- paksa di server,
+			//jangan percaya nilai user_role_id dari form (hidden input bisa dimanipulasi
+			//lewat devtools/curl). Naikkan role dilakukan superadmin manual lewat Users.
+			$modeldata['user_role_id'] = $this->modeldata['user_role_id'] = 4;
 			//Check if Duplicate Record Already Exit In The Database
 			$db->where("email", $modeldata['email']);
 			if ($db->has($tablename)) {

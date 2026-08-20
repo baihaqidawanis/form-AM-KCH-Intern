@@ -6,7 +6,7 @@ $csrf_token = Csrf::$token;
 $current_page = $this->set_current_page_link();
 ?>
 <section class="page">
-  <div class="bg-light p-3 mb-3"><div class="container"><h4>View AM Storage Tank</h4></div></div>
+  <div class="bg-light p-3 mb-3"><div class="container"><h4>View AM Storage Tank Silverson</h4></div></div>
   <div class="container">
     <?php $this::display_page_errors(); ?>
     <?php if (!empty($data['id_storage_tank'])) { ?>
@@ -16,7 +16,7 @@ $current_page = $this->set_current_page_link();
           <table class="table table-bordered">
             <tr><th width="25%">Nama Mesin</th><td><?php echo $data['nm_mesin'] ?: '-'; ?></td></tr>
             <tr><th>Tanggal</th><td><?php echo format_am_date($data["created_at"]); ?></td></tr>
-            <tr><th>Pembuat</th><td><?php echo $data['user_create']; ?></td></tr>
+            <tr><th>Pembuat</th><td><?php echo $data['user_create']; ?></td></tr><tr><th>User Approve</th><td><?php echo $data['user_approve'] ?: '-'; ?></td></tr><tr><th>Approval</th><td><?php echo $data['approval'] ?: '-'; ?></td></tr><tr><th>Tanggal Approve</th><td><?php echo $data['tanggal_perubahan'] ? format_am_date($data['tanggal_perubahan']) : '-'; ?></td></tr><tr><th>User Update</th><td><?php echo $data['user_perubah'] ?: '-'; ?></td></tr><tr><th>Tanggal Update</th><td><?php echo $data['updated_at'] ? format_am_date($data['updated_at']) : '-'; ?></td></tr><tr><th>Perubahan</th><td><?php echo nl2br(htmlspecialchars($data['perubahan'] ?: '-')); ?></td></tr>
           </table>
           <div class="table-responsive">
             <table class="table table-bordered">

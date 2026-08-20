@@ -5,30 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'conveyor_produk' => 'conveyor produk',
-  'roller_opp' => 'roller opp',
-  'rantai_opp' => 'rantai opp',
-  'bearing_break_opp' => 'bearing break opp',
-  'rantai_motor_utama_cam' => 'rantai motor utama cam',
-  'as_pendorong_pack' => 'as pendorong pack',
-  'jalur_compressed_air' => 'jalur compressed air',
-  'air_regulator' => 'air regulator',
-  'sensor_produk_opp_pack' => 'sensor produk opp pack'
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'conveyor_produk', 'roller_opp'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'rantai_opp', 'bearing_break_opp', 'rantai_motor_utama_cam', 'as_pendorong_pack'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'jalur_compressed_air', 'air_regulator', 'sensor_produk_opp_pack'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'chimei')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'chimei-edit-data-' . random_str();
 $rec_id = !empty($data['id_chimei']) ? $data['id_chimei'] : null;
@@ -66,8 +54,7 @@ $rec_id = !empty($data['id_chimei']) ? $data['id_chimei'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/chimei/chimei ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">

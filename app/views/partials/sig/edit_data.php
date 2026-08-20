@@ -5,30 +5,18 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-$image_names = array(
-  'sealing_cross_dan_vertikal' => 'sealing cross',
-  'guarding_akrilik' => 'akrilik',
-  'jalur_conveyor' => 'conveyor',
-  'vacuum_hood' => 'vacuum hood',
-  'antistatic' => 'antistatic',
-  'tekanan_angin_suplai' => 'pressure',
-  'jarak_slider_dengan_nozzle' => 'slider nozzle',
-  'rol_penarik_sachet_dan_foil_slitting_shim' => 'roll penarik &slitting shim',
-  'pisau_belah' => 'pisau belah',
-  'modul_pisau' => 'modul pisau',
-  'inkjet' => 'inkjet',
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'sealing_cross_dan_vertikal', 'guarding_akrilik', 'jalur_conveyor', 'vacuum_hood', 'antistatic'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'tekanan_angin_suplai', 'jarak_slider_dengan_nozzle', 'rol_penarik_sachet_dan_foil_slitting_shim',
-    'pisau_belah', 'modul_pisau', 'inkjet'
-  )
-);
-
+// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'sig')->orderBy('urutan', 'ASC')->get('master_part');
+$image_paths = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $image_paths[$field] = $row['image_path'];
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'sig-edit-data-' . random_str();
 $rec_id = !empty($data['id_sig']) ? $data['id_sig'] : null;
@@ -66,8 +54,7 @@ $rec_id = !empty($data['id_sig']) ? $data['id_sig'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-              $image_path = 'assets/images/sig/sig ' . $img_key . '.png';
+              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
               $kondisi_options = ($field === 'antistatic') ? Menu::$antistatic : Menu::$Kondisi_Harian;
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">

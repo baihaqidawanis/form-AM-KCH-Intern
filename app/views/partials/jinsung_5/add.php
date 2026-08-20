@@ -6,88 +6,20 @@ $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $machine_options = $model->sig_Line_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'belt_conveyor_dan_pusher_pack' => 'belt conveyor dan pusher pack',
-  'pocket_pembawa_sachet' => 'pocket pembawa sachet',
-  'shaft_bushing_pusher_piston' => 'shaft bushing pusher piston',
-  'rantai_penggerak_utama_cartoning' => 'rantai penggerak utama cartoning',
-  'regulator_angin_conveyor_cartoning_check_weigher' => 'regulator angin conveyor cartoning check weigher',
-  'regulator_angin_chamber_hot_melt' => 'regulator angin chamber hot melt',
-  'sensor_sachet_pack_nozzle' => 'sensor sachet pack nozzle',
-  'timing_belt_conveyor' => 'timing belt conveyor'
-);
-
-$part_details = array(
-  'belt_conveyor_dan_pusher_pack' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Kuas/Quiltec dan Air',
-    'standard' => 'Bersih dari kotoran',
-    'durasi' => "7'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'pocket_pembawa_sachet' => array(
-    'metode' => 'Dijog 1 putaran dan dilap',
-    'alat' => 'Kuas/Quiltec + Air Panas',
-    'standard' => 'Bersih dan Tidak Lengket',
-    'durasi' => "30'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'shaft_bushing_pusher_piston' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Terlumasi merata',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'rantai_penggerak_utama_cartoning' => array(
-    'metode' => 'Dilumasi',
-    'alat' => 'Grease',
-    'standard' => 'Terlumasi merata',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Mingguan (Setiap Senin Shift 1)'
-  ),
-  'regulator_angin_conveyor_cartoning_check_weigher' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tekanan minimal 4 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'regulator_angin_chamber_hot_melt' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tekanan 1.5 - 3 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'sensor_sachet_pack_nozzle' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Sensor berfungsi',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'timing_belt_conveyor' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak rusak',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'belt_conveyor_dan_pusher_pack', 'pocket_pembawa_sachet'
-  ),
-  'STANDAR PELUMASAN (LUBRICATING)' => array(
-    'shaft_bushing_pusher_piston', 'rantai_penggerak_utama_cartoning'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'regulator_angin_conveyor_cartoning_check_weigher', 'regulator_angin_chamber_hot_melt', 'sensor_sachet_pack_nozzle', 'timing_belt_conveyor'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'jinsung_5')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'jinsung_5-add-' . random_str();
 ?>
@@ -140,16 +72,15 @@ $page_element_id = 'jinsung_5-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/jinsung_5/jinsung 5 ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

@@ -59,12 +59,12 @@ $redirect_to = $this->redirect_to;
                                         <div class="form-group ">
                                             <div class="row">
                                                 <div class="col-sm-4">
-                                                    <label class="control-label" for="username">Username <span class="text-danger">*</span></label>
+                                                    <label class="control-label" for="username">NIK <span class="text-danger">*</span></label>
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="NIK (angka saja, 8 digit)" pattern="[0-9]{8}" minlength="8" maxlength="8" required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
-                                                            <small class="form-text text-muted">Username wajib NIK (Nomor Induk Karyawan): angka saja, tepat 8 digit.</small>
+                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="NIK (huruf/angka, maks 11 karakter)" pattern="[A-Za-z0-9]{1,11}" maxlength="11" required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
+                                                            <small class="form-text text-muted">NIK (Nomor Induk Karyawan): huruf dan/atau angka, maksimal 11 karakter.</small>
                                                             <div class="check-status"></div> 
                                                         </div>
                                                     </div>

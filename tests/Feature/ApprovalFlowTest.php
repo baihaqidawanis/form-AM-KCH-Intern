@@ -58,6 +58,50 @@ class ApprovalFlowTest extends TestCase
         }
     }
 
+    /**
+     * Regresi 20 Agustus 2026: edit_data() (operator koreksi data sendiri) dulu
+     * gak pernah re-evaluate status approval sama sekali -- record yang OK
+     * semua (auto-approved) diedit jadi ada NOK tetap nampilin "Approved",
+     * padahal harusnya balik butuh review manual. Sebaliknya, record yang
+     * NOK dikoreksi jadi OK semua harusnya auto-approve lagi kayak submission
+     * baru, bukan nyangkut status lama.
+     */
+    public function test_edit_data_ubah_ke_nok_reset_approval_ke_pending(): void
+    {
+        $client = (new ApiClient())->loginAs('administrator');
+        $addPage = $client->get(self::MACHINE . '/add');
+        $payload = FormScraper::buildAllOkPayload((string) $addPage->getBody());
+        $submit = $client->postWithCsrf(self::MACHINE . '/add', $payload);
+        $id = FormScraper::firstViewId((string) $submit->getBody(), self::MACHINE);
+        $this->assertNotNull($id, 'Gagal bikin record all-OK buat setup test');
+
+        try {
+            $listBeforeEdit = (string) $client->get(self::MACHINE)->getBody();
+            $this->assertStringContainsString('Approved', $listBeforeEdit, 'Record all-OK harusnya auto-approved dulu sebelum diedit');
+
+            $editDataPage = $client->get(self::MACHINE . "/edit_data/$id");
+            $nokField = FormScraper::partFieldNames((string) $editDataPage->getBody())[0];
+            $editPayload = FormScraper::buildOneNokPayload((string) $editDataPage->getBody(), $nokField, 'Test PHPUnit re-approval');
+            $editPayload['perubahan'] = 'Test ubah jadi NOK - regresi re-approval';
+            $client->postWithCsrf(self::MACHINE . "/edit_data/$id", $editPayload);
+
+            $viewAfter = (string) $client->get(self::MACHINE . "/view/$id")->getBody();
+            $this->assertStringNotContainsString('<td>Approved</td>', $viewAfter, 'Approval harusnya di-reset ke pending abis ada part jadi NOK, bukan tetap "Approved"');
+
+            // Koreksi lagi balik ke semua OK -> harus auto-approve ulang.
+            $editDataPage2 = $client->get(self::MACHINE . "/edit_data/$id");
+            $editPayload2 = FormScraper::buildAllOkPayload((string) $editDataPage2->getBody());
+            $editPayload2['perubahan'] = 'Test balikin ke OK - regresi re-approval';
+            $client->postWithCsrf(self::MACHINE . "/edit_data/$id", $editPayload2);
+
+            $viewAfter2 = (string) $client->get(self::MACHINE . "/view/$id")->getBody();
+            $this->assertStringContainsString('<td>Approved</td>', $viewAfter2, 'Balik ke semua OK harusnya auto-approve lagi otomatis');
+            $this->assertStringContainsString('<td>System</td>', $viewAfter2, 'User Approve harusnya "System" lagi pas auto-approve ulang');
+        } finally {
+            $client->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
+        }
+    }
+
     private function createNokRecord(ApiClient $client): string
     {
         $addPage = $client->get(self::MACHINE . '/add');

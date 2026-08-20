@@ -6,136 +6,20 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'conveyor' => 'conveyor',
-  'cutting_unit' => 'cutting unit',
-  'neck_sealing_unit' => 'neck sealing unit',
-  'nozzle' => 'nozzle',
-  'tekanan_angin' => 'tekanan angin',
-  'temperature_air_pendingin' => 'temperature air pendingin',
-  'piston_valves_dan_selang_pengisian' => 'piston valves dan selang pengisian',
-  'buffer_roller_dispenser' => 'buffer roller dispenser',
-  'sensory_eyemark_sensor_redaksi' => 'sensory eyemark sensor redaksi',
-  'cylinder_grip' => 'cylinder grip',
-  'timing_belt_pengisian' => 'timing belt pengisian',
-  'filter_airfan' => 'filter airfan',
-  'guide_nozzle' => 'guide nozzle'
-);
-
-$part_details = array(
-  'conveyor' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Quiltec',
-    'standard' => 'Bersih',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'cutting_unit' => array(
-    'metode' => 'Disemprot',
-    'alat' => 'Botol Semprot dan Angin Bertekanan',
-    'standard' => 'Bersih dari sisa potongan foil',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'neck_sealing_unit' => array(
-    'metode' => 'Diambil',
-    'alat' => 'Pinset',
-    'standard' => 'Tidak ada sisa foil dan lem menempel',
-    'durasi' => "5'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'nozzle' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Quiltec',
-    'standard' => 'Bersih dan tidak berkerak',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'tekanan_angin' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Minimal 6 bar',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'temperature_air_pendingin' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Suhu < 14 °C',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'piston_valves_dan_selang_pengisian' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak bocor, ataupun kendor',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'buffer_roller_dispenser' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Dapat berputar dengan lancar/tidak seret',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'sensory_eyemark_sensor_redaksi' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Sensor berfungsi',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'cylinder_grip' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control & Manual Jog',
-    'standard' => 'Gripper tidak slip',
-    'durasi' => "3'",
-    'pelaksanaan' => 'Harian (Setiap Awal Shift 1)'
-  ),
-  'timing_belt_pengisian' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada retakan',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan'
-  ),
-  'filter_airfan' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Bersih',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Mingguan'
-  ),
-  'guide_nozzle' => array(
-    'metode' => 'Tes Fungsi',
-    'alat' => 'Visual Control',
-    'standard' => 'Guide nozzle pastikan lurus dengan nozzle',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Mingguan'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'conveyor',
-    'cutting_unit',
-    'neck_sealing_unit',
-    'nozzle'
-  ),
-  'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)' => array(
-    'tekanan_angin',
-    'temperature_air_pendingin',
-    'piston_valves_dan_selang_pengisian',
-    'buffer_roller_dispenser',
-    'sensory_eyemark_sensor_redaksi',
-    'cylinder_grip',
-    'timing_belt_pengisian',
-    'filter_airfan',
-    'guide_nozzle'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'unifill_b')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'unifill_b-add-' . random_str();
 ?>
@@ -202,16 +86,15 @@ $page_element_id = 'unifill_b-add-' . random_str();
                   if (!isset($parts[$field]))
                     continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode' => '', 'alat' => '', 'standard' => '', 'durasi' => '', 'pelaksanaan' => '');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/unifill/unifill ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode' => '', 'alat' => '', 'standard' => '', 'durasi' => '', 'pelaksanaan' => '', 'image_path' => '', 'highlight' => '');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                   ?>

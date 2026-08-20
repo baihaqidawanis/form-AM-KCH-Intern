@@ -751,6 +751,30 @@ $(document).on('click', '.btn-toggle-password', function(){
 	}
 });
 /**
+ * form register -- dropdown Mesin otomatis nyesuain pilihan Area (cuma
+ * nampilin mesin yang satu kategori, "Semua Mesin" selalu kelihatan).
+ * No-op di halaman lain karena #ctrl-area/#ctrl-mesin cuma ada di register.
+ */
+$(document).on('change', '#ctrl-area', function(){
+	var selectedArea = $(this).val();
+	var $mesinSelect = $('#ctrl-mesin');
+	var $options = $mesinSelect.find('option[data-area]');
+	$options.each(function(){
+		var optionArea = $(this).attr('data-area');
+		var matches = (selectedArea === 'Semua Area' || optionArea === '' || optionArea === selectedArea);
+		$(this).toggle(matches);
+	});
+	var $selectedOption = $mesinSelect.find('option:selected');
+	if ($selectedOption.is(':hidden')) {
+		$mesinSelect.val('');
+	}
+});
+// Kalau halaman re-render abis gagal validasi (area udah keisi dari submit
+// sebelumnya), jalanin filter-nya juga pas load, bukan nunggu user ganti area.
+if ($('#ctrl-area').val()) {
+	$('#ctrl-area').trigger('change');
+}
+/**
  * replace failed images with better looking image
  */
 $(window).bind('load', function(){

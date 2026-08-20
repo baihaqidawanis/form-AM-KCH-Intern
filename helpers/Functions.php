@@ -476,8 +476,10 @@ function format_am_date($date)
 
 /**
  * URS: username akun baru wajib format NIK. NIK di sini = Nomor Induk
- * Karyawan pabrik (bukan NIK KTP 16 digit) -- dikonfirmasi user: full angka,
- * tepat 8 digit. Cuma dipakai buat akun BARU (register/add user), gak
+ * Karyawan pabrik (bukan NIK KTP 16 digit) -- dikonfirmasi user: formatnya
+ * variatif (1-3 huruf prefix + 7-8 digit angka), jadi divalidasi sebagai
+ * alfanumerik maks 11 karakter, bukan panjang/pola pasti. Cuma dipakai buat
+ * akun BARU (register/add user), gak
  * diterapin retroaktif ke akun lama yang usernamenya bukan format ini (misal
  * 'superadmin', atau akun dummy testing kayak 'MANAGE01') -- validasi ini
  * cuma jalan di add(), gak pernah di-recheck pas login/edit akun existing.
@@ -485,7 +487,25 @@ function format_am_date($date)
  */
 function is_valid_nik_username($username)
 {
-	return (bool) preg_match('/^[0-9]{8}$/', (string) $username);
+	// NIK di pabrik ini formatnya variatif (1-3 huruf prefix + 7-8 digit angka),
+	// jadi gak dipatok panjang pasti/pola pasti -- cukup alfanumerik, maks 11 karakter.
+	return (bool) preg_match('/^[A-Za-z0-9]{1,11}$/', (string) $username);
+}
+
+/**
+ * Cek apakah id_user tertentu adalah SATU-SATUNYA Super Admin (kolom
+ * users.is_super_admin, dijaga unique di level DB -- lihat migration
+ * 2026-08-20_add_super_admin_protection.sql). Dipakai buat nolak percobaan
+ * Administrator lain ubah role/status/hapus akun Super Admin ini -- sesama
+ * Administrator biasa (bukan Super Admin) tetap bebas saling kelola.
+ * @return bool
+ */
+function is_super_admin_user($id_user)
+{
+	if (empty($id_user)) { return false; }
+	$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+	$db->where('id_user', $id_user);
+	return (bool) $db->getValue('users', 'is_super_admin');
 }
 
 /**

@@ -5,84 +5,31 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
-$image_names = array(
-  'body_storage_tank' => 'body storage tank',
-  'jalur_pipa_storage_tank' => 'jalur pipa storage tank',
-  'motor_dan_gearbox' => 'motor dan gearbox',
-  'baling_baling_agitator' => 'baling baling agitator',
-  'seal_mainhole' => 'seal mainhole',
-  'pengunci_tutup_mainhole' => 'pengunci tutup mainhole',
-  'clamp_ferrule' => 'clamp ferrule'
-);
+// 15 unit fisik Storage Tank Silverson (ST Liq No 1..15), tiap unit punya
+// nomor seri sendiri -- lihat database/migrations/2026-08-20_add_storage_tank_units.sql
+$unit_options = $model->GetModel()->where('nama_mesin', 'ST Liq No%', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
 
-$part_details = array(
-  'body_storage_tank' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "15'",
-    'pelaksanaan' => 'Bulanan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'jalur_pipa_storage_tank' => array(
-    'metode' => 'Dilap',
-    'alat' => 'Wypall dan air',
-    'standard' => 'Bagian luar bersih dari kotoran',
-    'durasi' => "10'",
-    'pelaksanaan' => 'Bulanan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'motor_dan_gearbox' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada kebocoran oli',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'baling_baling_agitator' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak ada kebocoran oli',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'seal_mainhole' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak sobek',
-    'durasi' => "1'",
-    'pelaksanaan' => 'Mingguan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'pengunci_tutup_mainhole' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak kendur, bisa tertutup rapat',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap awal Shift 1) note: tidak mengikat hari'
-  ),
-  'clamp_ferrule' => array(
-    'metode' => 'Dicek',
-    'alat' => 'Visual Control',
-    'standard' => 'Tidak kendur, bisa tertutup rapat',
-    'durasi' => "2'",
-    'pelaksanaan' => 'Mingguan (Setiap awal Shift 1) note: tidak mengikat hari'
-  )
-);
-
-$sections = array(
-  'STANDAR PEMBERSIHAN (CLEANING)' => array(
-    'body_storage_tank', 'jalur_pipa_storage_tank'
-  ),
-  'STANDAR PENGECEKAN (INSPECTION)' => array(
-    'motor_dan_gearbox', 'baling_baling_agitator', 'seal_mainhole', 'pengunci_tutup_mainhole', 'clamp_ferrule'
-  )
-);
-
+// Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
+// master data di tabel master_part (CRUD-able admin lewat menu Master Data
+// Part), bukan hardcoded array lagi -- lihat Master_partController.
+$master_db = new SharedController;
+$part_rows = $master_db->GetModel()->where('machine_key', 'storage_tank')->orderBy('urutan', 'ASC')->get('master_part');
+$part_details = array();
+$sections = array();
+foreach ($part_rows as $row) {
+  $field = $row['field_name'];
+  $part_details[$field] = $row;
+  $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
+  if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
+  $sections[$section_title][] = $field;
+}
 $csrf_token = Csrf::$token;
 $page_element_id = 'storage_tank-add-' . random_str();
 ?>
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Add Autonomous Maintenance Storage Tank</h4>
+      <h4 class="record-title">Add Autonomous Maintenance Storage Tank Silverson</h4>
       <div>No: CR-PR-PR-1203.00 (25 Okt 2021)</div>
     </div>
   </div>
@@ -114,7 +61,15 @@ $page_element_id = 'storage_tank-add-' . random_str();
           <?php $this::display_page_errors(); ?>
           <form id="storage_tank-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("storage_tank/add?csrf_token=$csrf_token") ?>" method="post">
-            <input type="hidden" name="mesin" value="45">
+            <div class="form-group col-md-6 px-0">
+              <label class="d-block" for="ctrl-mesin">Mesin <span class="text-danger">*</span></label>
+              <select required class="custom-select" id="ctrl-mesin" name="mesin">
+                <option value="" disabled selected>Pilih ...</option>
+                <?php foreach ($unit_options as $u) { ?>
+                  <option value="<?php echo $u['id']; ?>"><?php echo htmlspecialchars($u['nama_mesin']); ?></option>
+                <?php } ?>
+              </select>
+            </div>
 
             <?php foreach ($sections as $section_title => $section_fields) { ?>
               <div class="section-block mb-4">
@@ -128,16 +83,15 @@ $page_element_id = 'storage_tank-add-' . random_str();
                 <?php foreach ($section_fields as $field) {
                   if (!isset($parts[$field])) continue;
                   $label = $parts[$field];
-                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'');
-                  $img_key = isset($image_names[$field]) ? $image_names[$field] : str_replace('_', ' ', $field);
-                  $image_path = 'assets/images/storage_tank/storage_tank ' . $img_key . '.png';
+                  $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'', 'alat'=>'', 'standard'=>'', 'durasi'=>'', 'pelaksanaan'=>'', 'image_path'=>'', 'highlight'=>'');
+                  $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
 
-                  // Determine row highlight background color based on Pelaksanaan value
-                  $pelaksanaan_lower = strtolower($info['pelaksanaan']);
+                  // Warna highlight baris sekarang eksplisit dari kolom master_part.highlight
+                  // (diisi admin lewat dropdown), bukan nebak dari teks Pelaksanaan lagi.
                   $pelaksanaan_bg = '';
-                  if (strpos($pelaksanaan_lower, 'mingguan') !== false && strpos($pelaksanaan_lower, '2 mingguan') === false) {
+                  if ($info['highlight'] === 'mingguan') {
                     $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);';
-                  } elseif (strpos($pelaksanaan_lower, 'bulanan') !== false || strpos($pelaksanaan_lower, '2 mingguan') !== false) {
+                  } elseif ($info['highlight'] === 'bulanan') {
                     $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);';
                   }
                 ?>

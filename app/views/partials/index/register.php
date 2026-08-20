@@ -67,12 +67,12 @@ $redirect_to = $this->redirect_to;
                                         <div class="form-group ">
                                             <div class="row">
                                                 <div class="col-sm-4">
-                                                    <label class="control-label" for="username">Username <span class="text-danger">*</span></label>
+                                                    <label class="control-label" for="username">NIK <span class="text-danger">*</span></label>
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="NIK (angka saja, 8 digit)" pattern="[0-9]{8}" minlength="8" maxlength="8" required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
-                                                            <small class="form-text text-muted">Username wajib NIK (Nomor Induk Karyawan): angka saja, tepat 8 digit.</small>
+                                                        <input id="ctrl-username"  value="<?php  echo $this->set_field_value('username',""); ?>" type="text" placeholder="NIK (huruf/angka, maks 11 karakter)" pattern="[A-Za-z0-9]{1,11}" maxlength="11" required="" name="username"  data-url="api/json/users_username_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
+                                                            <small class="form-text text-muted">NIK (Nomor Induk Karyawan): huruf dan/atau angka, maksimal 11 karakter.</small>
                                                             <div class="check-status"></div>
                                                         </div>
                                                     </div>
@@ -85,7 +85,14 @@ $redirect_to = $this->redirect_to;
                                                     </div>
                                                     <div class="col-sm-8">
                                                         <div class="">
-                                                            <input id="ctrl-area"  value="<?php  echo $this->set_field_value('area',""); ?>" type="text" placeholder="Enter Area"  required="" name="area"  class="form-control " />
+                                                            <select required id="ctrl-area" name="area" class="custom-select">
+                                                                <option value="" disabled selected>Pilih area ...</option>
+                                                                <?php foreach (array('Compounding', 'Filling', 'Packaging', 'Semua Area') as $area_option) {
+                                                                  $selected = $this->set_field_selected('area', $area_option, "");
+                                                                ?>
+                                                                <option <?php echo $selected; ?> value="<?php echo $area_option; ?>"><?php echo $area_option; ?></option>
+                                                                <?php } ?>
+                                                            </select>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -97,7 +104,34 @@ $redirect_to = $this->redirect_to;
                                                         </div>
                                                         <div class="col-sm-8">
                                                             <div class="">
-                                                                <input id="ctrl-mesin"  value="<?php  echo $this->set_field_value('mesin',""); ?>" type="text" placeholder="Enter Mesin"  required="" name="mesin"  class="form-control " />
+                                                                <?php
+                                                                $mesin_options = $comp_model->sig_Line_option_list();
+                                                                // Prefix nama mesin per kategori, sesuai pengelompokan submenu di helpers/Menu.php.
+                                                                $area_machine_prefixes = array(
+                                                                  'Compounding' => array('cosmec', 'fbd jaw chuan', 'fbd glatt', 'supermixer', 'storage tank', 'mixing tank'),
+                                                                  'Filling' => array('joeya', 'sig', 'illapak', 'unifill'),
+                                                                  'Packaging' => array('chimei', 'temach', 'jihcheng', 'injekt kemas', 'best pack', 'jinsung'),
+                                                                );
+                                                                $mesin_area_of = function ($label) use ($area_machine_prefixes) {
+                                                                  foreach ($area_machine_prefixes as $area => $prefixes) {
+                                                                    foreach ($prefixes as $prefix) {
+                                                                      if (stripos($label, $prefix) !== false) { return $area; }
+                                                                    }
+                                                                  }
+                                                                  return '';
+                                                                };
+                                                                ?>
+                                                                <select required id="ctrl-mesin" name="mesin" class="custom-select">
+                                                                    <option value="" disabled selected>Pilih nama mesin ...</option>
+                                                                    <?php foreach ($mesin_options as $option) {
+                                                                      $selected = $this->set_field_selected('mesin', $option['label'], "");
+                                                                    ?>
+                                                                    <option data-area="<?php echo $mesin_area_of($option['label']); ?>" <?php echo $selected; ?> value="<?php echo $option['label']; ?>"><?php echo $option['label']; ?></option>
+                                                                    <?php }
+                                                                    $selected_all = $this->set_field_selected('mesin', 'Semua Mesin', "");
+                                                                    ?>
+                                                                    <option data-area="" <?php echo $selected_all; ?> value="Semua Mesin">Semua Mesin</option>
+                                                                </select>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -143,35 +177,11 @@ $redirect_to = $this->redirect_to;
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="form-group ">
-                                                            <div class="row">
-                                                                <div class="col-sm-4">
-                                                                    <label class="control-label" for="user_role_id">User Role Id <span class="text-danger">*</span></label>
-                                                                </div>
-                                                                <div class="col-sm-8">
-                                                                    <div class="">
-                                                                        <select required=""  id="ctrl-user_role_id" name="user_role_id"  placeholder="Select a value ..."    class="custom-select" >
-                                                                            <option value="">Select a value ...</option>
-                                                                            <?php 
-                                                                            $user_role_id_options = $comp_model -> users_user_role_id_option_list();
-                                                                            if(!empty($user_role_id_options)){
-                                                                            foreach($user_role_id_options as $option){
-                                                                            $value = (!empty($option['value']) ? $option['value'] : null);
-                                                                            $label = (!empty($option['label']) ? $option['label'] : $value);
-                                                                            $selected = $this->set_field_selected('user_role_id',$value, "");
-                                                                            ?>
-                                                                            <option <?php echo $selected; ?> value="<?php echo $value; ?>">
-                                                                                <?php echo $label; ?>
-                                                                            </option>
-                                                                            <?php
-                                                                            }
-                                                                            }
-                                                                            ?>
-                                                                        </select>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <!-- Role gak dipilih user sendiri -- akun baru selalu didaftarkan sebagai
+                                                             Staff/Operator (role_id 4). Kalau butuh role lebih tinggi (Manager/
+                                                             Supervisor/Administrator), superadmin yang naikkan manual lewat
+                                                             menu Users -> Edit setelah akun diaktivasi. -->
+                                                        <input type="hidden" name="user_role_id" value="4">
                                                         <div class="form-group ">
                                                             <div class="row">
                                                                 <div class="col-sm-4">
