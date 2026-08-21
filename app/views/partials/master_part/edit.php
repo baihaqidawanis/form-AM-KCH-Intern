@@ -6,6 +6,9 @@ $highlight_options = Master_partController::$highlight_options;
 $rec_id = isset($data['id']) ? $data['id'] : null;
 //Balik ke list mesin part ini, bukan ke mesin default.
 $back_url = !empty($this->back_url) ? $this->back_url : 'master_part';
+//Section yang udah ada buat mesin part ini -- dropdown "Section" milih dari sini.
+$sections_by_machine = !empty($this->sections_by_machine) ? $this->sections_by_machine : array();
+$existing_sections = isset($sections_by_machine[$data['machine_key']]) ? $sections_by_machine[$data['machine_key']] : array();
 ?>
 <section class="page">
   <div class="bg-light p-3 mb-3">
@@ -37,7 +40,14 @@ $back_url = !empty($this->back_url) ? $this->back_url : 'master_part';
             </div>
             <div class="form-group">
               <label>Section</label>
-              <input type="text" name="section" class="form-control" value="<?php echo $data['section']; ?>" />
+              <select id="ctrl-section-picker" class="custom-select mb-2">
+                <option value="">-- Pilih section yang sudah ada, atau ketik baru di bawah --</option>
+                <?php foreach ($existing_sections as $s) { ?>
+                  <option value="<?php echo htmlspecialchars($s); ?>"><?php echo htmlspecialchars($s); ?></option>
+                <?php } ?>
+              </select>
+              <input type="text" id="ctrl-section" name="section" class="form-control" value="<?php echo $data['section']; ?>" placeholder="Ketik section baru, atau kosongkan buat masuk grup &quot;LAINNYA&quot;" />
+              <small class="form-text text-muted">Judul grup part di form Add AM. Pilih dari dropdown buat gabung ke section yang sudah ada, atau ketik section baru di kotak teks. Kosongkan buat masuk grup "LAINNYA".</small>
             </div>
             <div class="row">
               <div class="col-md-6 form-group">
@@ -53,15 +63,10 @@ $back_url = !empty($this->back_url) ? $this->back_url : 'master_part';
               <label>Standard</label>
               <textarea name="standard" class="form-control"><?php echo $data['standard']; ?></textarea>
             </div>
-            <div class="row">
-              <div class="col-md-6 form-group">
-                <label>Durasi</label>
-                <input type="text" name="durasi" class="form-control" value="<?php echo $data['durasi']; ?>" />
-              </div>
-              <div class="col-md-6 form-group">
-                <label>Urutan</label>
-                <input type="number" name="urutan" class="form-control" value="<?php echo $data['urutan']; ?>" />
-              </div>
+            <div class="form-group">
+              <label>Durasi</label>
+              <input type="text" name="durasi" class="form-control" value="<?php echo $data['durasi']; ?>" />
+              <small class="form-text text-muted">Urutan tampil part diatur lewat drag-and-drop di halaman list, bukan di sini.</small>
             </div>
             <div class="form-group">
               <label>Pelaksanaan</label>
@@ -95,3 +100,10 @@ $back_url = !empty($this->back_url) ? $this->back_url : 'master_part';
     </div>
   </div>
 </section>
+<script>
+$(function () {
+  $('#ctrl-section-picker').on('change', function () {
+    if (this.value) { $('#ctrl-section').val(this.value); }
+  });
+});
+</script>

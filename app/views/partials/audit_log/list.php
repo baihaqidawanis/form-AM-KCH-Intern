@@ -162,7 +162,7 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
                                                 <td class="td-TableName"> <?php echo $data['TableName']; ?></td>
                                                 <td class="td-UserID">
                                                     <a size="sm" class="btn btn-sm btn-primary page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['UserID'])) ?>">
-                                                        <i class="fa fa-eye"></i> <?php echo $data['UserID'] ?>
+                                                        <i class="fa fa-eye"></i> <?php echo !empty($data['user_username']) ? htmlspecialchars($data['user_username']) : $data['UserID']; ?>
                                                     </a>
                                                 </td>
                                                 <th class="td-btn">

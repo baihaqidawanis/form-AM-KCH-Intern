@@ -6,6 +6,9 @@ $highlight_options = Master_partController::$highlight_options;
 //perlu milih ulang, dan tombol Batal balik ke list mesin yang sama.
 $preselect_machine = !empty($this->preselect_machine) ? $this->preselect_machine : '';
 $back_url = 'master_part/index/' . $preselect_machine;
+//Section yang udah ada per mesin -- dropdown "Section" difilter JS sesuai
+//Mesin yang lagi dipilih, ditambah opsi ketik section baru.
+$sections_by_machine = !empty($this->sections_by_machine) ? $this->sections_by_machine : array();
 ?>
 <section class="page">
   <div class="bg-light p-3 mb-3">
@@ -24,13 +27,13 @@ $back_url = 'master_part/index/' . $preselect_machine;
           <form class="form needs-validation" novalidate action="<?php print_link("master_part/add/$preselect_machine?csrf_token=$csrf_token") ?>" method="post">
             <div class="form-group">
               <label>Mesin <span class="text-danger">*</span></label>
-              <select required name="machine_key" class="custom-select">
+              <select required name="machine_key" id="ctrl-machine-key" class="custom-select">
                 <option value="" disabled <?php echo empty($preselect_machine) ? 'selected' : ''; ?>>Pilih mesin ...</option>
                 <?php foreach ($machine_keys as $key => $label) { ?>
                   <option value="<?php echo $key; ?>" <?php echo ($key === $preselect_machine ? 'selected' : ''); ?>><?php echo $label; ?></option>
                 <?php } ?>
               </select>
-              <small class="form-text text-muted">Cuma Cosmec yang form Add AM-nya sudah baca dari sini -- mesin lain belum berefek sampai view-nya dimigrasikan.</small>
+              <small class="form-text text-muted">Semua mesin form Add AM-nya sudah baca dari sini -- part yang ditambahkan langsung muncul begitu disimpan.</small>
             </div>
             <div class="form-group">
               <label>Field Name <span class="text-danger">*</span></label>
@@ -43,7 +46,11 @@ $back_url = 'master_part/index/' . $preselect_machine;
             </div>
             <div class="form-group">
               <label>Section</label>
-              <input type="text" name="section" class="form-control" placeholder="misal: STANDAR PEMBERSIHAN (CLEANING)" />
+              <select id="ctrl-section-picker" class="custom-select mb-2">
+                <option value="">-- Pilih section yang sudah ada, atau ketik baru di bawah --</option>
+              </select>
+              <input type="text" id="ctrl-section" name="section" class="form-control" placeholder="Ketik section baru, atau kosongkan buat masuk grup &quot;LAINNYA&quot;" />
+              <small class="form-text text-muted">Judul grup part di form Add AM. Pilih dari dropdown buat gabung ke section yang sudah ada, atau ketik section baru di kotak teks. Kosongkan buat masuk grup "LAINNYA".</small>
             </div>
             <div class="row">
               <div class="col-md-6 form-group">
@@ -59,15 +66,10 @@ $back_url = 'master_part/index/' . $preselect_machine;
               <label>Standard</label>
               <textarea name="standard" class="form-control"></textarea>
             </div>
-            <div class="row">
-              <div class="col-md-6 form-group">
-                <label>Durasi</label>
-                <input type="text" name="durasi" class="form-control" placeholder="misal: 2'" />
-              </div>
-              <div class="col-md-6 form-group">
-                <label>Urutan</label>
-                <input type="number" name="urutan" class="form-control" value="0" />
-              </div>
+            <div class="form-group">
+              <label>Durasi</label>
+              <input type="text" name="durasi" class="form-control" placeholder="misal: 2'" />
+              <small class="form-text text-muted">Urutan tampil part diatur lewat drag-and-drop di halaman list, bukan di sini -- part baru otomatis ditaruh paling akhir.</small>
             </div>
             <div class="form-group">
               <label>Pelaksanaan</label>
@@ -97,3 +99,26 @@ $back_url = 'master_part/index/' . $preselect_machine;
     </div>
   </div>
 </section>
+<script>
+$(function () {
+  var sectionsByMachine = <?php echo json_encode($sections_by_machine); ?>;
+  var $machineSelect = $('#ctrl-machine-key');
+  var $picker = $('#ctrl-section-picker');
+  var $sectionInput = $('#ctrl-section');
+
+  function reloadSectionPicker() {
+    var sections = sectionsByMachine[$machineSelect.val()] || [];
+    $picker.find('option:not(:first)').remove();
+    sections.forEach(function (s) {
+      $picker.append($('<option></option>').val(s).text(s));
+    });
+  }
+
+  $machineSelect.on('change', reloadSectionPicker);
+  $picker.on('change', function () {
+    if ($picker.val()) { $sectionInput.val($picker.val()); }
+  });
+
+  reloadSectionPicker();
+});
+</script>

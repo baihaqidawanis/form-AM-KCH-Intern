@@ -16,6 +16,17 @@ class FilehelperController extends BaseController
 	{
 		if (!empty($this->post->fieldname)) { // Get Upload field name from post request
 			$fieldname = $this->post->fieldname;
+			//FilehelperController extends BaseController (bukan SecureController),
+			//jadi endpoint ini SENGAJA gak lewat cek login sama sekali -- 'pict'
+			//emang wajib bisa diakses guest (dipakai upload foto profil di halaman
+			//Register, sebelum akun ada/login). TAPI itu satu-satunya fieldname
+			//yang butuh guest access -- 'part_image' (Master Data Part) cuma
+			//dipakai Administrator yang udah login, jadi selain 'pict' wajib login
+			//dulu. Ditemukan lewat probing manual: guest bisa upload part_image
+			//bebas tanpa akun sama sekali.
+			if ($fieldname !== 'pict' && !user_login_status()) {
+				render_error('Login diperlukan untuk upload file ini.', 403);
+			}
 			if (!empty($this->file_upload_settings[$fieldname])) {
 				$upload_settings = $this->file_upload_settings[$fieldname];
 				$uploader = new Uploader;

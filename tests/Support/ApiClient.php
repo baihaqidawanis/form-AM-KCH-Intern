@@ -72,6 +72,21 @@ class ApiClient
         return $resp;
     }
 
+    /** Upload multipart (fieldname + file) ke filehelper/uploadfile, csrf_token diambil dari $tokenSourcePath. */
+    public function postMultipartUpload(string $tokenSourcePath, string $fieldname, string $filename, string $content, string $mimeType)
+    {
+        $getPage = $this->get($tokenSourcePath);
+        $token = $this->extractCsrfToken((string) $getPage->getBody());
+        $resp = $this->client->post('filehelper/uploadfile?csrf_token=' . $token, array(
+            'multipart' => array(
+                array('name' => 'fieldname', 'contents' => $fieldname),
+                array('name' => 'file', 'contents' => $content, 'filename' => $filename, 'headers' => array('Content-Type' => $mimeType)),
+            ),
+        ));
+        $this->lastBody = (string) $resp->getBody();
+        return $resp;
+    }
+
     public function postWithCsrfFrom(string $tokenSourcePath, string $postPath, array $formParams)
     {
         $getPage = $this->get($tokenSourcePath);

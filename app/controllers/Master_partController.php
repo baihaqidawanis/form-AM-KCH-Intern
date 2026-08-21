@@ -4,10 +4,9 @@
  * Pelaksanaan). Khusus Administrator (default-deny lewat ACL karena controller
  * ini gak didaftarkan di role 2/3/4 -- lihat libs/ACL.php).
  *
- * Pilot: baru Cosmec yang view-nya (add.php/edit_data.php) sudah dirubah baca
- * dari tabel ini. 16 mesin lain masih pakai array hardcoded di view masing-masing
- * sampai menyusul dimigrasikan -- nambah row di sini buat mesin lain BELUM
- * berefek ke form mereka sampai view-nya direfactor juga.
+ * Semua 18 mesin di $machine_keys sudah baca part detail-nya dari tabel ini
+ * (add.php/edit_data.php tiap mesin query master_part langsung) -- nambah/edit
+ * row di sini langsung berefek ke form Add AM mesin terkait.
  * @category  Controller
  */
 class Master_partController extends SecureController
@@ -19,10 +18,13 @@ class Master_partController extends SecureController
 		'cosmec' => 'Cosmec', 'fbd_jaw_chuan' => 'FBD Jaw Chuan', 'fbd_glatt' => 'FBD Glatt', 'supermixer' => 'Supermixer', 'storage_tank' => 'Storage Tank Silverson', 'storage_tank_tetrapak' => 'Storage Tank Tetrapak', 'mixing_tank' => 'Mixing Tank',
 	);
 
+	// Highlight juga nentuin jumlah pilihan Kondisi yang muncul di form
+	// add/edit_data (lihat Menu::kondisi_options()): Harian cuma Baik/Tidak
+	// Baik (2 pilihan), Mingguan/Bulanan tambah "Tidak Dilakukan" (3 pilihan).
 	public static $highlight_options = array(
-		'' => '(Tidak ada / Harian)',
-		'mingguan' => 'Mingguan',
-		'bulanan' => 'Bulanan / 2 Mingguan',
+		'' => '(Tidak ada / Harian) -- 2 pilihan kondisi (Baik/Tidak Baik)',
+		'mingguan' => 'Mingguan -- 3 pilihan kondisi (+ Tidak Dilakukan)',
+		'bulanan' => 'Bulanan / 2 Mingguan -- 3 pilihan kondisi (+ Tidak Dilakukan)',
 	);
 
 	/**
@@ -39,6 +41,25 @@ class Master_partController extends SecureController
 			$path = substr($path, strlen(SITE_ADDR));
 		}
 		return ltrim($path, '/');
+	}
+
+	/**
+	 * Section yang udah ada per mesin, dikelompokin machine_key => [section, ...]
+	 * -- dikirim ke view add/edit buat isi dropdown "Section" (pilih yang udah
+	 * ada, biar gak typo bikin grup ganda) sekaligus opsi ketik baru.
+	 * @return array
+	 */
+	private function sections_by_machine()
+	{
+		$db = $this->GetModel();
+		$db->groupBy('machine_key')->groupBy('section')->orderBy('section', 'ASC');
+		$rows = $db->get('master_part', null, array('machine_key', 'section'));
+		$grouped = array();
+		foreach ($rows as $row) {
+			if (empty($row['section'])) { continue; }
+			$grouped[$row['machine_key']][] = $row['section'];
+		}
+		return $grouped;
 	}
 
 	function __construct()
@@ -149,20 +170,30 @@ class Master_partController extends SecureController
 		//Mesin yang lagi dibuka di list, dipakai buat preselect dropdown &
 		//tombol Batal (biar gak mental ke mesin default tiap kali).
 		$this->view->preselect_machine = (!empty($machine_key) && array_key_exists($machine_key, self::$machine_keys)) ? $machine_key : '';
+		//Section yang udah ada per mesin -- dropdown "Section" di view milih dari
+		//sini (JS, difilter per mesin yang lagi dipilih), plus opsi ketik baru.
+		$this->view->sections_by_machine = $this->sections_by_machine();
 		if ($formdata) {
 			$db = $this->GetModel();
-			$this->fields = array('machine_key', 'field_name', 'label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path', 'urutan');
+			//Urutan BUKAN dari form -- part baru selalu ditaruh di akhir urutan
+			//mesinnya (dihitung di bawah), biar-biar posisinya cuma bisa diatur
+			//lewat drag-and-drop di list (satu-satunya sumber kebenaran urutan,
+			//gak ada lagi input angka manual yang bisa bentrok/duplikat/minus).
+			$this->fields = array('machine_key', 'field_name', 'label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path');
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
 				'machine_key' => 'required',
 				'field_name' => 'required',
 				'label' => 'required',
 			);
+			//Field deskriptif TIDAK di-sanitize_string (itu jalanin htmlspecialchars
+			//di save time) -- teks yang ngandung "&"/"<"/dll bakal kesimpen literal
+			//jadi "&amp;"/dll di DB (kejadian nyata, cek migrasi
+			//2026-08-20_fix_master_part_encoding.sql). View yang nampilin part detail
+			//(add.php/edit_data.php mesin + list.php di sini) semua udah escape pas
+			//nge-echo, jadi aman disimpan mentah -- escape di output, bukan di input.
 			$this->sanitize_array = array(
-				'machine_key' => 'sanitize_string', 'field_name' => 'sanitize_string', 'label' => 'sanitize_string',
-				'section' => 'sanitize_string', 'metode' => 'sanitize_string', 'alat' => 'sanitize_string',
-				'standard' => 'sanitize_string', 'durasi' => 'sanitize_string', 'pelaksanaan' => 'sanitize_string',
-				'highlight' => 'sanitize_string', 'urutan' => 'sanitize_numbers',
+				'machine_key' => 'sanitize_string', 'field_name' => 'sanitize_string',
 			);
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			if (!empty($modeldata['image_path'])) {
@@ -187,6 +218,9 @@ class Master_partController extends SecureController
 			}
 			if ($this->validated()) {
 				$modeldata['created_at'] = datetime_now();
+				$db->where('machine_key', $modeldata['machine_key'])->orderBy('urutan', 'DESC');
+				$last = $db->getOne($this->tablename, 'urutan');
+				$modeldata['urutan'] = (!empty($last['urutan']) ? intval($last['urutan']) : 0) + 1;
 				//Insert row master_part + ALTER TABLE dibungkus 1 transaction -- kalau
 				//ALTER TABLE gagal (misal user DB gak punya izin DDL), row master_part
 				//IKUT di-rollback juga. Tanpa ini, bisa kejadian row master_part sukses
@@ -228,15 +262,15 @@ class Master_partController extends SecureController
 		$owner_row = $db->getOne($this->tablename, 'machine_key');
 		$back_url = 'master_part/index/' . (!empty($owner_row['machine_key']) ? $owner_row['machine_key'] : '');
 		$this->view->back_url = $back_url;
+		$this->view->sections_by_machine = $this->sections_by_machine();
 		if ($formdata) {
-			$this->fields = array('label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path', 'urutan');
+			//Urutan gak ikut diedit di sini -- cuma diatur lewat drag-and-drop di
+			//list (lihat reorder()). Field deskriptif juga gak di-sanitize_string,
+			//sama alasannya kayak di add() -- lihat catatan di sana.
+			$this->fields = array('label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path');
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array('label' => 'required');
-			$this->sanitize_array = array(
-				'label' => 'sanitize_string', 'section' => 'sanitize_string', 'metode' => 'sanitize_string', 'alat' => 'sanitize_string',
-				'standard' => 'sanitize_string', 'durasi' => 'sanitize_string', 'pelaksanaan' => 'sanitize_string',
-				'highlight' => 'sanitize_string', 'urutan' => 'sanitize_numbers',
-			);
+			$this->sanitize_array = array();
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			//foto lama dibiarkan (gak dihapus) kalau admin gak upload foto baru pas edit.
 			if (empty($modeldata['image_path'])) { unset($modeldata['image_path']); }

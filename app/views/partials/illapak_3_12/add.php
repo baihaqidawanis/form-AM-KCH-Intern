@@ -94,11 +94,11 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
                 ?>
                   <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                     <div class="card-body">
-                      <h5><?php echo $label; ?></h5>
+                      <h5><?php echo htmlspecialchars($label); ?></h5>
                       <div class="row">
                         <div class="col-md-3">
                           <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>"
-                                alt="<?php echo $label; ?>"
+                                alt="<?php echo htmlspecialchars($label); ?>"
                                 onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span
                               style="display:none">Gambar belum diunggah</span></div>
                         </div>
@@ -106,28 +106,28 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
                           <table class="table table-bordered table-sm mb-0">
                             <tr>
                               <th>Metode</th>
-                              <td><?php echo $info['metode']; ?></td>
+                              <td><?php echo nl2br(htmlspecialchars($info['metode'])); ?></td>
                             </tr>
                             <tr>
                               <th>Alat</th>
-                              <td><?php echo $info['alat']; ?></td>
+                              <td><?php echo nl2br(htmlspecialchars($info['alat'])); ?></td>
                             </tr>
                             <tr>
                               <th>Standard</th>
-                              <td><?php echo $info['standard']; ?></td>
+                              <td><?php echo nl2br(htmlspecialchars($info['standard'])); ?></td>
                             </tr>
                             <tr>
                               <th>Durasi</th>
-                              <td><?php echo $info['durasi']; ?></td>
+                              <td><?php echo htmlspecialchars($info['durasi']); ?></td>
                             </tr>
                             <tr style="<?php echo $pelaksanaan_bg; ?>">
                               <th>Pelaksanaan</th>
-                              <td><?php echo $info['pelaksanaan']; ?></td>
+                              <td><?php echo htmlspecialchars($info['pelaksanaan']); ?></td>
                             </tr>
                           </table>
                         </div>
                         <div class="col-md-4"><label class="d-block">Kondisi <span
-                              class="text-danger">*</span></label><?php foreach (Menu::$Kondisi_Harian as $option) { ?>
+                              class="text-danger">*</span></label><?php foreach (Menu::kondisi_options($info['highlight']) as $option) { ?>
                             <div class="custom-control custom-radio"><input required class="custom-control-input part-kondisi"
                                 type="radio" id="<?php echo $field . '-' . $option['value']; ?>" name="<?php echo $field; ?>"
                                 value="<?php echo $option['value']; ?>"><label class="custom-control-label"

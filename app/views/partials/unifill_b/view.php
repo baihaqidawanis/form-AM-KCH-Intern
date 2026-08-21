@@ -17,8 +17,8 @@ $current_page = $this->set_current_page_link();
           <tbody>
             <?php foreach ($parts as $field => $label) { $abn = $data['abnormalitas'][$field] ?? null; ?>
               <tr>
-                <th><?php echo $label; ?></th>
-                <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } else { echo '-'; } ?></td>
+                <th><?php echo htmlspecialchars($label); ?></th>
+                <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } elseif ($val === 'N/A') { echo '<span class="badge badge-secondary">N/A</span>'; } else { echo '-'; } ?></td>
                 <td><?php echo htmlspecialchars($abn['kendala'] ?? '-'); ?></td>
                 <td><?php echo $abn['teks_kategori'] ?? '-'; ?></td>
                 <td><?php echo $abn['teks_korelasi'] ?? '-'; ?></td>

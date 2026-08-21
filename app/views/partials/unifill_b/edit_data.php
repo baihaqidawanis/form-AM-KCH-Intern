@@ -9,10 +9,12 @@ $parts = $data['parts'];
 $master_db = new SharedController;
 $part_rows = $master_db->GetModel()->where('machine_key', 'unifill_b')->orderBy('urutan', 'ASC')->get('master_part');
 $image_paths = array();
+$highlights = array();
 $sections = array();
 foreach ($part_rows as $row) {
   $field = $row['field_name'];
   $image_paths[$field] = $row['image_path'];
+  $highlights[$field] = $row['highlight'];
   $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
   if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
   $sections[$section_title][] = $field;
@@ -60,11 +62,11 @@ $rec_id = !empty($data['id_unifill_b']) ? $data['id_unifill_b'] : null;
                 <div class="card-body">
                   <div class="row">
                     <div class="col-md-3">
-                      <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>" alt="<?php echo $label; ?>" onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span style="display:none">Gambar belum diunggah</span></div>
+                      <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>" alt="<?php echo htmlspecialchars($label); ?>" onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span style="display:none">Gambar belum diunggah</span></div>
                     </div>
                     <div class="col-md-4">
-                      <label class="d-block"><?php echo $label; ?> <span class="text-danger">*</span></label>
-                      <?php foreach (Menu::$Kondisi_Harian as $option) { ?>
+                      <label class="d-block"><?php echo htmlspecialchars($label); ?> <span class="text-danger">*</span></label>
+                      <?php foreach (Menu::kondisi_options($highlights[$field] ?? '') as $option) { ?>
                         <div class="custom-control custom-radio">
                           <input required class="custom-control-input part-kondisi" type="radio"
                             id="<?php echo $field . '-' . $option['value']; ?>" name="<?php echo $field; ?>"

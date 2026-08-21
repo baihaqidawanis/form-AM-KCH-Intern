@@ -69,7 +69,7 @@ $show_export_btn = $this->show_export_btn;
                                         <th class="title"> Userid: </th>
                                         <td class="value">
                                             <a size="sm" class="btn btn-sm btn-primary page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['UserID'])) ?>">
-                                                <i class="fa fa-eye"></i> <?php echo $data['UserID'] ?>
+                                                <i class="fa fa-eye"></i> <?php echo !empty($data['user_username']) ? htmlspecialchars($data['user_username']) : $data['UserID']; ?>
                                             </a>
                                         </td>
                                     </tr>

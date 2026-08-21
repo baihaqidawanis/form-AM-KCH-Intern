@@ -18,17 +18,30 @@ class Audit_logController extends SecureController{
 		$request = $this->request;
 		$db = $this->GetModel();
 		$tablename = $this->tablename;
+		//"UserID" nyimpen id_user numerik doang -- gak kebaca manusia di list
+		//(cuma keliatan "1", "13", dst). Join ke users buat ikut nampilin
+		//username di kolom yang sama, TANPA ubah apa yang disimpen di UserID.
 		$fields = array("log_id",
 			'"Timestamp"',
 			'"Action"',
 			'"TableName"',
-			'"UserID"');
+			'"UserID"',
+			'users.username AS user_username');
+		$db->join('users', 'CAST(users.id_user AS VARCHAR) = audit_log."UserID"', 'LEFT');
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); // get current pagination e.g array(page_number, page_limit)
 		//search table record
 		if(!empty($request->search)){
 			$text = trim($request->search);
 			// Kolom audit_log huruf besar (peninggalan MySQL yang gak peduli besar-kecil huruf kolom) --
 			// wajib di-quote di Postgres, kalau enggak otomatis di-lowercase-in dan gagal match kolom asli.
+			// audit_log."UserID" nyimpen id_user NUMERIK (dipakai fitur "lihat
+			// detail user" -- tombol mata di kolom UserID nge-link ke
+			// users/view/$UserID, butuh id_user asli, bukan username). Jadi search
+			// biasa (LIKE ke UserID) gak bakal pernah ketemu kalau orang ngetik
+			// NAMA/NIK user (misal "superadmin") -- ditemukan lewat laporan user.
+			// Fix-nya nambah EXISTS ke tabel users biar bisa dicari by
+			// username/nama juga, TANPA ubah apa yang disimpen di UserID (biar
+			// tombol lihat detail user tetap jalan).
 			$search_condition = '(
 				CAST(audit_log.log_id AS VARCHAR) LIKE ? OR
 				audit_log."Timestamp" LIKE ? OR
@@ -41,10 +54,15 @@ class Audit_logController extends SecureController{
 				audit_log."RequestURL" LIKE ? OR
 				audit_log."RequestData" LIKE ? OR
 				audit_log."RequestCompleted" LIKE ? OR
-				audit_log."RequestMsg" LIKE ?
+				audit_log."RequestMsg" LIKE ? OR
+				EXISTS (
+					SELECT 1 FROM "users" u
+					WHERE CAST(u.id_user AS VARCHAR) = audit_log."UserID"
+					AND (u.username LIKE ? OR u.nama LIKE ?)
+				)
 			)';
 			$search_params = array(
-				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"
+				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"
 			);
 			//setting search conditions
 			$db->where($search_condition, $search_params);
@@ -115,12 +133,14 @@ class Audit_logController extends SecureController{
 			'"Action"',
 			'"TableName"',
 			'"UserID"',
+			'users.username AS user_username',
 			'"SQLQuery"',
 			'"ServerIP"',
 			'"RequestURL"',
 			'"RequestData"',
 			'"RequestCompleted"',
 			'"RequestMsg"');
+		$db->join('users', 'CAST(users.id_user AS VARCHAR) = audit_log."UserID"', 'LEFT');
 		if($value){
 			$db->where($rec_id, urldecode($value)); //select record based on field name
 		}

@@ -60,9 +60,9 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
                   <?php } ?>
                 </td>
                 <td><?php echo isset($machine_keys[$r['machine_key']]) ? $machine_keys[$r['machine_key']] : $r['machine_key']; ?></td>
-                <td><code><?php echo $r['field_name']; ?></code></td>
-                <td><?php echo $r['label']; ?></td>
-                <td><small><?php echo $r['section']; ?></small></td>
+                <td><code><?php echo htmlspecialchars($r['field_name']); ?></code></td>
+                <td><?php echo htmlspecialchars($r['label']); ?></td>
+                <td><small><?php echo htmlspecialchars($r['section']); ?></small></td>
                 <td class="urutan-cell"><?php echo $r['urutan']; ?></td>
                 <td>
                   <a class="btn btn-sm btn-outline-primary" href="<?php print_link('master_part/edit/' . $r['id']) ?>"><i class="fa fa-edit"></i></a>

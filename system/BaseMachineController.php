@@ -119,8 +119,11 @@ abstract class BaseMachineController extends SecureController
 			}
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$modeldata['created_at'] = datetime_now(); $modeldata['user_create'] = USER_NAME;
+			// Auto-approve kalau gak ada part yang NOK -- OK semua ATAU campuran
+			// OK/"Tidak Dilakukan" (N/A) tetap auto-approve, cuma NOK yang bikin
+			// masuk antrian review manual.
 			$all_ok = true;
-			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) !== 'OK') { $all_ok = false; break; } }
+			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
 			if ($this->validated()) {
 				$db->startTransaction();
@@ -214,12 +217,13 @@ abstract class BaseMachineController extends SecureController
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			$modeldata['updated_at'] = datetime_now(); $modeldata['user_perubah'] = USER_NAME;
 			//Re-evaluate approval abis data dikoreksi -- jangan biarin status approval
-			//lama nyangkut gitu aja. Semua part OK lagi -> auto-approve lagi (sama
-			//persis kayak submission baru). Ada yang jadi NOK -> approval di-reset ke
-			//"belum di-approve" (BUKAN langsung "Not Approved"), balik masuk antrian
-			//review manual supervisor/manager -- konsisten sama alur submission NOK baru.
+			//lama nyangkut gitu aja. Gak ada part NOK lagi (OK semua atau campuran
+			//OK/"Tidak Dilakukan") -> auto-approve lagi (sama persis kayak submission
+			//baru). Ada yang jadi NOK -> approval di-reset ke "belum di-approve"
+			//(BUKAN langsung "Not Approved"), balik masuk antrian review manual
+			//supervisor/manager -- konsisten sama alur submission NOK baru.
 			$all_ok = true;
-			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) !== 'OK') { $all_ok = false; break; } }
+			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
 			if ($all_ok) {
 				$modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now();
 			} else {

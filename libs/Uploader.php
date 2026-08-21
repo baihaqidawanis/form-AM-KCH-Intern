@@ -169,7 +169,14 @@ class Uploader {
             if(@$field['error'][$file['index']] > 0 && array_key_exists($field['error'][$file['index']], $this->error_messages)) $errors[] = $this->error_messages[$field['error'][$file['index']]];
             
             if(!empty($options['extensions'])  && $options['extensions'] != '*'){
-                if(stripos($options['extensions'], strtolower($file['extension'])) === false){
+                // File TANPA ekstensi (strrchr gagal nemu "." di nama file) balikin
+                // extension "" -- stripos($haystack, "") SELALU return 0 (needle
+                // kosong "ketemu" di posisi manapun), jadi whitelist ini ketembus
+                // begitu aja buat file apapun asal nama filenya gak ada titik.
+                // Ditemukan lewat probing manual (upload tanpa ekstensi lolos,
+                // ke-serve Apache tanpa Content-Type -> browser bisa MIME-sniff
+                // jadi text/html -> stored XSS). Wajib tolak eksplisit di sini.
+                if(empty($file['extension']) || stripos($options['extensions'], strtolower($file['extension'])) === false){
                     $errors[] = $this->error_messages['accept_file_types'];
                 }
             }

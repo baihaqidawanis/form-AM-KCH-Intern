@@ -173,6 +173,23 @@ class Menu
 		),
 	);
 
+	/**
+	 * Opsi kondisi (Baik/Tidak Baik + "Tidak Dilakukan") buat part di form
+	 * add/edit_data -- "Tidak Dilakukan" (value "N/A", sama kayak yang udah
+	 * dipakai antistatic/dll di SIG) cuma muncul buat part Mingguan/Bulanan,
+	 * bukan Harian, sesuai kolom master_part.highlight.
+	 * @param string $highlight nilai master_part.highlight ('', 'mingguan', 'bulanan')
+	 * @return array
+	 */
+	public static function kondisi_options($highlight = '')
+	{
+		$options = self::$Kondisi_Harian;
+		if ($highlight === 'mingguan' || $highlight === 'bulanan') {
+			$options[] = array("value" => "N/A", "label" => "Tidak Dilakukan");
+		}
+		return $options;
+	}
+
 	public static $antistatic = array(
 		array(
 			"value" => "OK",
