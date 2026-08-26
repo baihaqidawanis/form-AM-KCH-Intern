@@ -1,0 +1,40 @@
+# Folder ini isinya file yang di-UPLOAD USER (foto profil, foto part mesin).
+# Apapun isinya, jangan pernah dieksekusi sebagai script oleh Apache -- ini
+# lapis pertahanan terakhir kalau suatu saat validasi ekstensi di
+# libs/Uploader.php ketembus atau ada jalur upload baru yang lupa divalidasi.
+# Tanpa ini, 1 file .php yang lolos ke sini = eksekusi kode di server.
+
+# Matikan handler/engine PHP di folder ini (Apache 2.4 + mod_php / cgi)
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php5.c>
+    php_flag engine off
+</IfModule>
+
+# Kalau PHP jalan sebagai CGI/FastCGI, php_flag di atas gak ngaruh --
+# jadi blokir juga lewat handler & akses langsung ke ekstensi script.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule \.(php|phtml|php3|php4|php5|php7|phps|pht|cgi|pl|py|asp|aspx|jsp|sh|exe)$ - [F,L,NC]
+</IfModule>
+
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps .pht .cgi .pl .py
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .phps .pht
+
+# Jangan tampilkan daftar isi folder
+Options -Indexes -ExecCGI
+
+# File tanpa ekstensi (harusnya udah gak mungkin lolos lagi sejak fix
+# libs/Uploader.php validate() -- ekstensi kosong dulu ketembus whitelist)
+# gak dikirim Apache dengan Content-Type, jadi browser bisa MIME-sniff
+# isinya jadi text/html dan EKSEKUSI <script> di dalemnya -- stored XSS
+# lewat upload, meski file-nya sendiri gak bisa dieksekusi PHP-nya.
+# nosniff matiin sniffing itu: browser wajib percaya Content-Type generik
+# yang dikirim, gak boleh nebak-nebak jadi HTML.
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

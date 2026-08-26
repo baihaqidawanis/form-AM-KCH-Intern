@@ -26,8 +26,8 @@ class TagController extends SecureController{
 			$text = trim($request->search); 
 			// id integer -- Postgres gak izinin LIKE ke integer tanpa CAST (Round 31/37).
 			$search_condition = "(
-				CAST(tag.id AS VARCHAR) LIKE ? OR
-				tag.kategori_tag LIKE ?
+				CAST(tag.id AS VARCHAR) ILIKE ? OR
+				tag.kategori_tag ILIKE ?
 			)";
 			$search_params = array(
 				"%$text%","%$text%"

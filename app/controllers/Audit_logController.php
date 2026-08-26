@@ -43,22 +43,22 @@ class Audit_logController extends SecureController{
 			// username/nama juga, TANPA ubah apa yang disimpen di UserID (biar
 			// tombol lihat detail user tetap jalan).
 			$search_condition = '(
-				CAST(audit_log.log_id AS VARCHAR) LIKE ? OR
-				audit_log."Timestamp" LIKE ? OR
-				audit_log.id_log LIKE ? OR
-				audit_log."Action" LIKE ? OR
-				audit_log."TableName" LIKE ? OR
-				audit_log."UserID" LIKE ? OR
-				audit_log."SQLQuery" LIKE ? OR
-				audit_log."ServerIP" LIKE ? OR
-				audit_log."RequestURL" LIKE ? OR
-				audit_log."RequestData" LIKE ? OR
-				audit_log."RequestCompleted" LIKE ? OR
-				audit_log."RequestMsg" LIKE ? OR
+				CAST(audit_log.log_id AS VARCHAR) ILIKE ? OR
+				audit_log."Timestamp" ILIKE ? OR
+				audit_log.id_log ILIKE ? OR
+				audit_log."Action" ILIKE ? OR
+				audit_log."TableName" ILIKE ? OR
+				audit_log."UserID" ILIKE ? OR
+				audit_log."SQLQuery" ILIKE ? OR
+				audit_log."ServerIP" ILIKE ? OR
+				audit_log."RequestURL" ILIKE ? OR
+				audit_log."RequestData" ILIKE ? OR
+				audit_log."RequestCompleted" ILIKE ? OR
+				audit_log."RequestMsg" ILIKE ? OR
 				EXISTS (
 					SELECT 1 FROM "users" u
 					WHERE CAST(u.id_user AS VARCHAR) = audit_log."UserID"
-					AND (u.username LIKE ? OR u.nama LIKE ?)
+					AND (u.username ILIKE ? OR u.nama ILIKE ?)
 				)
 			)';
 			$search_params = array(

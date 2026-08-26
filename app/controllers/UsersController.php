@@ -35,15 +35,15 @@ class UsersController extends SecureController{
 			// tanpa CAST eksplisit (beda dari MySQL yang izinin implicit), sama
 			// kelas bug yang ketemu di audit_log.log_id (Round 31).
 			$search_condition = "(
-				CAST(users.id_user AS VARCHAR) LIKE ? OR
-				users.nama LIKE ? OR
-				users.email LIKE ? OR
-				users.username LIKE ? OR
-				users.area LIKE ? OR
-				users.mesin LIKE ? OR
-				users.account_status LIKE ? OR
-				CAST(users.user_role_id AS VARCHAR) LIKE ? OR
-				users.pict LIKE ?
+				CAST(users.id_user AS VARCHAR) ILIKE ? OR
+				users.nama ILIKE ? OR
+				users.email ILIKE ? OR
+				users.username ILIKE ? OR
+				users.area ILIKE ? OR
+				users.mesin ILIKE ? OR
+				users.account_status ILIKE ? OR
+				CAST(users.user_role_id AS VARCHAR) ILIKE ? OR
+				users.pict ILIKE ?
 			)";
 			$search_params = array(
 				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"

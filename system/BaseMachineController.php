@@ -85,7 +85,7 @@ abstract class BaseMachineController extends SecureController
 			$like = '%' . trim($request->search) . '%';
 			$search_fields = array_merge(array('mesin.nama_mesin', "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.kendala"), array_map(function ($part) use ($sql) { return "$sql.$part"; }, $this->part_fields()));
 			$conditions = array(); $params = array();
-			foreach ($search_fields as $f) { $conditions[] = "$f LIKE ?"; $params[] = $like; }
+			foreach ($search_fields as $f) { $conditions[] = "$f ILIKE ?"; $params[] = $like; }
 			$db->where('(' . implode(' OR ', $conditions) . ')', $params);
 			$this->view->search_template = "$table/search.php";
 		}

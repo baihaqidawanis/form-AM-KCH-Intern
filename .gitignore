@@ -1,5 +1,13 @@
 vendor/
-uploads/
+# uploads/* (bukan "uploads/" doang) -- exception di bawah buat .htaccess
+# CUMA jalan kalau folder induknya sendiri gak ke-exclude. uploads/.htaccess
+# BUKAN konten user, itu kontrol keamanan (blokir eksekusi PHP + header
+# X-Content-Type-Options: nosniff, lihat FileUploadSecurityTest.php) yang
+# WAJIB ikut ke-deploy tiap server baru -- tanpa exception ini, folder
+# uploads/ di server fresh gak ada .htaccess sama sekali, proteksi upload
+# yang udah difix (bypass ekstensi kosong, dst) balik lagi kebuka.
+uploads/*
+!uploads/.htaccess
 logs/
 .env
 node_modules/

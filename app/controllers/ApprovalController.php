@@ -25,7 +25,7 @@ class ApprovalController extends SecureController{
 			$text = trim($request->search); 
 			// id integer -- Postgres gak izinin LIKE ke integer tanpa CAST (Round 31/37).
 			$search_condition = "(
-				CAST(approval.id AS VARCHAR) LIKE ?
+				CAST(approval.id AS VARCHAR) ILIKE ?
 			)";
 			$search_params = array(
 				"%$text%"

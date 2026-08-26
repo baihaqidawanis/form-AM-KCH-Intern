@@ -26,8 +26,8 @@ class RolesController extends SecureController{
 			$text = trim($request->search); 
 			// role_id integer -- Postgres gak izinin LIKE ke integer tanpa CAST (Round 31/37).
 			$search_condition = "(
-				CAST(roles.role_id AS VARCHAR) LIKE ? OR
-				roles.role_name LIKE ?
+				CAST(roles.role_id AS VARCHAR) ILIKE ? OR
+				roles.role_name ILIKE ?
 			)";
 			$search_params = array(
 				"%$text%","%$text%"
