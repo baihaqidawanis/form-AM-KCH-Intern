@@ -1,4 +1,9 @@
-vendor/
+# vendor/ SENGAJA ikut di-commit (bukan gitignore standar) -- laptop yang
+# nge-deploy ke server (network share, bukan mesin dev) gak selalu punya
+# PHP/Composer ke-install, jadi biar bisa langsung "git pull" tanpa perlu
+# setup Composer segala di situ. Selalu commit versi --no-dev (kecil,
+# ~7MB, gak ikut PHPUnit dkk) -- jangan pernah commit hasil composer
+# install biasa (bisa 300MB+ gara-gara dependency testing ikut kebawa).
 # uploads/* (bukan "uploads/" doang) -- exception di bawah buat .htaccess
 # CUMA jalan kalau folder induknya sendiri gak ke-exclude. uploads/.htaccess
 # BUKAN konten user, itu kontrol keamanan (blokir eksekusi PHP + header
