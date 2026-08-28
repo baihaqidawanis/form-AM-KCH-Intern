@@ -29,6 +29,26 @@ class SharedController extends BaseController{
      * Count today's records for a given table/date-column
      * @return int
      */
+	/**
+	 * Jumlah record yang BELUM di-approve (approval IS NULL) buat 1 mesin --
+	 * dipakai badge notifikasi di tab halaman Approval (kayak notif WA), biar
+	 * Supervisor/Manager langsung tau tab mana yang ada antrian review.
+	 * @return int
+	 */
+	function count_pending_approval($machine_key){
+		$db = $this->GetModel();
+		$sqlTable = 'tb_mesin_' . $machine_key;
+		$sql = "SELECT COUNT(*) AS num FROM \"{$sqlTable}\" WHERE approval IS NULL";
+		$val = $db->rawQueryValue($sql, null);
+		// rawQueryValue() balikin ARRAY (bukan scalar) kalau query-nya gak
+		// diakhiri "LIMIT 1" -- lihat PDODb::rawQueryValue(). intval() ke array
+		// non-kosong SELALU balik 1 apapun isinya, jadi WAJIB di-unwrap dulu di
+		// sini (sama kayak pola _count_today() di bawah), kalau enggak semua
+		// mesin bakal keliatan "1" padahal count aslinya beda-beda.
+		if (is_array($val)) { $val = $val[0]; }
+		return intval($val ?: 0);
+	}
+
 	private function _count_today($table, $dateColumn){
 		$db = $this->GetModel();
 		$sqlTable = 'tb_mesin_' . $table;

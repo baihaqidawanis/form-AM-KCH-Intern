@@ -61,6 +61,12 @@ abstract class BaseMachineController extends SecureController
 	{
 		$data = new stdClass; $data->records = $records; $data->record_count = count($records);
 		$data->total_records = intval($total->totalCount); $data->total_page = ceil($data->total_records / MAX_RECORD_COUNT);
+		// Dikirim ke list2.php biar badge OK/NOK di overview ikut part yang
+		// AKTIF SEKARANG (termasuk yang baru ditambah/dihapus lewat Master
+		// Data Part) -- sebelum ini tiap list2.php nge-hardcode daftar nama
+		// field sendiri, jadi part baru gak pernah ke-deteksi NOK-nya di
+		// overview (padahal view.php udah bener, karena itu baca $parts dinamis).
+		$data->part_fields = $this->part_fields();
 		return $data;
 	}
 

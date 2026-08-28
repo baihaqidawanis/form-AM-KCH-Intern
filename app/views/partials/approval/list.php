@@ -14,6 +14,14 @@ $view_title = $this->view_title;
 $show_header = $this->show_header;
 $show_footer = $this->show_footer;
 $show_pagination = $this->show_pagination;
+$pending_counts = !empty($view_data->pending_counts) ? $view_data->pending_counts : array();
+// Badge notifikasi kayak notif WA -- cuma muncul kalau ada record yang
+// belum di-approve (approval IS NULL) buat mesin itu.
+$approval_badge = function ($machine_key) use ($pending_counts) {
+  $count = !empty($pending_counts[$machine_key]) ? intval($pending_counts[$machine_key]) : 0;
+  if ($count < 1) { return ''; }
+  return ' <span class="badge badge-danger rounded-pill ml-1">' . $count . '</span>';
+};
 ?>
 <section class="page" id="<?php echo $page_element_id; ?>" data-page-type="list"  data-display-type="table" data-page-url="<?php print_link($current_page); ?>">
     <?php
@@ -58,27 +66,27 @@ $show_pagination = $this->show_pagination;
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
                                     <a class="nav-link active" data-toggle="tab" href="#TabPage-2-Page1" role="tab" aria-selected="true">
-                                        SIG
+                                        SIG<?php echo $approval_badge('sig'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page2" role="tab" aria-selected="true">
-                                        Joeya
+                                        Joeya<?php echo $approval_badge('joeya'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page3" role="tab" aria-selected="true">
-                                        Illapak 1 - 2
+                                        Illapak 1 - 2<?php echo $approval_badge('illapak_1_2'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page4" role="tab" aria-selected="true">
-                                        Illapak 3 - 12
+                                        Illapak 3 - 12<?php echo $approval_badge('illapak_3_12'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page5" role="tab" aria-selected="true">
-                                        Unifill B
+                                        Unifill B<?php echo $approval_badge('unifill_b'); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -145,32 +153,32 @@ $show_pagination = $this->show_pagination;
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
                                     <a class="nav-link active" data-toggle="tab" href="#TabPage-3-Page1" role="tab" aria-selected="true">
-                                        Chimei
+                                        Chimei<?php echo $approval_badge('chimei'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page2" role="tab" aria-selected="true">
-                                        Temach
+                                        Temach<?php echo $approval_badge('temach'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page3" role="tab" aria-selected="true">
-                                        Jihcheng
+                                        Jihcheng<?php echo $approval_badge('jihcheng'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page4" role="tab" aria-selected="true">
-                                        Jinsung 1 - 4
+                                        Jinsung 1 - 4<?php echo $approval_badge('jinsung_1_4'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page5" role="tab" aria-selected="true">
-                                        Jinsung 5
+                                        Jinsung 5<?php echo $approval_badge('jinsung_5'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page6" role="tab" aria-selected="true">
-                                        Best Pack
+                                        Best Pack<?php echo $approval_badge('best_pack'); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -245,37 +253,37 @@ $show_pagination = $this->show_pagination;
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
                                     <a class="nav-link active" data-toggle="tab" href="#TabPage-4-Page1" role="tab" aria-selected="true">
-                                        Cosmec
+                                        Cosmec<?php echo $approval_badge('cosmec'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page2" role="tab" aria-selected="true">
-                                        FBD Jaw Chuan
+                                        FBD Jaw Chuan<?php echo $approval_badge('fbd_jaw_chuan'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page3" role="tab" aria-selected="true">
-                                        FBD Glatt
+                                        FBD Glatt<?php echo $approval_badge('fbd_glatt'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page4" role="tab" aria-selected="true">
-                                        Supermixer
+                                        Supermixer<?php echo $approval_badge('supermixer'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page5" role="tab" aria-selected="true">
-                                        Storage Tank Silverson
+                                        Storage Tank Silverson<?php echo $approval_badge('storage_tank'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page7" role="tab" aria-selected="true">
-                                        Storage Tank Tetrapak
+                                        Storage Tank Tetrapak<?php echo $approval_badge('storage_tank_tetrapak'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page6" role="tab" aria-selected="true">
-                                        Mixing Tank
+                                        Mixing Tank<?php echo $approval_badge('mixing_tank'); ?>
                                     </a>
                                 </li>
                             </ul>

@@ -66,6 +66,18 @@ class ApprovalController extends SecureController{
 		$this->view->report_layout = "report_layout.php";
 		$this->view->report_paper_size = "A4";
 		$this->view->report_orientation = "portrait";
+		//Badge notifikasi (kayak notif WA) per tab -- jumlah record yang belum
+		//di-approve (approval IS NULL) buat mesin itu.
+		$comp_model = new SharedController;
+		$pending_counts = array();
+		foreach (array(
+			'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b',
+			'chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5', 'best_pack',
+			'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer', 'storage_tank', 'storage_tank_tetrapak', 'mixing_tank',
+		) as $machine_key) {
+			$pending_counts[$machine_key] = $comp_model->count_pending_approval($machine_key);
+		}
+		$data->pending_counts = $pending_counts;
 		$this->render_view("approval/list.php", $data); //render the full page
 	}
 	/**
