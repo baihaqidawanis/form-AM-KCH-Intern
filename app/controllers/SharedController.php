@@ -269,6 +269,30 @@ class SharedController extends BaseController{
 		return $this->_count_today("mixing_tank", "created_at");
 	}
 
+	/**
+     * getcount_granulator Model Action
+     * @return Value
+     */
+	function getcount_granulator(){
+		return $this->_count_today("granulator", "created_at");
+	}
+
+	/**
+     * getcount_check_weigher Model Action
+     * @return Value
+     */
+	function getcount_check_weigher(){
+		return $this->_count_today("check_weigher", "created_at");
+	}
+
+	/**
+     * getcount_conveyor_sig Model Action
+     * @return Value
+     */
+	function getcount_conveyor_sig(){
+		return $this->_count_today("conveyor_sig", "created_at");
+	}
+
 }
 
 

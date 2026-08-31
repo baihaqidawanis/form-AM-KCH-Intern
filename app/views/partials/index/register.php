@@ -87,7 +87,7 @@ $redirect_to = $this->redirect_to;
                                                         <div class="">
                                                             <select required id="ctrl-area" name="area" class="custom-select">
                                                                 <option value="" disabled selected>Pilih area ...</option>
-                                                                <?php foreach (array('Compounding', 'Filling', 'Packaging', 'Semua Area') as $area_option) {
+                                                                <?php foreach (array('Compounding', 'Filling', 'Kemas', 'Wrapping dan Pack Cartoning', 'Semua Area') as $area_option) {
                                                                   $selected = $this->set_field_selected('area', $area_option, "");
                                                                 ?>
                                                                 <option <?php echo $selected; ?> value="<?php echo $area_option; ?>"><?php echo $area_option; ?></option>
@@ -108,9 +108,10 @@ $redirect_to = $this->redirect_to;
                                                                 $mesin_options = $comp_model->sig_Line_option_list();
                                                                 // Prefix nama mesin per kategori, sesuai pengelompokan submenu di helpers/Menu.php.
                                                                 $area_machine_prefixes = array(
-                                                                  'Compounding' => array('cosmec', 'fbd jaw chuan', 'fbd glatt', 'supermixer', 'storage tank', 'mixing tank'),
+                                                                  'Compounding' => array('cosmec', 'fbd jaw chuan', 'fbd glatt', 'supermixer', 'granulator', 'storage tank', 'mixing tank'),
                                                                   'Filling' => array('joeya', 'sig', 'illapak', 'unifill'),
-                                                                  'Packaging' => array('chimei', 'temach', 'jihcheng', 'injekt kemas', 'best pack', 'jinsung'),
+                                                                  'Kemas' => array('jihcheng', 'jinsung'),
+                                                                  'Wrapping dan Pack Cartoning' => array('chimei', 'temach', 'check weigher', 'conveyor sig', 'injekt kemas', 'inkjet kemas', 'best pack', 'cartoning', 'pack', 'wrapping'),
                                                                 );
                                                                 $mesin_area_of = function ($label) use ($area_machine_prefixes) {
                                                                   foreach ($area_machine_prefixes as $area => $prefixes) {

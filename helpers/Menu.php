@@ -42,6 +42,11 @@ class Menu
 					'icon' => ''
 				),
 				array(
+					'path' => 'granulator',
+					'label' => 'Granulator',
+					'icon' => ''
+				),
+				array(
 					'path' => 'storage_tank',
 					'label' => 'Storage Tank Silverson',
 					'icon' => ''
@@ -82,19 +87,9 @@ class Menu
 
 		array(
 			'path' => '/',
-			'label' => 'Packaging',
+			'label' => 'Kemas',
 			'icon' => '<i class="fa fa-gears "></i>',
 			'submenu' => array(
-				array(
-					'path' => 'chimei',
-					'label' => 'Chimei',
-					'icon' => ''
-				),
-				array(
-					'path' => 'temach',
-					'label' => 'Temach',
-					'icon' => ''
-				),
 				array(
 					'path' => 'jihcheng',
 					'label' => 'Jihcheng',
@@ -110,9 +105,37 @@ class Menu
 					'label' => 'Jinsung 5',
 					'icon' => ''
 				),
+			)
+		),
+
+		array(
+			'path' => '/',
+			'label' => 'Wrapping dan Pack Cartoning',
+			'icon' => '<i class="fa fa-gears "></i>',
+			'submenu' => array(
+				array(
+					'path' => 'chimei',
+					'label' => 'Chimei',
+					'icon' => ''
+				),
+				array(
+					'path' => 'temach',
+					'label' => 'Temach',
+					'icon' => ''
+				),
 				array(
 					'path' => 'best_pack',
-					'label' => 'Best Pack',
+					'label' => 'Inkjet Kemas & Best Pack',
+					'icon' => ''
+				),
+				array(
+					'path' => 'check_weigher',
+					'label' => 'Check Weigher',
+					'icon' => ''
+				),
+				array(
+					'path' => 'conveyor_sig',
+					'label' => 'Conveyor SIG',
 					'icon' => ''
 				),
 			)
@@ -559,6 +582,12 @@ class Menu
 			"label" => "K1C55",
 		),
 	);
+
+	// Area kerja user (users.area) -- sebelumnya text bebas (data jadi gak
+	// konsisten, misal "Filling" vs "filling"), sekarang dropdown biar
+	// standar. Samain sama pengelompokan mesin yang udah ada (sidebar &
+	// halaman Approval): Compounding / Filling / Kemas / Wrapping dan Pack Cartoning.
+	public static $area_options = array('Compounding', 'Filling', 'Kemas', 'Wrapping dan Pack Cartoning');
 
 	public static $account_status = array(
 		array(

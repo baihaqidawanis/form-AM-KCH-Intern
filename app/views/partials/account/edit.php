@@ -66,7 +66,7 @@ $redirect_to = $this->redirect_to;
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <input id="ctrl-area"  value="<?php  echo $data['area']; ?>" type="text" placeholder="Enter Area"  required="" name="area"  class="form-control " />
+                                                        <select id="ctrl-area" required="" name="area" placeholder="Pilih Area ..." class="custom-select"><option value="" disabled <?php echo empty($data['area']) ? 'selected' : ''; ?>>Pilih Area ...</option><?php foreach (Menu::$area_options as $opt) { $sel = ($data['area'] === $opt) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $opt; ?>"><?php echo $opt; ?></option><?php } ?></select>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -78,7 +78,7 @@ $redirect_to = $this->redirect_to;
                                                     </div>
                                                     <div class="col-sm-8">
                                                         <div class="">
-                                                            <input id="ctrl-mesin"  value="<?php  echo $data['mesin']; ?>" type="text" placeholder="Enter Mesin"  required="" name="mesin"  class="form-control " />
+                                                            <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select"><option value="" disabled <?php echo empty($data['mesin']) ? 'selected' : ''; ?>>Pilih Mesin ...</option><?php foreach (Master_partController::$machine_keys as $mkey => $mlabel) { $sel = ($data['mesin'] === $mlabel) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $mlabel; ?>"><?php echo $mlabel; ?></option><?php } ?></select>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -14,8 +14,8 @@ class Master_partController extends SecureController
 	/** Daftar machineKey yang valid, sinkron sama $machineKey di tiap *Controller.php mesin. */
 	public static $machine_keys = array(
 		'sig' => 'SIG', 'joeya' => 'Joeya', 'illapak_1_2' => 'Illapak 1 - 2', 'illapak_3_12' => 'Illapak 3 - 12', 'unifill_b' => 'Unifill',
-		'chimei' => 'Chimei', 'temach' => 'Temach', 'jihcheng' => 'Jihcheng', 'jinsung_1_4' => 'Jinsung 1 - 4', 'jinsung_5' => 'Jinsung 5', 'best_pack' => 'Best Pack',
-		'cosmec' => 'Cosmec', 'fbd_jaw_chuan' => 'FBD Jaw Chuan', 'fbd_glatt' => 'FBD Glatt', 'supermixer' => 'Supermixer', 'storage_tank' => 'Storage Tank Silverson', 'storage_tank_tetrapak' => 'Storage Tank Tetrapak', 'mixing_tank' => 'Mixing Tank',
+		'chimei' => 'Chimei', 'temach' => 'Temach', 'check_weigher' => 'Check Weigher', 'conveyor_sig' => 'Conveyor SIG', 'jihcheng' => 'Jihcheng', 'jinsung_1_4' => 'Jinsung 1 - 4', 'jinsung_5' => 'Jinsung 5', 'best_pack' => 'Best Pack',
+		'cosmec' => 'Cosmec', 'fbd_jaw_chuan' => 'FBD Jaw Chuan', 'fbd_glatt' => 'FBD Glatt', 'supermixer' => 'Supermixer', 'granulator' => 'Granulator', 'storage_tank' => 'Storage Tank Silverson', 'storage_tank_tetrapak' => 'Storage Tank Tetrapak', 'mixing_tank' => 'Mixing Tank',
 	);
 
 	// Highlight juga nentuin jumlah pilihan Kondisi yang muncul di form

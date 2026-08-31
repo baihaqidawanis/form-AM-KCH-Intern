@@ -24,8 +24,8 @@ class ACL
 		// 3 = Supervisor: akses Home, AM (full CRUD), Users, Approval, Panduan (URS 2.2) — TANPA Audit Trail
 		3 => array(
 			'sig' => '*', 'joeya' => '*', 'illapak_1_2' => '*', 'illapak_3_12' => '*', 'unifill_b' => '*',
-			'chimei' => '*', 'temach' => '*', 'jihcheng' => '*', 'jinsung_1_4' => '*', 'jinsung_5' => '*', 'best_pack' => '*',
-			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
+			'chimei' => '*', 'temach' => '*', 'check_weigher' => '*', 'conveyor_sig' => '*', 'jihcheng' => '*', 'jinsung_1_4' => '*', 'jinsung_5' => '*', 'best_pack' => '*',
+			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'granulator' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
 			'approval' => '*',
 			'users' => '*',
 			'roles' => '*', 'tag' => '*',
@@ -40,6 +40,8 @@ class ACL
 			'unifill_b' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'chimei' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'temach' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
+			'check_weigher' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
+			'conveyor_sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'jihcheng' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'jinsung_1_4' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'jinsung_5' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
@@ -48,6 +50,7 @@ class ACL
 			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'fbd_glatt' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'supermixer' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
+			'granulator' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'storage_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
 			'mixing_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete'), // view + approval (URS 4.2) + edit_data (dibatasi ke record sendiri, dicek di controller) + delete (URS 3.1), tidak add
@@ -63,6 +66,8 @@ class ACL
 			'unifill_b' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'chimei' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'temach' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
+			'check_weigher' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
+			'conveyor_sig' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'jihcheng' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'jinsung_1_4' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'jinsung_5' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
@@ -71,6 +76,7 @@ class ACL
 			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'fbd_glatt' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'supermixer' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
+			'granulator' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'storage_tank' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)
 			'mixing_tank' => array('list', 'list2', 'view', 'add', 'edit_data'), // + edit_data (dibatasi ke record sendiri, dicek di controller)

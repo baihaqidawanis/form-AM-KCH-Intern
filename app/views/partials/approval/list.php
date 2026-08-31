@@ -51,6 +51,132 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
             <div class="row ">
                 <div class="col-md-12 comp-grid">
                     <h4 ><div class="alert">
+                        <strong>Compounding</strong>
+                    </div>
+                    <style>
+                        .alert {
+                        padding: 20px;
+                        background-color: DodgerBlue;
+                        color: white;
+                        text-align: center;
+                        }
+                    </style></h4>
+                    <div class="card mb-4">
+                        <div class="card-header p-0 pt-2 px-2">
+                            <ul class="nav  nav-tabs   ">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-toggle="tab" href="#TabPage-1-Page1" role="tab" aria-selected="true">
+                                        Cosmec<?php echo $approval_badge('cosmec'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page2" role="tab" aria-selected="true">
+                                        FBD Jaw Chuan<?php echo $approval_badge('fbd_jaw_chuan'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page3" role="tab" aria-selected="true">
+                                        FBD Glatt<?php echo $approval_badge('fbd_glatt'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page4" role="tab" aria-selected="true">
+                                        Supermixer<?php echo $approval_badge('supermixer'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page8" role="tab" aria-selected="true">
+                                        Granulator<?php echo $approval_badge('granulator'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page5" role="tab" aria-selected="true">
+                                        Storage Tank Silverson<?php echo $approval_badge('storage_tank'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page7" role="tab" aria-selected="true">
+                                        Storage Tank Tetrapak<?php echo $approval_badge('storage_tank_tetrapak'); ?>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page6" role="tab" aria-selected="true">
+                                        Mixing Tank<?php echo $approval_badge('mixing_tank'); ?>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <div class="tab-pane show active fade" id="TabPage-1-Page1" role="tabpanel">
+                                    <h4 >Cosmec</h4>
+                                    <div class=" ">
+                                        <?php
+                                        $this->render_page("cosmec/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page2" role="tabpanel">
+                                    <h4 >FBD Jaw Chuan</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("fbd_jaw_chuan/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page3" role="tabpanel">
+                                    <h4 >FBD Glatt</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("fbd_glatt/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page4" role="tabpanel">
+                                    <h4 >Supermixer</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("supermixer/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page8" role="tabpanel">
+                                    <h4 >Granulator</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("granulator/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page5" role="tabpanel">
+                                    <h4 >Storage Tank Silverson</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("storage_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page7" role="tabpanel">
+                                    <h4 >Storage Tank Tetrapak</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("storage_tank_tetrapak/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="TabPage-1-Page6" role="tabpanel">
+                                    <h4 >Mixing Tank</h4>
+                                    <div class="bg-light reset-grids">
+                                        <?php
+                                        $this->render_page("mixing_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 ><div class="alert">
                         <strong>Filling</strong>
                     </div>
                     <style>
@@ -61,7 +187,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         text-align: center;
                         }
                     </style></h4>
-                    <div class="card ">
+                    <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
@@ -138,7 +264,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                     </div>
 
                     <h4 ><div class="alert">
-                        <strong>Packaging</strong>
+                        <strong>Kemas</strong>
                     </div>
                     <style>
                         .alert {
@@ -148,37 +274,22 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         text-align: center;
                         }
                     </style></h4>
-                    <div class="card ">
+                    <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
                                     <a class="nav-link active" data-toggle="tab" href="#TabPage-3-Page1" role="tab" aria-selected="true">
-                                        Chimei<?php echo $approval_badge('chimei'); ?>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page2" role="tab" aria-selected="true">
-                                        Temach<?php echo $approval_badge('temach'); ?>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page3" role="tab" aria-selected="true">
                                         Jihcheng<?php echo $approval_badge('jihcheng'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page4" role="tab" aria-selected="true">
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page2" role="tab" aria-selected="true">
                                         Jinsung 1 - 4<?php echo $approval_badge('jinsung_1_4'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page5" role="tab" aria-selected="true">
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page3" role="tab" aria-selected="true">
                                         Jinsung 5<?php echo $approval_badge('jinsung_5'); ?>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link " data-toggle="tab" href="#TabPage-3-Page6" role="tab" aria-selected="true">
-                                        Best Pack<?php echo $approval_badge('best_pack'); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -186,22 +297,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-3-Page1" role="tabpanel">
-                                    <h4 >Chimei</h4>
-                                    <div class=" ">
-                                        <?php
-                                        $this->render_page("chimei/list2?limit_count=20" , array( 'show_header' => false ));
-                                        ?>
-                                    </div>
-                                </div>
-                                <div class="tab-pane  fade" id="TabPage-3-Page2" role="tabpanel">
-                                    <h4 >Temach</h4>
-                                    <div class="bg-light reset-grids">
-                                        <?php
-                                        $this->render_page("temach/list2?limit_count=20" , array( 'show_header' => false ));
-                                        ?>
-                                    </div>
-                                </div>
-                                <div class="tab-pane  fade" id="TabPage-3-Page3" role="tabpanel">
                                     <h4 >Jihcheng</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
@@ -209,7 +304,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane  fade" id="TabPage-3-Page4" role="tabpanel">
+                                <div class="tab-pane  fade" id="TabPage-3-Page2" role="tabpanel">
                                     <h4 >Jinsung 1 - 4</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
@@ -217,19 +312,11 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane  fade" id="TabPage-3-Page5" role="tabpanel">
+                                <div class="tab-pane  fade" id="TabPage-3-Page3" role="tabpanel">
                                     <h4 >Jinsung 5</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("jinsung_5/list2?limit_count=20" , array( 'show_header' => false ));
-                                        ?>
-                                    </div>
-                                </div>
-                                <div class="tab-pane  fade" id="TabPage-3-Page6" role="tabpanel">
-                                    <h4 >Best Pack</h4>
-                                    <div class="bg-light reset-grids">
-                                        <?php
-                                        $this->render_page("best_pack/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>
@@ -238,7 +325,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                     </div>
 
                     <h4 ><div class="alert">
-                        <strong>Compounding</strong>
+                        <strong>Wrapping dan Pack Cartoning</strong>
                     </div>
                     <style>
                         .alert {
@@ -248,42 +335,32 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         text-align: center;
                         }
                     </style></h4>
-                    <div class="card ">
+                    <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
                                 <li class="nav-item">
                                     <a class="nav-link active" data-toggle="tab" href="#TabPage-4-Page1" role="tab" aria-selected="true">
-                                        Cosmec<?php echo $approval_badge('cosmec'); ?>
+                                        Chimei<?php echo $approval_badge('chimei'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page2" role="tab" aria-selected="true">
-                                        FBD Jaw Chuan<?php echo $approval_badge('fbd_jaw_chuan'); ?>
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-4-Page2" role="tab" aria-selected="true">
+                                        Temach<?php echo $approval_badge('temach'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page3" role="tab" aria-selected="true">
-                                        FBD Glatt<?php echo $approval_badge('fbd_glatt'); ?>
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-4-Page3" role="tab" aria-selected="true">
+                                        Best Pack<?php echo $approval_badge('best_pack'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page4" role="tab" aria-selected="true">
-                                        Supermixer<?php echo $approval_badge('supermixer'); ?>
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-4-Page4" role="tab" aria-selected="true">
+                                        Check Weigher<?php echo $approval_badge('check_weigher'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page5" role="tab" aria-selected="true">
-                                        Storage Tank Silverson<?php echo $approval_badge('storage_tank'); ?>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page7" role="tab" aria-selected="true">
-                                        Storage Tank Tetrapak<?php echo $approval_badge('storage_tank_tetrapak'); ?>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-toggle="tab" href="#TabPage-4-Page6" role="tab" aria-selected="true">
-                                        Mixing Tank<?php echo $approval_badge('mixing_tank'); ?>
+                                    <a class="nav-link " data-toggle="tab" href="#TabPage-4-Page5" role="tab" aria-selected="true">
+                                        Conveyor SIG<?php echo $approval_badge('conveyor_sig'); ?>
                                     </a>
                                 </li>
                             </ul>
@@ -291,58 +368,42 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-4-Page1" role="tabpanel">
-                                    <h4 >Cosmec</h4>
+                                    <h4 >Chimei</h4>
                                     <div class=" ">
                                         <?php
-                                        $this->render_page("cosmec/list2?limit_count=20" , array( 'show_header' => false ));
+                                        $this->render_page("chimei/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page2" role="tabpanel">
-                                    <h4 >FBD Jaw Chuan</h4>
+                                <div class="tab-pane  fade" id="TabPage-4-Page2" role="tabpanel">
+                                    <h4 >Temach</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
-                                        $this->render_page("fbd_jaw_chuan/list2?limit_count=20" , array( 'show_header' => false ));
+                                        $this->render_page("temach/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page3" role="tabpanel">
-                                    <h4 >FBD Glatt</h4>
+                                <div class="tab-pane  fade" id="TabPage-4-Page3" role="tabpanel">
+                                    <h4 >Inkjet Kemas & Best Pack</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
-                                        $this->render_page("fbd_glatt/list2?limit_count=20" , array( 'show_header' => false ));
+                                        $this->render_page("best_pack/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page4" role="tabpanel">
-                                    <h4 >Supermixer</h4>
+                                <div class="tab-pane  fade" id="TabPage-4-Page4" role="tabpanel">
+                                    <h4 >Check Weigher</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
-                                        $this->render_page("supermixer/list2?limit_count=20" , array( 'show_header' => false ));
+                                        $this->render_page("check_weigher/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page5" role="tabpanel">
-                                    <h4 >Storage Tank Silverson</h4>
+                                <div class="tab-pane  fade" id="TabPage-4-Page5" role="tabpanel">
+                                    <h4 >Conveyor SIG</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
-                                        $this->render_page("storage_tank/list2?limit_count=20" , array( 'show_header' => false ));
-                                        ?>
-                                    </div>
-                                </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page7" role="tabpanel">
-                                    <h4 >Storage Tank Tetrapak</h4>
-                                    <div class="bg-light reset-grids">
-                                        <?php
-                                        $this->render_page("storage_tank_tetrapak/list2?limit_count=20" , array( 'show_header' => false ));
-                                        ?>
-                                    </div>
-                                </div>
-                                <div class="tab-pane fade" id="TabPage-4-Page6" role="tabpanel">
-                                    <h4 >Mixing Tank</h4>
-                                    <div class="bg-light reset-grids">
-                                        <?php
-                                        $this->render_page("mixing_tank/list2?limit_count=20" , array( 'show_header' => false ));
+                                        $this->render_page("conveyor_sig/list2?limit_count=20" , array( 'show_header' => false ));
                                         ?>
                                     </div>
                                 </div>

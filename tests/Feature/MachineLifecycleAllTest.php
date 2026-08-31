@@ -52,6 +52,9 @@ class MachineLifecycleAllTest extends TestCase
             'fbd_jaw_chuan' => array('fbd_jaw_chuan'),
             'fbd_glatt' => array('fbd_glatt'),
             'supermixer' => array('supermixer'),
+            'granulator' => array('granulator'),
+            'check_weigher' => array('check_weigher'),
+            'conveyor_sig' => array('conveyor_sig'),
             'joeya' => array('joeya'),
         );
     }

@@ -379,3 +379,61 @@ INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "met
 SELECT 'storage_tank_tetrapak', "field_name", "label", "section", "metode", "alat", "standard", "durasi", "pelaksanaan", "highlight", "image_path", "urutan"
 FROM "master_part" WHERE "machine_key" = 'storage_tank'
 ON CONFLICT ("machine_key", "field_name") DO NOTHING;
+
+-- Granulator (Compounding)
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Granulator'
+WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Granulator');
+
+INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "metode", "alat", "standard", "durasi", "pelaksanaan", "highlight", "image_path", "urutan") VALUES
+  ('granulator', 'body_mesin', 'Body Mesin', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Wypall dan air', 'Bagian luar bersih dari kotoran', '10''', 'Harian', NULL, 'assets/images/granulator/granulator body mesin.png', 1),
+  ('granulator', 'perforated_mesh', 'Perforated Mesh', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tidak sobek, terpasang rapat', '1''', 'Harian', NULL, 'assets/images/granulator/granulator perforated mesh.png', 2),
+  ('granulator', 'baling_baling_pisau', 'Baling-baling Pisau', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Test Fungsi', 'Visual Control', 'Berfungsi normal, tidak bergesekan dengan mesh', '1''', 'Harian', NULL, 'assets/images/granulator/granulator baling baling pisau.png', 3),
+  ('granulator', 'seal_corong', 'Seal Corong', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tidak sobek', '1''', 'Mingguan', 'mingguan', 'assets/images/granulator/granulator seal corong.png', 4)
+ON CONFLICT ("machine_key", "field_name") DO NOTHING;
+
+-- Check Weigher (Wrapping dan Pack Cartoning)
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Check Weigher Jinsung 1' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Check Weigher Jinsung 1');
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Check Weigher Jinsung 2' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Check Weigher Jinsung 2');
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Check Weigher Jinsung 3' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Check Weigher Jinsung 3');
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Check Weigher Jinsung 4' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Check Weigher Jinsung 4');
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Check Weigher Jinsung 5' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Check Weigher Jinsung 5');
+
+INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "metode", "alat", "standard", "durasi", "pelaksanaan", "highlight", "image_path", "urutan") VALUES
+  ('check_weigher', 'lengan_rejector', 'Lengan Rejector', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Qulitec dan Air', 'Bersih dari kotoran', '2''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher lengan rejector.png', 1),
+  ('check_weigher', 'body_mesin_check_weigher', 'Body Mesin Check Weigher', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Qulitec dan Air', 'Bersih dari kotoran', '5''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher body mesin check weigher.png', 2),
+  ('check_weigher', 'vanbelt', 'Vanbelt', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Qulitec dan Air', 'Bersih dan Tidak Lengket', '30''', 'Mingguan/Saat CM Ilapak', 'mingguan', 'assets/images/check_weigher/check_weigher vanbelt.png', 3),
+  ('check_weigher', 'belt_check_weigher', 'Belt Check Weigher', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Quilltec', 'Bersih dan Tidak Lengket', '2''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher belt check weigher.png', 4),
+  ('check_weigher', 'roller_dan_bearing', 'Roller dan bearing', 'STANDAR PEMBERSIHAN (CLEANING)', 'Disemprot', 'Air Gun', 'Bersih dari kotoran', '30''', 'Mingguan/Saat CM Ilapak', 'mingguan', 'assets/images/check_weigher/check_weigher roller dan bearing.png', 5),
+  ('check_weigher', 'pelumasan_roller_dan_bearing', 'Roller dan bearing', 'STANDAR PELUMASAN (LUBRICATING)', 'Dilumasi', 'Grease', 'Terlumasi merata', '30''', 'Mingguan/Saat CM ilapak', 'mingguan', 'assets/images/check_weigher/check_weigher pelumasan roller dan bearing.png', 6),
+  ('check_weigher', 'bearing_roller', 'Bearing Roller', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek, kencangkan bila perlu', 'Visual Control', 'Tidak rusak, tidak kendur', '2''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher bearing roller.png', 7),
+  ('check_weigher', 'kaki_kaki', 'Kaki-Kaki', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek, kencangkan bila perlu', 'Visual Control', 'Tidak rusak, tidak kendur', '2''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher kaki kaki.png', 8),
+  ('check_weigher', 'pengecekan_belt_check_weigher', 'Belt Check Weigher', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek, kencangkan bila perlu', 'Visual Control', 'Tidak sobek', '5''', 'Harian', NULL, 'assets/images/check_weigher/check_weigher pengecekan belt check weigher.png', 9)
+ON CONFLICT ("machine_key", "field_name") DO NOTHING;
+
+-- Conveyor SIG (Wrapping dan Pack Cartoning)
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Conveyor SIG 5' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Conveyor SIG 5');
+INSERT INTO "mesin" ("nama_mesin")
+SELECT 'Conveyor SIG 6' WHERE NOT EXISTS (SELECT 1 FROM "mesin" WHERE "nama_mesin" = 'Conveyor SIG 6');
+
+INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "metode", "alat", "standard", "durasi", "pelaksanaan", "highlight", "image_path", "urutan") VALUES
+  ('conveyor_sig', 'meja', 'Meja', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Lap kering', 'Bersih dari kotoran', '2''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig meja.png', 1),
+  ('conveyor_sig', 'konveyor_belt_flexible_konveyor', 'Konveyor belt, Flexible Konveyor', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Lap kering', 'Bersih dari kotoran', '2''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig konveyor belt flexible konveyor.png', 2),
+  ('conveyor_sig', 'badan_konveyor', 'Badan Konveyor', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Lap kering', 'Bersih dari kotoran', '2''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig badan konveyor.png', 3),
+  ('conveyor_sig', 'sensor_untuk_batch', 'Sensor untuk batch', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Lap Kain dan Air', 'Bersih dari kotoran', '2''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig sensor untuk batch.png', 4),
+  ('conveyor_sig', 'roller', 'Roller', 'STANDAR PEMBERSIHAN (CLEANING)', 'Dilap', 'Lap Kain dan Air', 'Bersih dari kotoran', '15''', 'Mingguan', 'mingguan', 'assets/images/conveyor_sig/conveyor_sig roller.png', 5),
+  ('conveyor_sig', 'rantai_penggerak_utama', 'Rantai Penggerak Utama', 'STANDAR PELUMASAN (LUBRICATING)', 'Disemprot', 'Chain Lube', 'Terlumasi merata', '5''', 'Mingguan', 'mingguan', 'assets/images/conveyor_sig/conveyor_sig rantai penggerak utama.png', 6),
+  ('conveyor_sig', 'pengecekan_konveyor_belt_flexible_konveyor', 'Konveyor belt, Flexible Konveyor', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tekanan minimal 4 bar', '1''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig pengecekan konveyor belt flexible konveyor.png', 7),
+  ('conveyor_sig', 'pengecekan_roller', 'Roller', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tekanan 1.5 - 3 bar', '1''', 'Harian', NULL, 'assets/images/conveyor_sig/conveyor_sig pengecekan roller.png', 8),
+  ('conveyor_sig', 'sensor', 'Sensor', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Tes Fungsi', 'Visual Control', 'Sensor berfungsi', '5''', 'Mingguan', 'mingguan', 'assets/images/conveyor_sig/conveyor_sig sensor.png', 9),
+  ('conveyor_sig', 'control_panel', 'Control Panel', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Tes Fungsi', 'Visual Control', 'Panel berfungsi', '5''', 'Mingguan', 'mingguan', 'assets/images/conveyor_sig/conveyor_sig control panel.png', 10)
+ON CONFLICT ("machine_key", "field_name") DO NOTHING;
+
+
+
