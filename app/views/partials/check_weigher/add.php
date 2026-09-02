@@ -10,7 +10,7 @@ $unit_options = $model->GetModel()->where('nama_mesin', 'Check Weigher%', 'LIKE'
 
 // Detail part dari master_part
 $master_db = new SharedController;
-$part_rows = $master_db->GetModel()->where('machine_key', 'check_weigher')->orderBy('urutan', 'ASC')->get('master_part');
+$part_rows = $master_db->GetModel()->where('machine_key', 'check_weigher')->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part');
 $part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {
@@ -71,7 +71,9 @@ $page_element_id = 'check_weigher-add-' . random_str();
               </select>
             </div>
 
-            <?php foreach ($sections as $section_title => $section_fields) { ?>
+            <?php foreach ($sections as $section_title => $section_fields) {
+  $visible_fields = array_filter($section_fields, function($f) use ($parts) { return isset($parts[$f]); });
+  if (empty($visible_fields)) { continue; } ?>
               <div class="section-block mb-4">
                 <div class="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
                   <h4 class="text-primary m-0"><?php echo $section_title; ?></h4>

@@ -7,7 +7,7 @@ $parts = $this->view_data['parts'];
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) dari master_part
 $master_db = new SharedController;
-$part_rows = $master_db->GetModel()->where('machine_key', 'granulator')->orderBy('urutan', 'ASC')->get('master_part');
+$part_rows = $master_db->GetModel()->where('machine_key', 'granulator')->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part');
 $part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {
@@ -61,7 +61,9 @@ $mesin_id = $master_db->GetModel()->where('nama_mesin', 'Granulator')->getValue(
             action="<?php print_link("granulator/add?csrf_token=$csrf_token") ?>" method="post"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <input type="hidden" name="mesin" value="<?php echo $mesin_id; ?>">
 
-            <?php foreach ($sections as $section_title => $section_fields) { ?>
+            <?php foreach ($sections as $section_title => $section_fields) {
+  $visible_fields = array_filter($section_fields, function($f) use ($parts) { return isset($parts[$f]); });
+  if (empty($visible_fields)) { continue; } ?>
               <div class="section-block mb-4">
                 <div class="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
                   <h4 class="text-primary m-0"><?php echo $section_title; ?></h4>

@@ -10,7 +10,7 @@ $parts = $this->view_data['parts'];
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data
 // Part), bukan hardcoded array lagi -- lihat Master_partController.
 $master_db = new SharedController;
-$part_rows = $master_db->GetModel()->where('machine_key', 'illapak_1_2')->orderBy('urutan', 'ASC')->get('master_part');
+$part_rows = $master_db->GetModel()->where('machine_key', 'illapak_1_2')->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part');
 $part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {
@@ -95,7 +95,9 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
                 } ?>
               </select></div>
 
-            <?php foreach ($sections as $section_title => $section_fields) { ?>
+            <?php foreach ($sections as $section_title => $section_fields) {
+  $visible_fields = array_filter($section_fields, function($f) use ($parts) { return isset($parts[$f]); });
+  if (empty($visible_fields)) { continue; } ?>
               <div class="section-block mb-4">
                 <div class="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
                   <h4 class="text-primary m-0"><?php echo $section_title; ?></h4>
