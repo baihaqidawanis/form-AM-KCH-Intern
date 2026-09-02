@@ -47,12 +47,16 @@ class Master_partController extends SecureController
 	 * Section yang udah ada per mesin, dikelompokin machine_key => [section, ...]
 	 * -- dikirim ke view add/edit buat isi dropdown "Section" (pilih yang udah
 	 * ada, biar gak typo bikin grup ganda) sekaligus opsi ketik baru.
+	 *
+	 * Hanya part AKTIF (taken_out_at IS NULL) yang dimasukkan ke picker --
+	 * section dari part yang sudah di-takeout atau dihapus tidak perlu muncul
+	 * lagi karena tidak ada part aktif yang mereferensikan section itu.
 	 * @return array
 	 */
 	private function sections_by_machine()
 	{
 		$db = $this->GetModel();
-		$db->groupBy('machine_key')->groupBy('section')->orderBy('section', 'ASC');
+		$db->where('taken_out_at', null, 'IS')->groupBy('machine_key')->groupBy('section')->orderBy('section', 'ASC');
 		$rows = $db->get('master_part', null, array('machine_key', 'section'));
 		$grouped = array();
 		foreach ($rows as $row) {
