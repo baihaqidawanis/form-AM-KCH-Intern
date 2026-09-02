@@ -179,8 +179,12 @@ class Master_partController extends SecureController
 			//mesinnya (dihitung di bawah), biar-biar posisinya cuma bisa diatur
 			//lewat drag-and-drop di list (satu-satunya sumber kebenaran urutan,
 			//gak ada lagi input angka manual yang bisa bentrok/duplikat/minus).
-			$this->fields = array('machine_key', 'field_name', 'label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path');
+			$this->fields = array('machine_key', 'field_name', 'label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'shift_schedule', 'highlight', 'image_path');
 			$postdata = $this->format_request_data($formdata);
+			// Kalau validasi gagal, form Add dirender lagi pada request yang sama.
+			// Simpan nilai POST untuk diisi ulang oleh view, supaya admin tidak
+			// kehilangan isian yang sudah panjang hanya karena satu field salah.
+			$this->view->form_values = $postdata;
 			$this->rules_array = array(
 				'machine_key' => 'required',
 				'field_name' => 'required',
@@ -199,6 +203,11 @@ class Master_partController extends SecureController
 			if (!empty($modeldata['image_path'])) {
 				$modeldata['image_path'] = $this->relative_image_path($modeldata['image_path']);
 			}
+			// Backward-compatible untuk integrasi/data lama yang belum mengirim
+			// field ini: perilaku historis semua part adalah Shift 1.
+			$modeldata['shift_schedule'] = $this->normalize_shift_schedule(!empty($modeldata['shift_schedule']) ? $modeldata['shift_schedule'] : '1');
+			$modeldata['active_from'] = date('Y-m-d');
+			if ($modeldata['shift_schedule'] === null) { $this->view->page_error[] = 'Jadwal shift harus berisi minimal satu shift yang valid (1, 2, atau 3).'; }
 			//machine_key wajib dari whitelist -- dropdown di UI udah batasin, tapi
 			//tetap divalidasi ulang di server karena nilai ini dipakai bangun nama
 			//tabel mentah buat ALTER TABLE di bawah (jangan percaya POST mentah-mentah).
@@ -267,7 +276,7 @@ class Master_partController extends SecureController
 			//Urutan gak ikut diedit di sini -- cuma diatur lewat drag-and-drop di
 			//list (lihat reorder()). Field deskriptif juga gak di-sanitize_string,
 			//sama alasannya kayak di add() -- lihat catatan di sana.
-			$this->fields = array('label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'highlight', 'image_path');
+			$this->fields = array('label', 'section', 'metode', 'alat', 'standard', 'durasi', 'pelaksanaan', 'shift_schedule', 'highlight', 'image_path');
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array('label' => 'required');
 			$this->sanitize_array = array();
@@ -275,6 +284,8 @@ class Master_partController extends SecureController
 			//foto lama dibiarkan (gak dihapus) kalau admin gak upload foto baru pas edit.
 			if (empty($modeldata['image_path'])) { unset($modeldata['image_path']); }
 			else { $modeldata['image_path'] = $this->relative_image_path($modeldata['image_path']); }
+			$modeldata['shift_schedule'] = $this->normalize_shift_schedule(!empty($modeldata['shift_schedule']) ? $modeldata['shift_schedule'] : '1');
+			if ($modeldata['shift_schedule'] === null) { $this->view->page_error[] = 'Jadwal shift harus berisi minimal satu shift yang valid (1, 2, atau 3).'; }
 			if ($this->validated()) {
 				$modeldata['updated_at'] = datetime_now();
 				$db->where('id', $rec_id);
@@ -297,6 +308,14 @@ class Master_partController extends SecureController
 		if (!$data) { $this->set_page_error('No record found'); $data = array(); }
 		$this->view->page_title = 'Edit Part';
 		return $this->render_view('master_part/edit.php', $data);
+	}
+
+	/** Canonical form: "1", "1,2", atau "1,2,3". */
+	private function normalize_shift_schedule($value)
+	{
+		$values = array_unique(array_filter(array_map('trim', explode(',', (string) $value)), function ($shift) { return in_array($shift, array('1', '2', '3'), true); }));
+		sort($values, SORT_NUMERIC);
+		return empty($values) ? null : implode(',', $values);
 	}
 
 	/**
@@ -323,5 +342,33 @@ class Master_partController extends SecureController
 			$this->set_flash_msg($db->getLastError(), 'danger');
 		}
 		return $this->redirect($back_url);
+	}
+
+	/**
+	 * Takeout menghentikan part dari form baru tanpa menghapus definisi atau
+	 * nilai pada report lama. Ini satu-satunya jalur normal untuk part aktif.
+	 */
+	function takeout($rec_id = null, $formdata = null)
+	{
+		$db = $this->GetModel();
+		$db->where('id', $rec_id);
+		$part = $db->getOne($this->tablename, array('id', 'machine_key', 'label', 'taken_out_at'));
+		if (!$part) { $this->set_page_error('Part tidak ditemukan'); return $this->redirect('master_part'); }
+		if ($formdata) {
+			Csrf::cross_check();
+			$reason = trim((string)($formdata['takeout_reason'] ?? ''));
+			if ($reason === '') { $this->view->page_error[] = 'Alasan takeout wajib diisi.'; }
+			else {
+				$db->where('id', $rec_id);
+				if ($db->update($this->tablename, array('taken_out_at' => datetime_now(), 'taken_out_by' => USER_NAME, 'takeout_reason' => $reason))) {
+					$this->write_to_log('takeout', 'true');
+					$this->set_flash_msg('Part ditakeout. Report historis tetap mempertahankan part ini.', 'success');
+					return $this->redirect('master_part/index/' . $part['machine_key']);
+				}
+				$this->set_page_error($db->getLastError());
+			}
+		}
+		$this->view->page_title = 'Takeout Part';
+		return $this->render_view('master_part/takeout.php', $part);
 	}
 }

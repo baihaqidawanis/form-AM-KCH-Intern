@@ -91,7 +91,9 @@ class ApiClient
     {
         $getPage = $this->get($tokenSourcePath);
         $token = $this->extractCsrfToken((string) $getPage->getBody());
-        $resp = $this->client->post(ltrim($postPath, '/') . '/?csrf_token=' . $token, array(
+        $formParams['csrf_token'] = $token;
+        $sep = str_contains($postPath, '?') ? '&' : '?';
+        $resp = $this->client->post(ltrim($postPath, '/') . $sep . 'csrf_token=' . $token, array(
             'form_params' => $formParams,
         ));
         $this->lastBody = (string) $resp->getBody();
@@ -110,6 +112,9 @@ class ApiClient
     public function extractCsrfToken(string $html): string
     {
         if (preg_match('/csrf_token=([a-f0-9]+)/', $html, $m)) {
+            return $m[1];
+        }
+        if (preg_match('/name="csrf_token"\s+value="([a-f0-9]+)"/i', $html, $m)) {
             return $m[1];
         }
         throw new \RuntimeException('csrf_token gak ketemu di halaman — kemungkinan gak lagi login atau halaman error');

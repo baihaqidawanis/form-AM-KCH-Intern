@@ -55,8 +55,11 @@ $page_element_id = 'best_pack-add-' . random_str();
       <div class="col-md-9">
         <div class="bg-light p-3 animated fadeIn page-content">
           <?php $this::display_page_errors(); ?>
+<?php $is_shift_form = !empty($this->uses_shift); $selected_shift = $this->selected_shift ?? ''; if ($is_shift_form && !$selected_shift) { ?>
+<div class="alert alert-info"><strong>Pilih Shift Pemeriksaan</strong><div class="form-inline mt-2"><select id="shift-selector" class="custom-select mr-2"><option value="">Pilih shift ...</option><option value="1">Shift 1</option><option value="2">Shift 2</option><option value="3">Shift 3</option></select><button type="button" class="btn btn-primary" onclick="var s=document.getElementById('shift-selector').value;if(s){window.location.href=window.location.pathname+'?shift='+s;}">Tampilkan Checklist</button></div></div>
+<?php } ?>
           <form id="best_pack-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("best_pack/add?csrf_token=$csrf_token") ?>" method="post">
+            action="<?php print_link("best_pack/add?csrf_token=$csrf_token") ?>" method="post"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <input type="hidden" name="mesin" value="35">
 
             <?php foreach ($sections as $section_title => $section_fields) { ?>

@@ -36,7 +36,9 @@ define("SITE_NAME", "Form AM Site Pulogadung");
 
 
 // Get Site Address Dynamically
-$site_addr = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off" ? "https" : "http") . "://" . $_SERVER["HTTP_HOST"] . dirname($_SERVER["SCRIPT_NAME"]);
+$http_host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$script_name = $_SERVER['SCRIPT_NAME'] ?? '/form-am/index.php';
+$site_addr = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] !== "off" ? "https" : "http") . "://" . $http_host . dirname($script_name);
 
 //Must end with /
 $site_addr = rtrim($site_addr, "/\\") . "/";

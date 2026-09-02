@@ -1562,3 +1562,9 @@ body{
 	display:inline;
 	max-height:30px;
 }
+
+/* Export generik (Print/Word/CSV/PDF per tabel) tidak dipakai untuk AM.
+   Gunakan tombol Check Sheet PDF yang menuju format formulir resmi. */
+.export-btn-holder {
+	display: none !important;
+}

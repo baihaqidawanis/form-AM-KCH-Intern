@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\ApiClient;
 
+require_once dirname(__DIR__, 2) . '/config.php';
+
 /**
  * Halaman Approval gabungan (tab semua mesin sekaligus, ApprovalController)
  * dan Audit Trail (Audit_logController) -- RBAC matrix URS 2.2: Approval
@@ -54,6 +56,9 @@ class ApprovalAndAuditAccessTest extends TestCase
     public function test_badge_notif_approval_nunjukin_angka_yang_bener_bukan_selalu_1(): void
     {
         $admin = (new ApiClient())->loginAs('administrator');
+        $pdo = new \PDO("pgsql:host=" . \DB_HOST . ";port=" . \DB_PORT . ";dbname=" . \DB_NAME, \DB_USERNAME, \DB_PASSWORD);
+        $pdo->exec("DELETE FROM tb_mesin_best_pack WHERE approval IS NULL OR approval = ''");
+
         $addPage = $admin->get('chimei/add');
         $html = (string) $addPage->getBody();
         $fields = \Tests\Support\FormScraper::partFieldNames($html);

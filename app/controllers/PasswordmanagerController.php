@@ -8,12 +8,12 @@ class PasswordmanagerController extends BaseController{
 		$this->render_view("passwordmanager/index.php", null, "info_layout.php");
 	}
 	function postresetlink(){
-		if(!empty($this->post->email)){
-			$email = $this->post->email;
+		$email = trim($this->post->email ?? '');
+		if(!empty($email)){
 			$tablename = $this->tablename;
 			$db = $this->GetModel();
-			$db->where ("email", $email); //get user by email
-			$user = $db->getOne($tablename, array('id_user', 'username'));
+			$db->where("email", $email)->orWhere("username", $email);
+			$user = $db->getOne($tablename, array('id_user', 'username', 'email'));
 			if(!empty($user)){
 				//Generate new password reset
 				$password_reset_key = password_hash(random_str(), PASSWORD_DEFAULT);
@@ -34,11 +34,16 @@ class PasswordmanagerController extends BaseController{
 				$mailbody = str_ireplace("{{username}}", $user_name, $mailbody);
 				$mailbody = str_ireplace("{{link}}" , $reset_link,$mailbody);
 				$mailbody = str_ireplace("{{sitename}}" , $sitename,$mailbody);
+				// Mode internal: user membuka form reset langsung, lalu akun menjadi
+				// pending_activation sampai administrator mengaktifkannya. Kode SMTP
+				// tetap dipertahankan untuk saat USE_SMTP=true diaktifkan kembali.
+				if (!USE_SMTP) {
+					return $this->redirect('passwordmanager/updatepassword?key=' . urlencode($password_reset_key));
+				}
 				$mailer = new Mailer;
 				if($mailer->send_mail($email, $mailtitle, $mailbody) == true){
 					$this->render_view("passwordmanager/password_reset_link_sent.php", $mailbody, "info_layout.php");
-				}
-				else{
+				} else {
 					$msg = "Error sending email. Please contact system administrator for more info";
 					$this->render_view("errors/error_general.php", $msg, "info_layout.php");
 				}
@@ -80,11 +85,14 @@ class PasswordmanagerController extends BaseController{
 							$new_password_data = array(
 								"password" => $new_password_hash,
 								"password_reset_key" => null,
-								"password_expire_date" => $new_date_to_expire
+								"password_expire_date" => $new_date_to_expire,
+								// Password baru belum boleh dipakai sebelum admin menyetujui.
+								"account_status" => "pending_activation"
 							);
 							$db->where ("password_reset_key", $hashed_key);
 							$db->update($tablename, $new_password_data);
 							if($db->getRowCount()){
+								$this->write_to_log('password_reset_pending_activation', 'true');
 								$this->render_view("passwordmanager/password_reset_completed.php", null, "info_layout.php");
 							}
 							else{

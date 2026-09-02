@@ -62,11 +62,13 @@ class MachineLifecycleAllTest extends TestCase
     /** @dataProvider machineProvider */
     public function test_lifecycle_semua_ok_auto_approve(string $machine): void
     {
-        $addPage = $this->client->get("$machine/add");
+        $addUrl = $machine === 'illapak_3_12' ? "$machine/add?shift=1" : "$machine/add";
+        $addPage = $this->client->get($addUrl);
         $this->assertSame(200, $addPage->getStatusCode(), "$machine: halaman add gagal dibuka");
         $html = (string) $addPage->getBody();
 
-        $payload = FormScraper::buildAllOkPayload($html);
+        $extra = $machine === 'illapak_3_12' ? array('shift' => '1') : array();
+        $payload = FormScraper::buildAllOkPayload($html, $extra);
         $this->assertNotEmpty(FormScraper::partFieldNames($html), "$machine: gagal baca daftar part dari form add");
 
         $submit = $this->client->postWithCsrf("$machine/add", $payload);
@@ -96,12 +98,14 @@ class MachineLifecycleAllTest extends TestCase
     /** @dataProvider machineProvider */
     public function test_lifecycle_satu_nok_pending_approval(string $machine): void
     {
-        $addPage = $this->client->get("$machine/add");
+        $addUrl = $machine === 'illapak_3_12' ? "$machine/add?shift=1" : "$machine/add";
+        $addPage = $this->client->get($addUrl);
         $html = (string) $addPage->getBody();
         $fields = FormScraper::partFieldNames($html);
         $this->assertNotEmpty($fields, "$machine: gagal baca daftar part");
 
-        $payload = FormScraper::buildOneNokPayload($html, $fields[0], "Test PHPUnit $machine — kondisi tidak baik");
+        $extra = $machine === 'illapak_3_12' ? array('shift' => '1') : array();
+        $payload = FormScraper::buildOneNokPayload($html, $fields[0], "Test PHPUnit $machine — kondisi tidak baik", $extra);
         $submit = $this->client->postWithCsrf("$machine/add", $payload);
         $this->assertSame(200, $submit->getStatusCode(), "$machine: submit dengan 1 NOK gagal");
         $body = (string) $submit->getBody();

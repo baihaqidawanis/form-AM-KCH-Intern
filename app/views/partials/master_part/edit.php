@@ -73,6 +73,21 @@ $existing_sections = isset($sections_by_machine[$data['machine_key']]) ? $sectio
               <input type="text" name="pelaksanaan" class="form-control" value="<?php echo $data['pelaksanaan']; ?>" />
             </div>
             <div class="form-group">
+              <label>Berlaku pada Shift <span class="text-danger">*</span></label>
+              <?php $selected_shifts = explode(',', $data['shift_schedule'] ?? '1'); ?>
+              <div class="d-flex flex-wrap" id="shift-schedule-options">
+                <?php foreach (array('1', '2', '3') as $shift) { ?>
+                  <div class="custom-control custom-checkbox custom-control-inline mr-3 mb-2">
+                    <input type="checkbox" class="custom-control-input shift-schedule-option" id="ctrl-shift-<?php echo $shift; ?>" data-shift="<?php echo $shift; ?>" <?php echo in_array($shift, $selected_shifts, true) ? 'checked' : ''; ?> />
+                    <label class="custom-control-label" for="ctrl-shift-<?php echo $shift; ?>">Shift <?php echo $shift; ?></label>
+                  </div>
+                <?php } ?>
+              </div>
+              <input type="hidden" required name="shift_schedule" id="ctrl-shift-schedule" value="<?php echo htmlspecialchars(implode(',', $selected_shifts)); ?>" />
+              <small id="shift-schedule-error" class="form-text text-danger" style="display:none">Pilih minimal satu shift.</small>
+              <small class="form-text text-muted">Dipakai oleh filter checklist. Teks Pelaksanaan hanya untuk informasi operator.</small>
+            </div>
+            <div class="form-group">
               <label>Highlight Baris</label>
               <select name="highlight" class="custom-select">
                 <?php foreach ($highlight_options as $value => $label) { $sel = ($value == $data['highlight']) ? 'selected' : ''; ?>
@@ -104,6 +119,17 @@ $existing_sections = isset($sections_by_machine[$data['machine_key']]) ? $sectio
 $(function () {
   $('#ctrl-section-picker').on('change', function () {
     if (this.value) { $('#ctrl-section').val(this.value); }
+  });
+
+  function syncShiftSchedule() {
+    var shifts = $('.shift-schedule-option:checked').map(function () { return $(this).data('shift').toString(); }).get();
+    $('#ctrl-shift-schedule').val(shifts.join(','));
+    $('#shift-schedule-error').toggle(shifts.length === 0);
+    return shifts.length > 0;
+  }
+  $('.shift-schedule-option').on('change', syncShiftSchedule);
+  $('form').on('submit', function (event) {
+    if (!syncShiftSchedule()) { event.preventDefault(); }
   });
 });
 </script>

@@ -30,6 +30,7 @@ abstract class BaseMachineController extends SecureController
 		parent::__construct();
 		$this->tablename = $this->machineKey;
 		$this->loadDynamicParts();
+		if ($this->machineUsesConfiguredShift() && !in_array('shift', $this->extraFields, true)) { $this->extraFields[] = 'shift'; }
 	}
 
 	/**
@@ -39,10 +40,27 @@ abstract class BaseMachineController extends SecureController
 	 * sekali buat mesin ini, tetap pakai $parts hardcoded di subclass (mesin
 	 * yang belum dimigrasikan ke master data).
 	 */
+	/** Shift aktif mengatur form BARU dan dropdown shift. */
+	private function machineUsesConfiguredShift()
+	{
+		$db = $this->GetModel();
+		$db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->where("(shift_schedule LIKE '%2%' OR shift_schedule LIKE '%3%')");
+		return $db->has('master_part');
+	}
+
+	/** Shift historis mengatur cara membaca report lama setelah takeout. */
+	private function machineHasShiftHistory()
+	{
+		$db = $this->GetModel();
+		$db->where('machine_key', $this->machineKey)->where("(shift_schedule LIKE '%2%' OR shift_schedule LIKE '%3%')");
+		return $db->has('master_part');
+	}
 	private function loadDynamicParts()
 	{
 		$db = $this->GetModel();
-		$db->where('machine_key', $this->machineKey)->orderBy('urutan', 'ASC');
+		// Part yang sudah takeout tidak boleh muncul pada form baru. Data historis
+		// memakai partsForRecord(), bukan daftar aktif ini.
+		$db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC');
 		$rows = $db->get('master_part', null, array('field_name', 'label'));
 		if (!empty($rows)) {
 			$parts = array();
@@ -56,6 +74,106 @@ abstract class BaseMachineController extends SecureController
 	/** Nama tabel fisik di DB, terpisah dari $machineKey (yang tetap dipakai buat URL/nama folder view/idColumn). */
 	protected function sqlTable() { return 'tb_mesin_' . $this->machineKey; }
 	protected function part_fields() { return array_keys($this->parts); }
+	/** Field master yang pernah ada, termasuk part takeout, untuk membaca histori. */
+	protected function historicalPartFields()
+	{
+		$db = $this->GetModel();
+		$rows = $db->where('machine_key', $this->machineKey)->orderBy('urutan', 'ASC')->get('master_part', null, array('field_name'));
+		if (empty($rows)) { return $this->part_fields(); }
+		return array_values(array_unique(array_map(function ($row) { return $row['field_name']; }, $rows)));
+	}
+
+	/** Tanggal operasional dimulai 06:45 dan selesai 05:45 esok harinya. */
+	protected function operationalDate($at = null)
+	{
+		$time = $at ? new DateTime($at, new DateTimeZone('Asia/Jakarta')) : new DateTime('now', new DateTimeZone('Asia/Jakarta'));
+		if ($time->format('H:i') < '06:45') { $time->modify('-1 day'); }
+		return $time->format('Y-m-d');
+	}
+
+	/** Daftar part sesuai saat record dibuat; takeout tengah hari tidak mengubah form shift lama. */
+	protected function partsForRecord($operational_date, $record_created_at = null)
+	{
+		$db = $this->GetModel();
+		$db->where('machine_key', $this->machineKey)->where('active_from', $operational_date, '<=');
+		if ($record_created_at) {
+			// active_from hanya DATE. created_at memastikan part yang dibuat belakangan
+			// pada hari sama tidak masuk ke form yang sudah lebih dulu disubmit.
+			$db->where('(created_at IS NULL OR created_at <= ?)', array($record_created_at));
+			$db->where('(taken_out_at IS NULL OR taken_out_at > ?)', array($record_created_at));
+		} else { $db->where('(taken_out_at IS NULL OR taken_out_at::date > ?)', array($operational_date)); }
+		$db->orderBy('urutan', 'ASC');
+		$rows = $db->get('master_part', null, array('field_name', 'label'));
+		if (empty($rows)) {
+			// Fallback hanya untuk mesin lama yang BENAR-BENAR belum punya master part;
+			// jangan jadikan daftar aktif hari ini sebagai isi form historis yang kosong.
+			$has_master = $this->GetModel()->where('machine_key', $this->machineKey)->has('master_part');
+			return $has_master ? array() : $this->parts;
+		}
+		$parts = array(); foreach ($rows as $row) { $parts[$row['field_name']] = $row['label']; }
+		return $parts;
+	}
+
+	protected function partDetailsForRecord($operational_date, $record_created_at = null)
+	{
+		$db = $this->GetModel();
+		$db->where('machine_key', $this->machineKey)->where('active_from', $operational_date, '<=');
+		if ($record_created_at) {
+			$db->where('(created_at IS NULL OR created_at <= ?)', array($record_created_at));
+			$db->where('(taken_out_at IS NULL OR taken_out_at > ?)', array($record_created_at));
+		} else { $db->where('(taken_out_at IS NULL OR taken_out_at::date > ?)', array($operational_date)); }
+		$db->orderBy('urutan', 'ASC');
+		return $db->get('master_part');
+	}
+
+	/** Union part yang benar-benar berlaku pada semua row sebuah report. */
+	protected function partsForRows($rows, $operational_date)
+	{
+		$parts = array();
+		foreach ($rows as $row) {
+			$row_date = $row['operational_date'] ?? $operational_date;
+			foreach ($this->partsForRecord($row_date, $row['created_at'] ?? null) as $field => $label) { $parts[$field] = $label; }
+		}
+		return (!empty($parts) || !empty($rows)) ? $parts : $this->partsForRecord($operational_date);
+	}
+
+	/** Metadata PDF harus mengikuti snapshot part yang sama dengan report form. */
+	protected function partDetailsForRows($rows, $operational_date)
+	{
+		$details = array();
+		foreach ($rows as $row) {
+			$row_date = $row['operational_date'] ?? $operational_date;
+			foreach ($this->partDetailsForRecord($row_date, $row['created_at'] ?? null) as $part) {
+				if (!isset($details[$part['field_name']])) { $details[$part['field_name']] = $part; }
+			}
+		}
+		return !empty($details) || !empty($rows) ? array_values($details) : $this->partDetailsForRecord($operational_date);
+	}
+
+	/**
+	 * Part yang wajib diisi pada halaman add. Default-nya seluruh part aktif.
+	 * Subclass boleh override untuk memilih part berdasarkan konteks form, misalnya
+	 * shift kerja. Daftar ini dipakai juga saat validasi/simpan, bukan hanya view,
+	 * supaya field yang sengaja dikirim dari browser tidak bisa melewati filter.
+	 */
+	protected function partsForAdd($formdata = null)
+	{
+		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
+		$shift = is_array($formdata) ? (string) ($formdata['shift'] ?? '') : (string) ($this->request->shift ?? '');
+		$this->view->uses_shift = true; $this->view->selected_shift = $shift;
+		if (!in_array($shift, array('1', '2', '3'), true)) { return array(); }
+		$db = $this->GetModel(); $parts = array();
+		$rows = $db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part', null, array('field_name', 'label', 'shift_schedule'));
+		foreach ($rows as $row) { $shifts = array_filter(array_map('trim', explode(',', (string) $row['shift_schedule']))); if (in_array($shift, $shifts, true)) { $parts[$row['field_name']] = $row['label']; } }
+		return $parts;
+	}
+
+	/** Return pesan error bila konteks Add tidak sah, atau null bila valid. */
+	protected function addContextError($formdata)
+	{
+		if (!in_array('shift', $this->extraFields, true)) { return null; }
+		return in_array((string) ($formdata['shift'] ?? ''), array('1', '2', '3'), true) ? null : 'Shift wajib dipilih (1, 2, atau 3).';
+	}
 
 	private function page_data($records, $total)
 	{
@@ -66,7 +184,14 @@ abstract class BaseMachineController extends SecureController
 		// Data Part) -- sebelum ini tiap list2.php nge-hardcode daftar nama
 		// field sendiri, jadi part baru gak pernah ke-deteksi NOK-nya di
 		// overview (padahal view.php udah bener, karena itu baca $parts dinamis).
-		$data->part_fields = $this->part_fields();
+		$data->part_fields = $this->historicalPartFields();
+		$data->machine_key = $this->machineKey;
+		$data->display_name = $this->displayName;
+		$data->id_column = $this->idColumn();
+		// Kontrol UI ini hanya pelengkap; otorisasi penghapusan tetap diverifikasi
+		// ulang di delete(), sehingga URL tidak bisa dipakai oleh role lain.
+		$data->can_delete_reports = intval(get_active_user('user_role_id')) === 1;
+		$data->bulk_delete_url = SITE_ADDR . $this->machineKey . '/delete/{sel_ids}/?csrf_token=' . urlencode(Csrf::$token);
 		return $data;
 	}
 
@@ -85,11 +210,13 @@ abstract class BaseMachineController extends SecureController
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$request = $this->request; $db = $this->GetModel();
-		$fields = array("$sql.$idcol", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at");
-		foreach ($this->part_fields() as $part) { $fields[] = "$sql.$part"; }
+		$fields = array("$sql.$idcol", "$sql.mesin", "$sql.operational_date", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at");
+		$has_shift_history = $this->machineHasShiftHistory();
+if ($has_shift_history) { $fields[] = "$sql.shift"; }
+		foreach ($this->historicalPartFields() as $part) { $fields[] = "$sql.$part"; }
 		if (!empty($request->search)) {
 			$like = '%' . trim($request->search) . '%';
-			$search_fields = array_merge(array('mesin.nama_mesin', "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.kendala"), array_map(function ($part) use ($sql) { return "$sql.$part"; }, $this->part_fields()));
+			$search_fields = array_merge(array('mesin.nama_mesin', "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.kendala"), array_map(function ($part) use ($sql) { return "$sql.$part"; }, $this->historicalPartFields()));
 			$conditions = array(); $params = array();
 			foreach ($search_fields as $f) { $conditions[] = "$f ILIKE ?"; $params[] = $like; }
 			$db->where('(' . implode(' OR ', $conditions) . ')', $params);
@@ -102,15 +229,27 @@ abstract class BaseMachineController extends SecureController
 		$db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->orderBy("$sql.$idcol", ORDER_TYPE);
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); $tc = $db->withTotalCount(); $records = $db->get($sql, $pagination, $fields);
 		$this->view->page_title = $this->displayName; $this->set_report_props($this->displayName, 'landscape');
-		return $this->render_view("$table/list2.php", $this->page_data($records, $tc));
+		$data = $this->page_data($records, $tc);
+		// Begitu sebuah mesin memakai shift, overview harus menjadi satu report
+		// harian seperti Illapak, bukan tiga form yang terpisah.
+		$data->uses_shift = $has_shift_history;
+		return $this->render_view($data->uses_shift ? 'machine_shift_list.php' : "$table/list2.php", $data);
 	}
 
 	function add($formdata = null)
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		if ($formdata) {
+			$context_error = $this->addContextError($formdata);
+			if ($context_error) {
+				$this->view->page_error[] = $context_error;
+				$this->set_page_error();
+				$this->view->page_title = "Add New AM {$this->displayName}";
+				return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd($formdata)));
+			}
 			$db = $this->GetModel();
-			$fields = array_merge(array('mesin'), $this->part_fields(), $this->extraFields);
+			$parts_for_add = $this->partsForAdd($formdata);
+			$fields = array_merge(array('mesin'), array_keys($parts_for_add), $this->extraFields);
 			$this->fields = $fields;
 			$postdata = $this->format_request_data($formdata); $this->rules_array = array(); $this->sanitize_array = array();
 			foreach ($fields as $field) { $this->rules_array[$field] = 'required'; $this->sanitize_array[$field] = 'sanitize_string'; }
@@ -124,37 +263,48 @@ abstract class BaseMachineController extends SecureController
 				$this->rules_array[$ef] = 'required|numeric';
 			}
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
-			$modeldata['created_at'] = datetime_now(); $modeldata['user_create'] = USER_NAME;
+			$modeldata['created_at'] = datetime_now();
+			$modeldata['operational_date'] = $this->operationalDate($modeldata['created_at']);
+			$modeldata['user_create'] = USER_NAME;
 			// Auto-approve kalau gak ada part yang NOK -- OK semua ATAU campuran
 			// OK/"Tidak Dilakukan" (N/A) tetap auto-approve, cuma NOK yang bikin
 			// masuk antrian review manual.
 			$all_ok = true;
-			foreach ($this->part_fields() as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
+			foreach (array_keys($parts_for_add) as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
+			// Mesin biasa hanya satu form per hari. Mesin shift tetap satu form per shift.
+			if ($this->validated()) {
+				$db->where('mesin', $modeldata['mesin'])->where('operational_date', $modeldata['operational_date']);
+				if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $modeldata['shift']); }
+				if ($db->has($sql)) {
+					$this->view->page_error[] = in_array('shift', $this->extraFields, true) ? 'Shift ini sudah diisi untuk tanggal operasional tersebut.' : 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.';
+				}
+			}
 			if ($this->validated()) {
 				$db->startTransaction();
 				$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
 				if ($rec_id) {
-					foreach ($this->parts as $field => $label) {
+					foreach ($parts_for_add as $field => $label) {
 						if (!empty($_POST['kendala_' . $field])) {
 							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'created_at' => datetime_now()));
 						}
 					}
 					$db->commit();
-					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success'); return $this->redirect($table);
+					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
+					return $this->redirect($table . '/daily_report?mesin=' . urlencode($modeldata['mesin']) . '&date=' . urlencode($modeldata['operational_date']));
 				}
 				$db->rollback();
 				$this->set_page_error();
 			}
 		}
-		$this->view->page_title = "Add New AM {$this->displayName}"; return $this->render_view("$table/add.php", array('parts' => $this->parts));
+		$this->view->page_title = "Add New AM {$this->displayName}"; return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd()));
 	}
 
 	function view($rec_id = null, $value = null)
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
-		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->part_fields(), $this->extraFields)));
+		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->historicalPartFields(), $this->extraFields)));
 		if ($value) { $db->where($rec_id, urldecode($value)); } else { $db->where("$sql.$idcol", urldecode($rec_id)); }
 		$record = $db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->getOne($sql, $fields);
 		if ($record) {
@@ -162,8 +312,64 @@ abstract class BaseMachineController extends SecureController
 			$record['abnormalitas'] = array(); foreach ($details as $detail) { $record['abnormalitas'][$detail['nama_bagian']] = $detail; }
 		} else { $this->set_page_error($db->getLastError() ?: 'No record found'); }
 		if (!$record) { $record = array(); }
-		$record['parts'] = $this->parts; $this->view->page_title = "View AM {$this->displayName}"; $this->set_report_props("View AM {$this->displayName}");
+		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null) : $this->parts;
+		$this->view->page_title = "View AM {$this->displayName}"; $this->set_report_props("View AM {$this->displayName}");
 		return $this->render_view("$table/view.php", $record);
+	}
+
+	/** Cetak check sheet resmi untuk Periode 1 (1-16) atau Periode 2 (17-akhir bulan). */
+	function period_report()
+	{
+		$request = $this->request;
+		$year = intval($request->year ?? date('Y'));
+		$month = intval($request->month ?? date('n'));
+		$period = intval($request->period ?? 1);
+		$mesin = intval($request->mesin ?? 0);
+		if ($year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !$mesin) {
+			$this->view->page_title = 'Cetak Check Sheet ' . $this->displayName;
+			return $this->render_view('machine_period_report.php', array('selection_only' => true, 'machine_key' => $this->machineKey, 'display_name' => $this->displayName));
+		}
+		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
+		$start_day = $period === 1 ? 1 : 17;
+		$end_day = $period === 1 ? 16 : intval($first->format('t'));
+		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
+		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
+		$db = $this->GetModel(); $sql = $this->sqlTable();
+		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('created_at', 'ASC')->get($sql);
+		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
+		$checks = array(); $all_approved = !empty($rows);
+		foreach ($rows as $row) {
+			if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
+			$day = intval((new DateTime($row['operational_date']))->format('j'));
+			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null) as $field => $label) {
+				if (!empty($row[$field])) { $checks[$field][$day][] = array('shift' => $row['shift'] ?? null, 'value' => $row[$field]); }
+			}
+		}
+		$part_details = $this->partDetailsForRows($rows, $start);
+		$data = array('selection_only' => false, 'machine_key' => $this->machineKey, 'display_name' => $this->displayName, 'machine_name' => $machine['nama_mesin'] ?? '-', 'year' => $year, 'month' => $month, 'period' => $period, 'start_day' => $start_day, 'end_day' => $end_day, 'parts' => $this->partsForRows($rows, $start), 'part_details' => $part_details, 'checks' => $checks);
+		$data['all_approved'] = $all_approved;
+		$this->view->page_title = 'Check Sheet ' . $this->displayName;
+		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-P' . $period, 'landscape');
+		return $this->render_view('machine_period_report.php', $data);
+	}
+
+	/** Satu layar report harian yang menggabungkan semua submit shift pada operational_date yang sama. */
+	function daily_report()
+	{
+		$mesin = intval($this->request->mesin ?? 0); $date = trim((string)($this->request->date ?? ''));
+		if (!$mesin || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { return $this->redirect($this->machineKey); }
+		// Hitung sebelum query laporan dibuat: PDODb memakai query builder yang
+		// sama, sehingga filter mesin/tanggal tidak boleh terbawa ke master_part.
+		$has_shift_history = $this->machineHasShiftHistory();
+		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
+		$db->where('mesin', $mesin)->where('operational_date', $date);
+		if ($has_shift_history) {
+			$db->orderBy('shift', 'ASC');
+		}
+		$rows = $db->orderBy('created_at', 'ASC')->get($sql);
+		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
+		$this->view->page_title = 'Report Harian ' . $this->displayName;
+		return $this->render_view('machine_daily_report.php', array('display_name' => $this->displayName, 'machine_key' => $this->machineKey, 'machine_name' => $machine['nama_mesin'] ?? '-', 'operational_date' => $date, 'rows' => $rows, 'parts' => $this->partsForRows($rows, $date), 'id_column' => $idcol));
 	}
 
 	function edit($rec_id = null, $formdata = null)
@@ -273,7 +479,8 @@ abstract class BaseMachineController extends SecureController
 		} else {
 			$this->set_page_error($db->getLastError() ?: 'No record found'); $record = array();
 		}
-		$record['parts'] = $this->parts; $this->view->page_title = "Edit Data AM {$this->displayName}";
+		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null) : $this->parts;
+		$this->view->page_title = "Edit Data AM {$this->displayName}";
 		return $this->render_view("$table/edit_data.php", $record);
 	}
 
@@ -314,9 +521,19 @@ abstract class BaseMachineController extends SecureController
 	function delete($rec_id = null)
 	{
 		Csrf::cross_check();
+		// Menghapus laporan adalah tindakan destruktif. Hanya Super Admin yang
+		// boleh menjalankannya, termasuk bila URL delete dipanggil langsung.
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			http_response_code(403);
+			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
-		$ids = array_map('trim', explode(',', $rec_id));
+		$ids = array_values(array_filter(array_map('intval', explode(',', (string) $rec_id))));
+		if (empty($ids)) {
+			$this->set_flash_msg('Tidak ada laporan yang dipilih.', 'warning');
+			return $this->redirect($table);
+		}
 		//Baris kendala (abnormalitas) anaknya WAJIB ikut dihapus -- gak ada FK
 		//ON DELETE CASCADE di skema ini, jadi kalau cuma hapus record induk,
 		//kendala-nya nyangkut jadi orphan selamanya (bikin DB numpuk & berisiko

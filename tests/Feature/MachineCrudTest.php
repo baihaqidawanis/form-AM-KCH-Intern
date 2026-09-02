@@ -41,7 +41,17 @@ class MachineCrudTest extends TestCase
 
     public function test_lifecycle_illapak_1_2_dropdown_mesin_1_nok(): void
     {
-        $this->runLifecycle('illapak_1_2', 'sealing_horizontal', 'Test PHPUnit — kebocoran seal horizontal');
+        $addPage = $this->client->get('illapak_1_2/add?shift=1');
+        $html = (string) $addPage->getBody();
+        $payload = FormScraper::buildOneNokPayload($html, 'sealing_horizontal', 'Test PHPUnit — kebocoran seal horizontal', array('shift' => '1'));
+        $submit = $this->client->postWithCsrf('illapak_1_2/add', $payload);
+        $this->assertSame(200, $submit->getStatusCode());
+        $id = FormScraper::firstViewId((string) $submit->getBody(), 'illapak_1_2');
+        $this->assertNotNull($id);
+        $this->createdViewPath = "illapak_1_2/view/$id";
+        $this->createdDeletePath = "illapak_1_2/delete/$id";
+        $view = $this->client->get($this->createdViewPath);
+        $this->assertStringContainsString('Test PHPUnit — kebocoran seal horizontal', (string) $view->getBody());
     }
 
     public function test_lifecycle_sig_extra_field_tekanan_angin(): void

@@ -63,6 +63,8 @@ class MasterPartTest extends TestCase
     {
         $html = (string) $this->client->get('master_part/add/sig')->getBody();
         $this->assertStringNotContainsString('name="urutan"', $html, 'Input Urutan manual mestinya udah dihapus -- urutan cuma dari drag-and-drop di list');
+        $this->assertSame(3, substr_count($html, 'class="custom-control-input shift-schedule-option"'), 'Jadwal shift harus berupa tiga checkbox independen, bukan daftar kombinasi dropdown.');
+        $this->assertStringContainsString('name="shift_schedule"', $html);
     }
 
     public function test_form_edit_part_gak_ada_input_urutan_manual(): void

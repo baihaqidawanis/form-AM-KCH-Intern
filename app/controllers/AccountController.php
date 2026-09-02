@@ -77,8 +77,7 @@ class AccountController extends SecureController{
 			if($this->validated()){
 				$db->where("users.id_user", $rec_id);
 				$bool = $db->update($tablename, $modeldata);
-				$numRows = $db->getRowCount(); //number of affected rows. 0 = no record field updated
-				if($bool && $numRows){
+				if($bool){
 					$this->write_to_log("edit", "true");
 					$this->set_flash_msg("Record updated successfully", "success");
 					$db->where ("id_user", $rec_id);
@@ -90,11 +89,7 @@ class AccountController extends SecureController{
 					if($db->getLastError()){
 						$this->set_page_error();
 					}
-					elseif(!$numRows){
-						//not an error, but no record was updated
-						$this->set_flash_msg("No record updated", "warning");
-						return	$this->redirect("account");
-					}
+					return $this->redirect("account");
 				}
 			}
 		}

@@ -375,6 +375,25 @@ class UsersController extends SecureController{
 	 * Support multi delete by separating record id by comma.
      * @return BaseView
      */
+	/** Administrator activates an account after an out-of-band password reset confirmation. */
+	function activate_password($rec_id = null){
+		Csrf::cross_check();
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			http_response_code(403);
+			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
+		$db = $this->GetModel();
+		$db->where('id_user', $rec_id)->where('account_status', 'pending_activation');
+		if ($db->update($this->tablename, array('account_status' => 'active'))) {
+			$this->rec_id = $rec_id;
+			$this->write_to_log('activate_password_reset', 'true');
+			$this->set_flash_msg('Akun berhasil diaktifkan.', 'success');
+		} else {
+			$this->set_flash_msg($db->getLastError() ?: 'Akun tidak sedang menunggu aktivasi.', 'warning');
+		}
+		return $this->redirect('users/view/' . urlencode($rec_id));
+	}
+
 	function delete($rec_id = null){
 		Csrf::cross_check();
 		$request = $this->request;

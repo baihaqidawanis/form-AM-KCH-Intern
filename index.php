@@ -108,6 +108,7 @@
 	
 	//display page with the exceptions
 	function exception_handler($exception){
+		error_log("UNCAUGHT EXCEPTION: " . $exception->getMessage() . " in " . $exception->getFile() . ":" . $exception->getLine() . "\n" . $exception->getTraceAsString());
 		$view = new BaseView();
 		// BaseView::__construct baca ulang $_GET['format'] dari request yang lagi
 		// crash (pdf/word/csv/excel/dst) -- kalau dibiarkan, render() di bawah bakal

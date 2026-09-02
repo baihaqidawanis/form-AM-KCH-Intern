@@ -21,6 +21,7 @@ foreach ($part_rows as $row) {
   $sections[$section_title][] = $field;
 }
 $csrf_token = Csrf::$token;
+$selected_shift = !empty($this->selected_shift) ? $this->selected_shift : '';
 $page_element_id = 'illapak_3_12-add-' . random_str();
 ?>
 <section class="page" id="<?php echo $page_element_id; ?>">
@@ -56,8 +57,29 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
       <div class="col-md-9">
         <div class="bg-light p-3 animated fadeIn page-content">
           <?php $this::display_page_errors(); ?>
+          <?php if (!$selected_shift) { ?>
+            <div class="card mb-3">
+              <div class="card-body">
+                <h5>Pilih Shift Pemeriksaan</h5>
+                <p class="text-muted">Checklist akan disusun sesuai part yang berlaku pada shift tersebut.</p>
+                <form method="get" action="<?php print_link('illapak_3_12/add'); ?>" class="form-inline">
+                  <label class="mr-2" for="ctrl-shift-selector">Shift <span class="text-danger">*</span></label>
+                  <select required id="ctrl-shift-selector" name="shift" class="custom-select mr-2">
+                    <option value="" selected>Pilih shift ...</option>
+                    <option value="1">Shift 1</option><option value="2">Shift 2</option><option value="3">Shift 3</option>
+                  </select>
+                  <button class="btn btn-primary" type="submit">Tampilkan Checklist</button>
+                </form>
+              </div>
+            </div>
+          <?php } else { ?>
+          <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span><strong>Shift <?php echo htmlspecialchars($selected_shift); ?></strong> &mdash; hanya part yang berlaku pada shift ini yang ditampilkan.</span>
+            <a class="btn btn-sm btn-outline-primary" href="<?php print_link('illapak_3_12/add'); ?>">Ganti shift</a>
+          </div>
           <form id="illapak_3_12-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("illapak_3_12/add?csrf_token=$csrf_token") ?>" method="post">
+            <input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>">
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select required
                 id="ctrl-mesin" name="mesin" class="custom-select">
                 <option value="" disabled selected>Pilih nama mesin ...</option>
@@ -172,6 +194,7 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
             <div class="text-center"><a class="btn btn-secondary mr-2" href="<?php print_link('illapak_3_12') ?>">Batal</a><button
                 class="btn btn-primary" type="submit">Simpan AM <i class="fa fa-send"></i></button></div>
           </form>
+          <?php } ?>
         </div>
       </div>
     </div>

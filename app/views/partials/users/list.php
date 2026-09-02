@@ -258,6 +258,11 @@ $show_pagination = $this->show_pagination;
                                                         <a class="btn btn-sm btn-success has-tooltip" title="View Record" href="<?php print_link("users/view/$rec_id"); ?>">
                                                             <i class="fa fa-eye"></i> View
                                                         </a>
+                                                        <?php if (in_array(strtolower($data['account_status']), array('pending_activation', 'pending')) && intval(get_active_user('user_role_id')) === 1) { ?>
+                                                        <a class="btn btn-sm btn-warning has-tooltip text-dark font-weight-bold" title="Aktivasi Akun" href="<?php print_link('users/activate_password/' . $rec_id . '?csrf_token=' . $csrf_token); ?>" onclick="return confirm('Aktifkan akun ini?');">
+                                                            <i class="fa fa-check-circle"></i> Aktivasi
+                                                        </a>
+                                                        <?php } ?>
                                                         <a class="btn btn-sm btn-info has-tooltip" title="Edit This Record" href="<?php print_link("users/edit/$rec_id"); ?>">
                                                             <i class="fa fa-edit"></i> Edit
                                                         </a>

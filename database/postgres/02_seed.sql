@@ -202,6 +202,12 @@ VALUES
   ('cosmec', 'panel_pompa_hidrolik_mesin', 'Panel Pompa Hidrolik Mesin', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tidak ada tetesan Oli', '2''', 'Harian (Setiap Awal Shift 1)', NULL, 'assets/images/cosmec/cosmec panel pompa hidrolik mesin.png', 7)
 ON CONFLICT ("machine_key", "field_name") DO NOTHING;
 
+-- Jadwal shift Illapak 1-2: dua pemeriksaan ini dilakukan pada setiap awal shift.
+UPDATE "master_part"
+SET "shift_schedule" = '1,2,3'
+WHERE "machine_key" = 'illapak_1_2'
+  AND "field_name" IN ('position_indicator_sealing_vertical', 'vacum_sliter');
+
 
 -- Master data part 16 mesin sisanya -- lihat database/migrations/2026-08-20_migrate_master_part_16_mesin.sql
 INSERT INTO "master_part"
@@ -435,5 +441,12 @@ INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "met
   ('conveyor_sig', 'control_panel', 'Control Panel', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Tes Fungsi', 'Visual Control', 'Panel berfungsi', '5''', 'Mingguan', 'mingguan', 'assets/images/conveyor_sig/conveyor_sig control panel.png', 10)
 ON CONFLICT ("machine_key", "field_name") DO NOTHING;
 
+-- Dijalankan setelah seluruh seed masuk, agar fresh install juga mengenali item
+-- Illapak yang wajib dicek pada setiap awal shift.
+UPDATE "master_part"
+SET "shift_schedule" = '1,2,3'
+WHERE "machine_key" = 'illapak_1_2'
+  AND "field_name" IN ('position_indicator_sealing_vertical', 'vacum_sliter');
 
-
+-- Default mesin biasa tetap Shift 1. Shift 2/3 diaktifkan melalui Master Data Part.
+UPDATE "master_part" SET "shift_schedule" = '1' WHERE "shift_schedule" IS NULL OR "shift_schedule" = '';

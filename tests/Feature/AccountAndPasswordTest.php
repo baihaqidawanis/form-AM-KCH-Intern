@@ -27,6 +27,13 @@ class AccountAndPasswordTest extends TestCase
                 $current[$field] = html_entity_decode($m[1]);
             }
         }
+        if (empty($current['mesin'])) {
+            if (preg_match('/<select[^>]*name="mesin"[^>]*>[\s\S]*?<option[^>]*value="([^"]+)"[^>]*selected/i', $editPage, $m)) {
+                $current['mesin'] = $m[1];
+            } else if (preg_match('/<select[^>]*name="mesin"[^>]*>[\s\S]*?<option[^>]*value="([^"]+)"/i', $editPage, $m)) {
+                $current['mesin'] = $m[1];
+            }
+        }
         $this->assertArrayHasKey('username', $current);
         // pict wajib diisi tapi field value-nya kosong di HTML (widget dropzone,
         // bukan plain value="..."). "pict" cuma divalidasi non-empty di server,

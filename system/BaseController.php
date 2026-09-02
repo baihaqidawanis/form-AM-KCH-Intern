@@ -135,6 +135,7 @@ class BaseController{
 
 
 	function __construct(){
+		Csrf::init();
 		$this->view = new BaseView; //initialize the view renderer
 
 		if(is_post_request()){

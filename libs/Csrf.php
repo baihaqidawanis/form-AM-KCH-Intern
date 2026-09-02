@@ -7,7 +7,8 @@
 class Csrf
 {
 	public static $token = null;
-	function __construct()
+
+	public static function init()
 	{
 		$token = get_session('csrf_token');
 		if (empty($token)) {
@@ -15,6 +16,12 @@ class Csrf
 			set_session('csrf_token', $token);		//set new token in session if not available
 		}
 		self::$token = $token;
+		return $token;
+	}
+
+	function __construct()
+	{
+		self::init();
 	}
 
 	/**

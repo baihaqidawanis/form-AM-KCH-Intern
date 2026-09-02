@@ -66,7 +66,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
                 <td class="urutan-cell"><?php echo $r['urutan']; ?></td>
                 <td>
                   <a class="btn btn-sm btn-outline-primary" href="<?php print_link('master_part/edit/' . $r['id']) ?>"><i class="fa fa-edit"></i></a>
-                  <a class="btn btn-sm btn-outline-danger" href="<?php print_link('master_part/delete/' . $r['id'] . '?csrf_token=' . $csrf_token) ?>" onclick="return confirm('Hapus part &quot;<?php echo htmlspecialchars($r['label']); ?>&quot;? Bagian ini bakal hilang dari form Add AM.');"><i class="fa fa-trash"></i></a>
+<?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i> Takeout</a><?php } else { ?><span class="badge badge-secondary">Taken out</span><?php } ?>
                 </td>
               </tr>
             <?php } ?>

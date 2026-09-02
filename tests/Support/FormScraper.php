@@ -65,11 +65,11 @@ class FormScraper
         return $payload;
     }
 
-    /** Ambil id record dari redirect location / body setelah submit sukses, cari href .../view/{id} pertama. */
+    /** Ambil id record dari redirect location / body setelah submit sukses, ambil id tertinggi (terbaru). */
     public static function firstViewId(string $html, string $machineKey): ?string
     {
-        if (preg_match('#/' . preg_quote($machineKey, '#') . '/view/(\d+)#', $html, $m)) {
-            return $m[1];
+        if (preg_match_all('#/' . preg_quote($machineKey, '#') . '/view/(\d+)#', $html, $m) && !empty($m[1])) {
+            return (string) max(array_map('intval', $m[1]));
         }
         return null;
     }
