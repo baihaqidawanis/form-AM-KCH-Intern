@@ -1101,3 +1101,4 @@ BEGIN
     EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS shift varchar(1) DEFAULT NULL', form_table);
   END LOOP;
 END $$;
+
