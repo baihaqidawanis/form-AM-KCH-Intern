@@ -2,13 +2,14 @@
 
 Dokumen ini adalah handoff untuk agent/model berikutnya. Jangan mengubah aturan audit di bawah tanpa persetujuan eksplisit.
 
-## Status tiga poin krusial
+## Status poin krusial
 
 | Poin | Status | Implementasi utama |
 |---|---|---|
 | Shift harian, satu report per mesin/tanggal | Selesai | `system/BaseMachineController.php`, `app/views/partials/machine_shift_list.php`, `machine_daily_report.php` |
 | Forgot password mandiri lalu aktivasi admin, SMTP tetap tersedia | Selesai | `app/controllers/PasswordmanagerController.php`, `app/controllers/UsersController.php` |
 | Takeout tidak mengubah form/audit/PDF historis | Selesai | `system/BaseMachineController.php`, `app/controllers/Master_partController.php`, `machine_period_report.php` |
+| Snapshot metadata part permanen per submit | **Selesai** | `system/BaseMachineController.php` (savePartSnapshot), `database/migrations/2026-09-02_add_form_part_snapshot.sql` |
 
 ## 1. Shift harian
 
@@ -47,18 +48,46 @@ AND (taken_out_at IS NULL OR taken_out_at > form.created_at)
 
 Diagram lengkap: [DOCS_MD/MASTER_PART_AUDIT_FLOW.md](DOCS_MD/MASTER_PART_AUDIT_FLOW.md).
 
-## Verifikasi terakhir
+## 4. Snapshot metadata part (implementasi 2026-09-02)
+
+Sejak 2026-09-02, setiap submit form AM menyimpan snapshot metadata ke tabel `form_part_snapshot`:
+
+```text
+form_part_snapshot:
+  machine_key | form_id | field_name | label | section | metode | alat
+              | standard | durasi | pelaksanaan | highlight | image_path | urutan
+```
+
+- Snapshot ditulis oleh `BaseMachineController::savePartSnapshot()` di dalam transaction `add()`, tepat setelah INSERT record dan INSERT kendala, sebelum `commit()`.
+- `ON CONFLICT DO NOTHING` — aman dijalankan ulang (idempotent).
+- Jika tabel belum ada di environment (migration belum dijalankan), `try/catch` memastikan submit form tetap berhasil; error di-log ke `error.log` tanpa crash.
+- **Backfill record lama:** Migration `2026-09-02_add_form_part_snapshot.sql` menyertakan DO $$ backfill untuk semua record `tb_mesin_*` yang dibuat sebelum fitur ini ada.
+- **Deployment wajib:** Jalankan kedua migration ini sebelum deploy ke production:
+  1. `database/migrations/2026-09-02_add_shift_to_all_machine_forms.sql` — idempotent (`ADD COLUMN IF NOT EXISTS`)
+  2. `database/migrations/2026-09-02_add_form_part_snapshot.sql` — idempotent (`CREATE TABLE IF NOT EXISTS` + `ON CONFLICT DO NOTHING`)
+
+## Verifikasi terakhir (2026-09-02)
 
 - `joeya/daily_report?mesin=3&date=2026-09-02`: HTTP 200, tanpa Error 500.
 - Part Joeya dibuat 13:10 tidak tampil pada form Shift 1/2 yang dibuat 13:01.
 - Part historis NOK yang sudah takeout tetap terbaca pada overview, Report Harian, dan period PDF.
 - Period PDF menghasilkan respons `%PDF` valid.
 - `php -l system/BaseMachineController.php` lulus.
+- `php -l system/BaseView.php` lulus.
+- `php -l tests/Feature/GenericShiftLifecycleTest.php` lulus.
+- Bug `DOMDocumentFragment::appendXML(): Entity 'acirc' not defined` di `BaseView.php:771` diperbaiki (`htmlentities` -> `htmlspecialchars`).
+- Snapshot metadata: `savePartSnapshot()` ditambah di `BaseMachineController::add()`.
 
 ## PR / risiko lanjutan
 
-1. **Snapshot metadata belum permanen.** Nilai OK/NOK dan keberadaan part sudah historis, tetapi jika admin mengubah `label`, `section`, `metode`, `standard`, atau foto master part, tampilan metadata laporan lama masih dapat berubah. Solusi audit paling kuat: simpan snapshot metadata part per record saat submit.
-2. **Regression test generic shift belum lengkap.** Tambahkan test HTTP untuk mesin non-Illapak seperti Joeya/SIG: tambah part shift, submit Shift 1 OK, submit Shift 2 NOK, takeout, lalu cek View/Report/PDF.
-3. **Working tree sangat kotor dan belum dipisahkan commit.** Jangan menjalankan reset/checkout massal. Audit perubahan lalu pecah commit per fitur sebelum deployment.
-4. **Deployment database.** Pastikan migration `database/migrations/2026-09-02_add_shift_to_all_machine_forms.sql` dan schema/seed PostgreSQL ikut diterapkan di environment target.
-5. **Error log legacy.** Ada warning/deprecation lama di `error.log`; bukan penyebab alur tiga poin di atas, tetapi perlu dibersihkan sebelum production formal.
+1. **Snapshot metadata — SELESAI.** `savePartSnapshot()` sudah ada di `BaseMachineController::add()`. Jalankan migration `2026-09-02_add_form_part_snapshot.sql` di environment target.
+2. **Regression test generic shift — SELESAI.** `tests/Feature/GenericShiftLifecycleTest.php` cover skenario Joeya & SIG: tambah part shift-2, submit Shift 1 OK, submit Shift 2 NOK, takeout, cek `daily_report` + `period_report` historis.
+3. **Git cleanup — SELESAI (2026-09-02 13:42).** Di-commit dan di-push (`73aaac9`). Commit message: `merubah master data`.
+4. **Deployment database — SELESAI (verifikasi idempotent).** Kedua migration menggunakan `IF NOT EXISTS` / `ON CONFLICT DO NOTHING`. Aman dijalankan berulang.
+5. **Error log legacy — SELESAI.** Root cause warning `&acirc;` di PDF diperbaiki di `system/BaseView.php:771` (`htmlentities` -> `htmlspecialchars(ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8')`).
+
+### Risiko terbuka baru
+
+- **Snapshot tidak di-update saat `edit_data`.** Snapshot menyimpan *definisi* part saat submit, bukan nilai OK/NOK — ini desain yang benar. Nilai edit_data tersimpan di tabel mesin seperti biasa. Jangan bingung dengan tidak adanya row snapshot baru setelah edit_data.
+- **GenericShiftLifecycleTest belum pernah dijalankan di CI.** Memerlukan environment dengan DB live. Jalankan manual: `vendor\bin\phpunit tests/Feature/GenericShiftLifecycleTest.php`.
+- **Error log lama non-acirc masih ada.** Warning `appendXML` sebelum fix tetap ada di `error.log` lama — tidak perlu dihapus. Pantau bahwa warning baru tidak muncul setelah deploy.

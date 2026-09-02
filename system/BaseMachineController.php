@@ -137,6 +137,54 @@ abstract class BaseMachineController extends SecureController
 		return (!empty($parts) || !empty($rows)) ? $parts : $this->partsForRecord($operational_date);
 	}
 
+	/**
+	 * Simpan snapshot metadata part ke form_part_snapshot saat form di-submit.
+	 * Dipanggil sekali di dalam transaction add(), setelah INSERT record berhasil.
+	 * Kalau tabel belum ada (environment lama sebelum migration), error diabaikan
+	 * dengan try/catch -- alur submit tetap berhasil, fallback ke resolver lama.
+	 * @param int   $form_id   ID record baru yang baru saja di-INSERT
+	 * @param array $parts_meta Hasil partsForRecord() pada saat submit (field_name => label)
+	 */
+	protected function savePartSnapshot($form_id, $parts_meta)
+	{
+		if (empty($parts_meta) || !$form_id) { return; }
+		$db = $this->GetModel();
+		// Ambil metadata lengkap dari master_part sesuai part yang aktif saat submit.
+		$field_names = array_keys($parts_meta);
+		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in');
+		$master_rows = $db->get('master_part');
+		if (empty($master_rows)) { return; }
+		try {
+			foreach ($master_rows as $row) {
+				$db->rawQuery(
+					'INSERT INTO "form_part_snapshot"
+						(machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan, snapshot_at)
+					VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+					ON CONFLICT (machine_key, form_id, field_name) DO NOTHING',
+					array(
+						$this->machineKey,
+						$form_id,
+						$row['field_name'],
+						$row['label'],
+						$row['section']      ?? null,
+						$row['metode']       ?? null,
+						$row['alat']         ?? null,
+						$row['standard']     ?? null,
+						$row['durasi']       ?? null,
+						$row['pelaksanaan']  ?? null,
+						$row['highlight']    ?? null,
+						$row['image_path']   ?? null,
+						$row['urutan']       ?? null,
+					)
+				);
+			}
+		} catch (\Exception $e) {
+			// Tabel form_part_snapshot belum ada di environment lama -- jangan crash
+			// submit form. Migration harus dijalankan terpisah di environment target.
+			error_log('savePartSnapshot skipped (migration belum dijalankan?): ' . $e->getMessage());
+		}
+	}
+
 	/** Metadata PDF harus mengikuti snapshot part yang sama dengan report form. */
 	protected function partDetailsForRows($rows, $operational_date)
 	{
@@ -289,6 +337,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'created_at' => datetime_now()));
 						}
 					}
+					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
+					// label/section/metode/standard master_part di kemudian hari mengubah
+					// tampilan laporan lama. Dipanggil di dalam transaction yang sama.
+					$this->savePartSnapshot($rec_id, $parts_for_add);
 					$db->commit();
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
 					return $this->redirect($table . '/daily_report?mesin=' . urlencode($modeldata['mesin']) . '&date=' . urlencode($modeldata['operational_date']));

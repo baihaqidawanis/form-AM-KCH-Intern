@@ -768,7 +768,11 @@ class BaseView
 	 */
 	private function setInnerHTML($element, $html)
 	{
-		$html = htmlentities($html);
+		// htmlspecialchars() hanya escape karakter XML-wajib (&lt;&gt;&amp;&quot;).
+		// htmlentities() juga mengubah karakter Unicode (✓, â, Ã, dll) jadi named
+		// entity HTML (&acirc; dll) yang TIDAK valid di XML -- menyebabkan
+		// DOMDocumentFragment::appendXML() gagal dan PDF kosong/warning di error.log.
+		$html = htmlspecialchars($html, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 		$fragment = $element->ownerDocument->createDocumentFragment();
 		$fragment->appendXML($html);
 		$clone = $element->cloneNode(); // Get element copy without children
