@@ -13,7 +13,7 @@
 					<label>New Password</label>
 					<div class="input-group">
 						<input placeholder="Your New Password" required minlength="8" value="" class="form-control default" name="password" id="txtpass" type="password" />
-						<div class="input-group-append cursor-pointer btn-toggle-password" style="cursor: pointer;">
+						<div class="input-group-append" style="cursor: pointer;" onclick="togglePassVisibility('txtpass', this)">
 							<span class="input-group-text"><i class="fa fa-eye"></i></span>
 						</div>
 					</div>
@@ -23,7 +23,7 @@
 					<label>Confirm new password</label>
 					<div class="input-group">
 						<input placeholder="Confirm Password" required class="form-control default" name="cpassword" id="txtcpass" type="password" />
-						<div class="input-group-append cursor-pointer btn-toggle-password" style="cursor: pointer;">
+						<div class="input-group-append" style="cursor: pointer;" onclick="togglePassVisibility('txtcpass', this)">
 							<span class="input-group-text"><i class="fa fa-eye"></i></span>
 						</div>
 					</div>
@@ -34,18 +34,16 @@
 	</div>
 </div>
 <script>
-$(document).ready(function(){
-	$(document).on('click', '.btn-toggle-password', function(e){
-		e.preventDefault();
-		var $input = $(this).closest('.input-group').find('input');
-		var $icon = $(this).find('i');
-		if ($input.attr('type') === 'password') {
-			$input.attr('type', 'text');
-			$icon.removeClass('fa-eye').addClass('fa-eye-slash');
-		} else {
-			$input.attr('type', 'password');
-			$icon.removeClass('fa-eye-slash').addClass('fa-eye');
-		}
-	});
-});
+function togglePassVisibility(inputId, btn) {
+	var input = document.getElementById(inputId);
+	if (!input) return;
+	var icon = btn.querySelector('i');
+	if (input.type === 'password') {
+		input.type = 'text';
+		if (icon) icon.className = 'fa fa-eye-slash';
+	} else {
+		input.type = 'password';
+		if (icon) icon.className = 'fa fa-eye';
+	}
+}
 </script>
