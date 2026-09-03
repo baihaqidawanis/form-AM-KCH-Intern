@@ -742,12 +742,15 @@ $(document).on('keyup', 'input.ajax-page-search', debounce(function(){
  */
 $(document).on('click', '.btn-toggle-password', function(){
 	var input = $(this).closest(".form-group").find("input");
+	var icon = $(this).find("i");
 	var inputType = input.attr("type");
 	if(inputType == "password"){
 		input.attr("type", "text");
+		icon.removeClass("fa-eye").addClass("fa-eye-slash");
 	}
 	else{
 		input.attr("type", "password");
+		icon.removeClass("fa-eye-slash").addClass("fa-eye");
 	}
 });
 /**
