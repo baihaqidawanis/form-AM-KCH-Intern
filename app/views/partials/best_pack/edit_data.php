@@ -5,9 +5,8 @@ $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $data = $this->view_data;
 $parts = $data['parts'];
-// Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
-$master_db = new SharedController;
-$part_rows = $master_db->GetModel()->where('machine_key', 'best_pack')->orderBy('urutan', 'ASC')->get('master_part');
+// Metadata berasal dari resolver controller: snapshot per form diprioritaskan, lalu master_part historis untuk record lama.
+$part_rows = $data['part_details'] ?? array();
 $part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {

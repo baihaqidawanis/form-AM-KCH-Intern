@@ -7,8 +7,7 @@ $data = $this->view_data;
 $parts = $data['parts'];
 
 // Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
-$master_db = new SharedController;
-$part_rows = $master_db->GetModel()->where('machine_key', 'cosmec')->orderBy('urutan', 'ASC')->get('master_part');
+$part_rows = $data['part_details'] ?? array();
 $part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {

@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\ApiClient;
 
+require_once dirname(__DIR__, 2) . '/config.php';
+
 /**
  * Master Data Part (CRUD detail part mesin oleh Administrator) -- full
  * lifecycle add -> edit -> delete, urutan otomatis (drag-and-drop only, gak
@@ -25,8 +27,29 @@ class MasterPartTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->createdId !== null) {
-            $this->client->deleteWithCsrf('master_part/index/sig', "master_part/delete/{$this->createdId}");
+            $this->cleanupTestPart($this->createdId);
             $this->createdId = null;
+        }
+    }
+
+    private function cleanupTestPart(int $partId): void
+    {
+        $pdo = new \PDO("pgsql:host=" . \DB_HOST . ";port=" . \DB_PORT . ";dbname=" . \DB_NAME, \DB_USERNAME, \DB_PASSWORD, array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION));
+        $find = $pdo->prepare('SELECT machine_key, field_name FROM master_part WHERE id = ?');
+        $find->execute(array($partId));
+        $part = $find->fetch(\PDO::FETCH_ASSOC);
+        if (!$part || !preg_match('/^phpunit_[a-z0-9_]+$/', $part['field_name']) || $part['machine_key'] !== 'sig') { return; }
+
+$hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot') IS NOT NULL")->fetchColumn();
+        $pdo->beginTransaction();
+        try {
+            if ($hasSnapshot) { $pdo->prepare('DELETE FROM form_part_snapshot WHERE machine_key = ? AND field_name = ?')->execute(array($part['machine_key'], $part['field_name'])); }
+            $pdo->prepare('DELETE FROM master_part WHERE id = ?')->execute(array($partId));
+            $pdo->exec('ALTER TABLE "tb_mesin_sig" DROP COLUMN IF EXISTS "' . $part['field_name'] . '"');
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            throw $e;
         }
     }
 
@@ -150,18 +173,12 @@ class MasterPartTest extends TestCase
         $addAmAfterEdit = (string) $this->client->get('sig/add')->getBody();
         $this->assertStringContainsString('Label Sudah Diubah', $addAmAfterEdit);
 
-        // DELETE
+        // Endpoint DELETE harus ditolak; cleanup fisik hanya dilakukan langsung pada database test di tearDown().
         $delete = $this->client->deleteWithCsrf('master_part/index/sig', "master_part/delete/$id");
         $this->assertSame(200, $delete->getStatusCode());
         $deleteBody = (string) $delete->getBody();
-        $this->assertStringContainsString('Part berhasil dihapus', $deleteBody);
-        $this->assertStringNotContainsString('phpunit_test_lifecycle', $deleteBody, 'Part yang udah dihapus gak boleh nongol lagi di list');
-
-        // Part yang udah dihapus juga harus hilang dari form Add AM beneran
-        $addAmAfterDelete = (string) $this->client->get('sig/add')->getBody();
-        $this->assertStringNotContainsString('Label Sudah Diubah', $addAmAfterDelete, 'Part yang udah dihapus masih nongol di form Add AM');
-
-        $this->createdId = null; // udah dihapus manual di atas, jangan didelete lagi di tearDown
+        $this->assertStringContainsString('Penghapusan fisik part dilarang', $deleteBody);
+        $this->assertStringContainsString('phpunit_test_lifecycle', $deleteBody, 'Part harus tetap ada setelah endpoint delete ditolak');
     }
 
     public function test_label_dan_section_di_escape_pas_ditampilkan_bukan_disimpan_ter_encode(): void

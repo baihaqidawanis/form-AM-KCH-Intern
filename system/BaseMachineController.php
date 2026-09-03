@@ -92,8 +92,16 @@ abstract class BaseMachineController extends SecureController
 	}
 
 	/** Daftar part sesuai saat record dibuat; takeout tengah hari tidak mengubah form shift lama. */
-	protected function partsForRecord($operational_date, $record_created_at = null)
+	protected function partsForRecord($operational_date, $record_created_at = null, $form_id = null)
 	{
+		if ($form_id) {
+			$snapshots = $this->GetModel()->where('machine_key', $this->machineKey)->where('form_id', intval($form_id))->orderBy('urutan', 'ASC')->get('form_part_snapshot', null, array('field_name', 'label'));
+			if (!empty($snapshots)) {
+				$parts = array();
+				foreach ($snapshots as $snapshot) { $parts[$snapshot['field_name']] = $snapshot['label']; }
+				return $parts;
+			}
+		}
 		$db = $this->GetModel();
 		$db->where('machine_key', $this->machineKey)->where('active_from', $operational_date, '<=');
 		if ($record_created_at) {
@@ -114,8 +122,12 @@ abstract class BaseMachineController extends SecureController
 		return $parts;
 	}
 
-	protected function partDetailsForRecord($operational_date, $record_created_at = null)
+	protected function partDetailsForRecord($operational_date, $record_created_at = null, $form_id = null)
 	{
+		if ($form_id) {
+			$snapshots = $this->GetModel()->where('machine_key', $this->machineKey)->where('form_id', intval($form_id))->orderBy('urutan', 'ASC')->get('form_part_snapshot');
+			if (!empty($snapshots)) { return $snapshots; }
+		}
 		$db = $this->GetModel();
 		$db->where('machine_key', $this->machineKey)->where('active_from', $operational_date, '<=');
 		if ($record_created_at) {
@@ -132,7 +144,7 @@ abstract class BaseMachineController extends SecureController
 		$parts = array();
 		foreach ($rows as $row) {
 			$row_date = $row['operational_date'] ?? $operational_date;
-			foreach ($this->partsForRecord($row_date, $row['created_at'] ?? null) as $field => $label) { $parts[$field] = $label; }
+			foreach ($this->partsForRecord($row_date, $row['created_at'] ?? null, $row[$this->idColumn()] ?? null) as $field => $label) { $parts[$field] = $label; }
 		}
 		return (!empty($parts) || !empty($rows)) ? $parts : $this->partsForRecord($operational_date);
 	}
@@ -191,7 +203,7 @@ abstract class BaseMachineController extends SecureController
 		$details = array();
 		foreach ($rows as $row) {
 			$row_date = $row['operational_date'] ?? $operational_date;
-			foreach ($this->partDetailsForRecord($row_date, $row['created_at'] ?? null) as $part) {
+			foreach ($this->partDetailsForRecord($row_date, $row['created_at'] ?? null, $row[$this->idColumn()] ?? null) as $part) {
 				if (!isset($details[$part['field_name']])) { $details[$part['field_name']] = $part; }
 			}
 		}
@@ -364,7 +376,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$record['abnormalitas'] = array(); foreach ($details as $detail) { $record['abnormalitas'][$detail['nama_bagian']] = $detail; }
 		} else { $this->set_page_error($db->getLastError() ?: 'No record found'); }
 		if (!$record) { $record = array(); }
-		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null) : $this->parts;
+		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : $this->parts;
 		$this->view->page_title = "View AM {$this->displayName}"; $this->set_report_props("View AM {$this->displayName}");
 		return $this->render_view("$table/view.php", $record);
 	}
@@ -386,14 +398,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$end_day = $period === 1 ? 16 : intval($first->format('t'));
 		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
 		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
-		$db = $this->GetModel(); $sql = $this->sqlTable();
+		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('created_at', 'ASC')->get($sql);
 		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
 		$checks = array(); $all_approved = !empty($rows);
 		foreach ($rows as $row) {
 			if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
-			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null) as $field => $label) {
+			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
 				if (!empty($row[$field])) { $checks[$field][$day][] = array('shift' => $row['shift'] ?? null, 'value' => $row[$field]); }
 			}
 		}
@@ -531,7 +543,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		} else {
 			$this->set_page_error($db->getLastError() ?: 'No record found'); $record = array();
 		}
-		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null) : $this->parts;
+		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : $this->parts;
+		$record['part_details'] = !empty($record) ? $this->partDetailsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : array();
 		$this->view->page_title = "Edit Data AM {$this->displayName}";
 		return $this->render_view("$table/edit_data.php", $record);
 	}

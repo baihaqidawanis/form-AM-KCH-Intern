@@ -331,21 +331,8 @@ class Master_partController extends SecureController
 	function delete($rec_id = null)
 	{
 		Csrf::cross_check();
-		$db = $this->GetModel();
-		$this->rec_id = $rec_id;
-		$ids = array_map('trim', explode(',', $rec_id));
-		//Catat machine_key SEBELUM dihapus, biar bisa balik ke list mesin yang bener.
-		$db->where('id', $ids, 'in');
-		$owner_row = $db->getOne($this->tablename, 'machine_key');
-		$back_url = 'master_part/index/' . (!empty($owner_row['machine_key']) ? $owner_row['machine_key'] : '');
-		$db->where('id', $ids, 'in');
-		if ($db->delete($this->tablename)) {
-			$this->write_to_log('delete', 'true');
-			$this->set_flash_msg('Part berhasil dihapus', 'success');
-		} else {
-			$this->set_flash_msg($db->getLastError(), 'danger');
-		}
-		return $this->redirect($back_url);
+		$this->set_flash_msg('Penghapusan fisik part dilarang demi kepatuhan audit trail GMP. Silakan gunakan fitur Takeout untuk menonaktifkan part.', 'warning');
+		return $this->redirect('master_part');
 	}
 
 	/**

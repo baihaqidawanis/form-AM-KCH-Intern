@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use PHPUnit\Framework\TestCase;
 use Tests\Support\ApiClient;
+
+require_once dirname(__DIR__, 2) . '/config.php';
 use Tests\Support\FormScraper;
 
 /**
@@ -54,10 +56,29 @@ class GenericShiftLifecycleTest extends TestCase
 
         $partId = $this->cleanup['master_part_id'];
         if ($partId) {
-            $this->client->deleteWithCsrf(
-                "master_part/index/$machine",
-                "master_part/delete/$partId"
-            );
+            $this->cleanupTestPart($machine, (int) $partId);
+        }
+    }
+
+    private function cleanupTestPart(string $machine, int $partId): void
+    {
+        if (!preg_match('/^[a-z0-9_]+$/', $machine)) { return; }
+        $pdo = new \PDO("pgsql:host=" . \DB_HOST . ";port=" . \DB_PORT . ";dbname=" . \DB_NAME, \DB_USERNAME, \DB_PASSWORD, array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION));
+        $find = $pdo->prepare('SELECT machine_key, field_name FROM master_part WHERE id = ?');
+        $find->execute(array($partId));
+        $part = $find->fetch(\PDO::FETCH_ASSOC);
+        if (!$part || $part['machine_key'] !== $machine || !preg_match('/^phpunit_[a-z0-9_]+$/', $part['field_name'])) { return; }
+
+$hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot') IS NOT NULL")->fetchColumn();
+        $pdo->beginTransaction();
+        try {
+            if ($hasSnapshot) { $pdo->prepare('DELETE FROM form_part_snapshot WHERE machine_key = ? AND field_name = ?')->execute(array($machine, $part['field_name'])); }
+            $pdo->prepare('DELETE FROM master_part WHERE id = ?')->execute(array($partId));
+            $pdo->exec('ALTER TABLE "tb_mesin_' . $machine . '" DROP COLUMN IF EXISTS "' . $part['field_name'] . '"');
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            throw $e;
         }
     }
 
