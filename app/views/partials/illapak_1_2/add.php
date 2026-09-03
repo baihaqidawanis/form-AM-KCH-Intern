@@ -64,17 +64,21 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
         <div class="bg-light p-3 animated fadeIn page-content">
           <?php $this::display_page_errors(); ?>
           <?php if (!$selected_shift) { ?>
-            <div class="card mb-3">
-              <div class="card-body">
-                <h5>Pilih Shift Pemeriksaan</h5>
-                <p class="text-muted">Checklist akan disusun sesuai part yang berlaku pada shift tersebut.</p>
-                <form method="get" action="<?php print_link('illapak_1_2/add'); ?>" class="form-inline">
-                  <label class="mr-2" for="ctrl-shift-selector">Shift <span class="text-danger">*</span></label>
-                  <select required id="ctrl-shift-selector" name="shift" class="custom-select mr-2">
-                    <option value="" selected>Pilih shift ...</option>
-                    <option value="1">Shift 1</option><option value="2">Shift 2</option><option value="3">Shift 3</option>
-                  </select>
-                  <button class="btn btn-primary" type="submit">Tampilkan Checklist</button>
+            <div class="card mb-3 shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="font-weight-bold mb-1">Pilih Shift Pemeriksaan</h5>
+                <p class="text-muted mb-3">Checklist akan disusun sesuai part yang berlaku pada shift tersebut.</p>
+                <form method="get" action="<?php print_link('illapak_1_2/add'); ?>">
+                  <div class="form-group mb-3">
+                    <label class="font-weight-bold mb-1" for="ctrl-shift-selector">Shift <span class="text-danger">*</span></label>
+                    <select required id="ctrl-shift-selector" name="shift" class="custom-select d-block" style="max-width: 360px;">
+                      <option value="" selected>Pilih shift ...</option>
+                      <option value="1">Shift 1</option><option value="2">Shift 2</option><option value="3">Shift 3</option>
+                    </select>
+                  </div>
+                  <div class="pt-1">
+                    <button class="btn btn-primary px-4" type="submit">Tampilkan Checklist</button>
+                  </div>
                 </form>
               </div>
             </div>
