@@ -8,13 +8,11 @@ $parts = $data['parts'];
 // Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
 $master_db = new SharedController;
 $part_rows = $master_db->GetModel()->where('machine_key', 'sig')->orderBy('urutan', 'ASC')->get('master_part');
-$image_paths = array();
-$highlights = array();
+$part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {
   $field = $row['field_name'];
-  $image_paths[$field] = $row['image_path'];
-  $highlights[$field] = $row['highlight'];
+  $part_details[$field] = $row;
   $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
   if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
   $sections[$section_title][] = $field;
@@ -56,7 +54,11 @@ $rec_id = !empty($data['id_sig']) ? $data['id_sig'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
+              $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'','alat'=>'','standard'=>'','durasi'=>'','pelaksanaan'=>'','image_path'=>'','highlight'=>'');
+              $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
+              $pelaksanaan_bg = '';
+              if (($info['highlight'] ?? '') === 'mingguan') { $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);'; }
+              elseif (($info['highlight'] ?? '') === 'bulanan') { $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);'; }
               $kondisi_options = ($field === 'antistatic') ? Menu::$antistatic : Menu::kondisi_options($highlights[$field] ?? '');
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">

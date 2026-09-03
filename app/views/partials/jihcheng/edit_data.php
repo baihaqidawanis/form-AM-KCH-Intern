@@ -8,13 +8,11 @@ $parts = $data['parts'];
 // Sama kayak add.php -- foto & pengelompokan section sekarang dari master_part.
 $master_db = new SharedController;
 $part_rows = $master_db->GetModel()->where('machine_key', 'jihcheng')->orderBy('urutan', 'ASC')->get('master_part');
-$image_paths = array();
-$highlights = array();
+$part_details = array();
 $sections = array();
 foreach ($part_rows as $row) {
   $field = $row['field_name'];
-  $image_paths[$field] = $row['image_path'];
-  $highlights[$field] = $row['highlight'];
+  $part_details[$field] = $row;
   $section_title = !empty($row['section']) ? $row['section'] : 'LAINNYA';
   if (!isset($sections[$section_title])) { $sections[$section_title] = array(); }
   $sections[$section_title][] = $field;
@@ -56,17 +54,31 @@ $rec_id = !empty($data['id_jihcheng']) ? $data['id_jihcheng'] : null;
               $current_value = isset($data[$field]) ? $data[$field] : '';
               $abn = isset($data['abnormalitas'][$field]) ? $data['abnormalitas'][$field] : null;
               $is_nok = ($current_value === 'NOK');
-              $image_path = isset($image_paths[$field]) ? $image_paths[$field] : '';
+              $info = isset($part_details[$field]) ? $part_details[$field] : array('metode'=>'','alat'=>'','standard'=>'','durasi'=>'','pelaksanaan'=>'','image_path'=>'','highlight'=>'');
+              $image_path = !empty($info['image_path']) ? $info['image_path'] : '';
+              $pelaksanaan_bg = '';
+              if (($info['highlight'] ?? '') === 'mingguan') { $pelaksanaan_bg = 'background-color: rgba(255, 255, 0, 0.4);'; }
+              elseif (($info['highlight'] ?? '') === 'bulanan') { $pelaksanaan_bg = 'background-color: rgba(0, 204, 255, 0.4);'; }
             ?>
               <div class="card mb-3 part-card" data-part="<?php echo $field; ?>">
                 <div class="card-body">
+                  <h5><?php echo htmlspecialchars($label); ?></h5>
                   <div class="row">
                     <div class="col-md-3">
                       <div class="border text-center p-2 text-muted"><a href="<?php print_link($image_path); ?>" class="part-image-link"><img class="img-fluid" src="<?php print_link($image_path); ?>" alt="<?php echo htmlspecialchars($label); ?>" onerror="this.style.display='none';this.parentNode.nextElementSibling.style.display='block';"></a><span style="display:none">Gambar belum diunggah</span></div>
                     </div>
+                    <div class="col-md-5">
+                      <table class="table table-bordered table-sm mb-0">
+                        <tr><th>Metode</th><td><?php echo nl2br(htmlspecialchars($info['metode'] ?? '')); ?></td></tr>
+                        <tr><th>Alat</th><td><?php echo nl2br(htmlspecialchars($info['alat'] ?? '')); ?></td></tr>
+                        <tr><th>Standard</th><td><?php echo nl2br(htmlspecialchars($info['standard'] ?? '')); ?></td></tr>
+                        <tr><th>Durasi</th><td><?php echo htmlspecialchars($info['durasi'] ?? ''); ?></td></tr>
+                        <tr style="<?php echo $pelaksanaan_bg; ?>"><th>Pelaksanaan</th><td><?php echo htmlspecialchars($info['pelaksanaan'] ?? ''); ?></td></tr>
+                      </table>
+                    </div>
                     <div class="col-md-4">
-                      <label class="d-block"><?php echo htmlspecialchars($label); ?> <span class="text-danger">*</span></label>
-                      <?php foreach (Menu::kondisi_options($highlights[$field] ?? '') as $option) { ?>
+                      <label class="d-block">Kondisi <span class="text-danger">*</span></label>
+                      <?php foreach (Menu::kondisi_options($info['highlight'] ?? '') as $option) { ?>
                         <div class="custom-control custom-radio">
                           <input required class="custom-control-input part-kondisi" type="radio"
                             id="<?php echo $field . '-' . $option['value']; ?>" name="<?php echo $field; ?>"
