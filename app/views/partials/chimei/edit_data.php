@@ -39,6 +39,9 @@ $rec_id = !empty($data['id_chimei']) ? $data['id_chimei'] : null;
       </table>
       <form id="chimei-edit-data-form" class="form page-form needs-validation" novalidate
         action="<?php print_link("chimei/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post">
+        <?php if (!empty($data['shift'])) { ?>
+          <input type="hidden" name="shift" value="<?php echo htmlspecialchars($data['shift']); ?>">
+        <?php } ?>
         <?php foreach ($sections as $section_title => $section_fields) { ?>
           <div class="section-block mb-4">
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
@@ -126,8 +129,9 @@ $rec_id = !empty($data['id_chimei']) ? $data['id_chimei'] : null;
                             <option selected value="<?php echo $abn['kategori_ketidaksesuaian']; ?>"><?php echo $abn['kategori_ketidaksesuaian']; ?></option>
                           <?php } ?>
                         </select>
-                      </div>
                     </div>
+                    </div>
+                    <?php include dirname(__DIR__) . '/machine_no_wr_field.php'; ?>
                   </div>
                 </div>
               </div>
@@ -157,6 +161,10 @@ $(function () {
         isNokChecked = card.find('.part-kondisi[value="NOK"]').is(':checked');
     box.toggle(isNokChecked);
     box.find('textarea,select').prop('required', isNokChecked);
+    if (!isNokChecked) {
+      box.find('textarea, input[type="text"]').val('');
+      box.find('select').val('');
+    }
   }
 
   $('.part-kondisi').on('change', function () {

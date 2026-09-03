@@ -1,0 +1,22 @@
+-- Nomor Work Request disimpan sebagai teks agar nol di depan dan hingga 20 digit tetap utuh.
+ALTER TABLE "kendala_sig" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_joeya" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_illapak_1_2" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_illapak_3_12" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_unifill_b" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_chimei" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_temach" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_jihcheng" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_jinsung_1_4" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_jinsung_5" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_best_pack" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_cosmec" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_fbd_jaw_chuan" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_fbd_glatt" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_supermixer" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_storage_tank" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_storage_tank_tetrapak" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_mixing_tank" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_granulator" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_check_weigher" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;
+ALTER TABLE "kendala_conveyor_sig" ADD COLUMN IF NOT EXISTS "no_wr" varchar(20) DEFAULT NULL;

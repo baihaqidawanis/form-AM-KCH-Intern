@@ -20,9 +20,9 @@ $current_page = $this->set_current_page_link();
           </table>
           <div class="table-responsive">
             <table class="table table-bordered">
-              <thead><tr><th>Nama Part</th><th>Kondisi</th><th>Kendala</th><th>Kategori Tag</th><th>Korelasi</th><th>Klasifikasi</th><th>Ketidaksesuaian</th></tr></thead>
+              <thead><tr><th>Nama Part</th><th>Kondisi</th><th>Kendala</th><th>Kategori Tag</th><th>Korelasi</th><th>Klasifikasi</th><th>Ketidaksesuaian</th><th>Nomor WR</th></tr></thead>
               <tbody>
-                <?php foreach ($parts as $field => $label) { $abn = $data['abnormalitas'][$field] ?? null; ?>
+                <?php foreach ($parts as $field => $label) { $abn = (($data[$field] ?? '') === 'NOK') ? ($data['abnormalitas'][$field] ?? null) : null; ?>
                   <tr>
                     <th><?php echo htmlspecialchars($label); ?><?php if ($field === 'tekanan_angin_suplai' && !empty($data['value_tekanan_angin'])) { echo ' <span class="text-muted">(' . rtrim(rtrim($data['value_tekanan_angin'], '0'), '.') . ' BAR)</span>'; } ?></th>
                     <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } elseif ($val === 'N/A') { echo '<span class="badge badge-secondary">N/A</span>'; } else { echo '-'; } ?></td>
@@ -31,6 +31,7 @@ $current_page = $this->set_current_page_link();
                     <td><?php echo $abn['teks_korelasi'] ?? '-'; ?></td>
                     <td><?php echo $abn['teks_klasifikasi'] ?? '-'; ?></td>
                     <td><?php echo $abn['teks_ketidaksesuaian'] ?? '-'; ?></td>
+                    <td><?php echo htmlspecialchars($abn['no_wr'] ?? '-'); ?></td>
                   </tr>
                 <?php } ?>
               </tbody>

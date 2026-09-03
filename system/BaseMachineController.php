@@ -296,6 +296,27 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return $this->render_view($data->uses_shift ? 'machine_shift_list.php' : "$table/list2.php", $data);
 	}
 
+
+	/** Nomor WR tetap string agar nol depan dan hingga 20 digit tidak hilang. */
+	protected function noWrForField(array $formdata, $field)
+	{
+		$no_wr = trim((string)($formdata['no_wr_' . $field] ?? ''));
+		return $no_wr === '' ? null : $no_wr;
+	}
+
+	protected function hasValidNoWrInput(array $formdata, array $part_fields)
+	{
+		foreach ($part_fields as $field => $label) {
+			if (($formdata[$field] ?? null) !== 'NOK') { continue; }
+			$no_wr = trim((string)($formdata['no_wr_' . $field] ?? ''));
+			if ($no_wr !== '' && !preg_match('/^[0-9]{1,20}$/', $no_wr)) {
+				$this->view->page_error[] = 'Nomor WR untuk ' . $label . ' harus berisi maksimal 20 digit angka.';
+				return false;
+			}
+		}
+		return true;
+	}
+
 	function add($formdata = null)
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
@@ -333,20 +354,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			foreach (array_keys($parts_for_add) as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
 			// Mesin biasa hanya satu form per hari. Mesin shift tetap satu form per shift.
-			if ($this->validated()) {
+			$valid_no_wr = $this->hasValidNoWrInput($formdata, $parts_for_add);
+			if ($this->validated() && $valid_no_wr) {
 				$db->where('mesin', $modeldata['mesin'])->where('operational_date', $modeldata['operational_date']);
 				if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $modeldata['shift']); }
 				if ($db->has($sql)) {
 					$this->view->page_error[] = in_array('shift', $this->extraFields, true) ? 'Shift ini sudah diisi untuk tanggal operasional tersebut.' : 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.';
 				}
 			}
-			if ($this->validated()) {
+			if ($this->validated() && $valid_no_wr) {
 				$db->startTransaction();
 				$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
 				if ($rec_id) {
 					foreach ($parts_for_add as $field => $label) {
-						if (!empty($_POST['kendala_' . $field])) {
-							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'created_at' => datetime_now()));
+						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
+						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
+							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()));
 						}
 					}
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
@@ -355,7 +378,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$this->savePartSnapshot($rec_id, $parts_for_add);
 					$db->commit();
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
-					return $this->redirect($table . '/daily_report?mesin=' . urlencode($modeldata['mesin']) . '&date=' . urlencode($modeldata['operational_date']));
+					return $this->redirect($table . '/view/' . $rec_id);
 				}
 				$db->rollback();
 				$this->set_page_error();
@@ -484,6 +507,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->rules_array = array('perubahan' => 'required');
 			$this->sanitize_array = array('perubahan' => 'sanitize_string');
 			foreach (array_merge($this->part_fields(), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
+			// Edit Data tidak selalu menampilkan extra field (contohnya shift). Pertahankan nilai
+			// yang tersimpan agar validasi required tidak gagal dan kolom lama tidak tertimpa.
+			$existing_record = $db->where($idcol, $rec_id)->getOne($sql);
+			foreach ($this->extraFields as $ef) {
+				if (!isset($postdata[$ef]) && isset($existing_record[$ef])) { $postdata[$ef] = $existing_record[$ef]; }
+			}
 			// Lihat catatan sama di add(): extraFields kolomnya numeric di DB, jadi
 			// perlu divalidasi + koma dinormalisasi ke titik di sini juga.
 			foreach ($this->extraFields as $ef) {
@@ -505,7 +534,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			} else {
 				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
 			}
-			if ($this->validated()) {
+			$valid_no_wr = $this->hasValidNoWrInput($formdata, $this->parts);
+			if ($this->validated() && $valid_no_wr) {
 				$db->startTransaction();
 				$db->where($idcol, $rec_id);
 				$bool = $db->update($sql, $modeldata);
@@ -517,8 +547,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$db->where('id_am', $rec_id);
 					$db->delete($this->kendalaTable());
 					foreach ($this->parts as $field => $label) {
-						if (!empty($_POST['kendala_' . $field])) {
-							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $mesin_id, 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'created_at' => datetime_now()));
+						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
+						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
+							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $mesin_id, 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()));
 						}
 					}
 					$db->commit();

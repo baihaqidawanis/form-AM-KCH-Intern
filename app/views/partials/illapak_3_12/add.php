@@ -190,7 +190,8 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
                               <option value="">Pilih ...</option>
                             </select></div>
                         </div>
-                      </div>
+                      <?php include dirname(__DIR__) . '/machine_no_wr_field.php'; ?>
+                    </div>
                     </div>
                   </div>
                 <?php } ?>
@@ -214,6 +215,10 @@ $(function () {
         isNokChecked = card.find('.part-kondisi[value="NOK"]').is(':checked');
     box.toggle(isNokChecked);
     box.find('textarea,select').prop('required', isNokChecked);
+    if (!isNokChecked) {
+      box.find('textarea, input[type="text"]').val('');
+      box.find('select').val('');
+    }
   });
 
   $('.btn-check-section-ok').on('click', function () {

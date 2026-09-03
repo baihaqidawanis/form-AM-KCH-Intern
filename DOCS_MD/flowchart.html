@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Flowchart Integrasi Form AM ke Breakdown Management (RTWT)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      padding: 30px;
+      text-align: center;
+    }
+    h2 {
+      color: #0b4d75;
+      margin-bottom: 5px;
+    }
+    p {
+      color: #666;
+      margin-bottom: 25px;
+    }
+    .mermaid-container {
+      background: #ffffff;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      max-width: 95%;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Flowchart Integrasi Form AM ke Breakdown Management (RTWT)</h2>
+  <p>Alur End-to-End sesuai Kebutuhan QS Pulogadung (Mesin Productivity vs Dept Support)</p>
+
+  <div class="mermaid-container">
+    <pre class="mermaid">
+graph TD
+    A["1. Operator Form AM Cek Mesin"] --> B{"Kondisi Part?"}
+    B -->|"Kondisi Baik (OK)"| C["Auto-Approved System (Selesai)"]
+    B -->|"Kondisi Tidak Baik (NOK)"| D["Input Kendala, Tag, No WR"]
+    D --> E["Submit Form AM"]
+
+    E -->|"Integrasi Pipeline API"| F["Tiket RTWT Mesin Produksi"]
+    G["2. Karyawan Office Input Manual"] --> H["Tiket RTWT Dept Support (Office)"]
+
+    F --> I["Teknik: Search & Collective Assign by Category"]
+    H --> J["Dept Head / GA: Assign PIC Pelaksana"]
+
+    I --> K["Notifikasi In-App & Draft Email ke PIC"]
+    J --> K
+
+    K --> L["Status: IN PROGRESS (Perbaikan Fisik)"]
+    L --> M["Upload Foto Bukti & Tindakan Penanggulangan"]
+    M --> N["Submit untuk Verifikasi"]
+
+    N --> O{"Apa Kategori Temuan?"}
+    O -->|"Kategori Productivity / Mesin"| P["Verifikasi & CLOSED oleh TEKNIK"]
+    O -->|"Kategori 5R & HSE (Safety/K3)"| Q["Verifikasi & CLOSED oleh QS"]
+
+    P --> R["Status Resmi: CLOSED"]
+    Q --> R
+
+    R --> S["Dashboard Penilaian & Pencapaian KPI QS Pulogadung"]
+    </pre>
+  </div>
+
+</body>
+</html>
