@@ -157,6 +157,19 @@ $redirect_to = $this->redirect_to;
                                                                         <small class="number chip">Number</small>
                                                                         <small class="special chip">Symbol</small>
                                                                     </div>
+                                                                    <small class="form-text text-muted mt-1">
+                                                                        <i class="fa fa-info-circle"></i>
+                                                                        Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.
+                                                                    </small>
+                                                                    <?php
+                                                                    // Tampilkan error password secara inline di sini juga
+                                                                    $page_errors = $this->view->page_error ?? [];
+                                                                    foreach ((array)$page_errors as $err) {
+                                                                        if (stripos($err, 'password') !== false || stripos($err, 'karakter') !== false || stripos($err, 'huruf') !== false) { ?>
+                                                                        <div class="alert alert-danger py-1 px-2 mt-1 mb-0" style="font-size:0.875rem;">
+                                                                            <i class="fa fa-exclamation-circle"></i> <?php echo htmlspecialchars($err); ?>
+                                                                        </div>
+                                                                    <?php }} ?>
                                                                 </div>
                                                             </div>
                                                         </div>
