@@ -69,6 +69,7 @@
 	<?php
 	Html::page_js('popper.js');
 	Html::page_js('bootstrap-4.3.1.min.js');
+	Html::page_js('page-scripts.js');
 	?>
 </body>
 

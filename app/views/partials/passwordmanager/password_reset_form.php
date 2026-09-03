@@ -33,3 +33,19 @@
 		</div>
 	</div>
 </div>
+<script>
+$(document).ready(function(){
+	$(document).on('click', '.btn-toggle-password', function(e){
+		e.preventDefault();
+		var $input = $(this).closest('.input-group').find('input');
+		var $icon = $(this).find('i');
+		if ($input.attr('type') === 'password') {
+			$input.attr('type', 'text');
+			$icon.removeClass('fa-eye').addClass('fa-eye-slash');
+		} else {
+			$input.attr('type', 'password');
+			$icon.removeClass('fa-eye-slash').addClass('fa-eye');
+		}
+	});
+});
+</script>
