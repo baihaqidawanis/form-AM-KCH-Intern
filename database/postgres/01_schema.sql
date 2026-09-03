@@ -1099,6 +1099,11 @@ BEGIN
     WHERE table_schema = 'public' AND table_name LIKE 'tb_mesin_%'
   LOOP
     EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS shift varchar(1) DEFAULT NULL', form_table);
+    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS operational_date date NULL', form_table);
+    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (mesin, operational_date)', 'idx_' || form_table || '_operational_date', form_table);
   END LOOP;
 END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "uq_illapak_1_2_operational_shift" ON "tb_mesin_illapak_1_2" ("mesin", "operational_date", "shift") WHERE "shift" IS NOT NULL;
+
 
