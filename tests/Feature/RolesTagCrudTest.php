@@ -25,10 +25,13 @@ class RolesTagCrudTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->createdRoleId !== null) {
-            $this->client->deleteWithCsrf('roles/view/' . $this->createdRoleId, 'roles/delete/' . $this->createdRoleId);
+            // delete endpoint pakai GET dengan csrf_token di URL (deleteWithCsrf sudah benar)
+            $this->client->deleteWithCsrf('roles', 'roles/delete/' . $this->createdRoleId);
+            $this->createdRoleId = null;
         }
         if ($this->createdTagId !== null) {
-            $this->client->deleteWithCsrf('tag/view/' . $this->createdTagId, 'tag/delete/' . $this->createdTagId);
+            $this->client->deleteWithCsrf('tag', 'tag/delete/' . $this->createdTagId);
+            $this->createdTagId = null;
         }
     }
 
@@ -50,7 +53,7 @@ class RolesTagCrudTest extends TestCase
         $this->assertStringContainsString('PHPUnit Test Role Diedit', $editBody);
         $this->assertStringNotContainsString('PHPUnit Test Role<', $editBody, 'Nama role lama mestinya udah ke-replace');
 
-        $delete = $this->client->deleteWithCsrf("roles/view/$id", "roles/delete/$id");
+        $delete = $this->client->deleteWithCsrf('roles', 'roles/delete/' . $id);
         $this->assertSame(200, $delete->getStatusCode());
         $this->assertStringNotContainsString('PHPUnit Test Role Diedit', (string) $delete->getBody());
         $this->createdRoleId = null;
@@ -70,7 +73,7 @@ class RolesTagCrudTest extends TestCase
         $edit = $this->client->postWithCsrf("tag/edit/$id", array('kategori_tag' => 'PHPUnit Test Tag Diedit'));
         $this->assertStringContainsString('PHPUnit Test Tag Diedit', (string) $edit->getBody());
 
-        $delete = $this->client->deleteWithCsrf("tag/view/$id", "tag/delete/$id");
+        $delete = $this->client->deleteWithCsrf('tag', 'tag/delete/' . $id);
         $this->assertStringNotContainsString('PHPUnit Test Tag Diedit', (string) $delete->getBody());
         $this->createdTagId = null;
     }

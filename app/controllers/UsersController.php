@@ -383,8 +383,12 @@ class UsersController extends SecureController{
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
 		}
 		$db = $this->GetModel();
-		$db->where('id_user', $rec_id)->where('account_status', 'pending_activation');
-		if ($db->update($this->tablename, array('account_status' => 'active'))) {
+		// Terima dua kondisi: 'Pending' (dari alur registrasi baru) dan
+		// 'pending_activation' (dari alur password reset). Keduanya sama-sama
+		// menunggu konfirmasi admin.
+		$db->where('id_user', $rec_id)
+		   ->where('account_status', array('Pending', 'pending_activation'), 'in');
+		if ($db->update($this->tablename, array('account_status' => 'Active'))) {
 			$this->rec_id = $rec_id;
 			$this->write_to_log('activate_password_reset', 'true');
 			$this->set_flash_msg('Akun berhasil diaktifkan.', 'success');

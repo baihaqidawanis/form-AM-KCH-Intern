@@ -78,7 +78,18 @@ $redirect_to = $this->redirect_to;
                                                     </div>
                                                     <div class="col-sm-8">
                                                         <div class="">
-                                                            <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select"><option value="" disabled <?php echo empty($data['mesin']) ? 'selected' : ''; ?>>Pilih Mesin ...</option><?php foreach (Master_partController::$machine_keys as $mkey => $mlabel) { $sel = ($data['mesin'] === $mlabel) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $mlabel; ?>"><?php echo $mlabel; ?></option><?php } ?></select>
+                                                            <?php
+                                                            $mesin_options_edit = $comp_model->sig_Line_option_list();
+                                                            $selected_all_mesin = ($data['mesin'] === 'Semua Mesin') ? 'selected' : '';
+                                                            ?>
+                                                            <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select">
+                                                                <option value="" disabled <?php echo empty($data['mesin']) ? 'selected' : ''; ?>>Pilih Mesin ...</option>
+                                                                <?php foreach ($mesin_options_edit as $option) {
+                                                                  $sel = ($data['mesin'] === $option['label']) ? 'selected' : ''; ?>
+                                                                <option <?php echo $sel; ?> value="<?php echo $option['label']; ?>"><?php echo $option['label']; ?></option>
+                                                                <?php } ?>
+                                                                <option <?php echo $selected_all_mesin; ?> value="Semua Mesin">Semua Mesin</option>
+                                                            </select>
                                                             </div>
                                                         </div>
                                                     </div>
