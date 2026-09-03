@@ -21,7 +21,7 @@ foreach ($records as $row) {
       <h4 class="mb-0"><?php echo htmlspecialchars($this->page_title); ?></h4>
       <div>
         <?php if ($this->show_header) { ?><a class="btn btn-primary" href="<?php print_link($d->machine_key . '/add'); ?>"><i class="fa fa-plus"></i> Add New <?php echo htmlspecialchars($d->display_name); ?></a><?php } ?>
-        <a class="btn btn-outline-primary ml-2" href="<?php print_link($d->machine_key . '/period_report'); ?>"><i class="fa fa-file-pdf-o"></i> Export PDF</a>
+        <a class="btn btn-danger ml-2" href="<?php print_link($d->machine_key . '/period_report'); ?>"><i class="fa fa-file-pdf-o"></i> Export PDF</a>
       </div>
     </div>
     <form class="search filter-form mt-2" action="<?php print_link($d->machine_key . '/list2'); ?>" method="get">
