@@ -21,7 +21,7 @@ BEGIN
         EXECUTE format('DROP INDEX IF EXISTS public.%I', 'uq_' || t || '_operational_shift');
 
         EXECUTE format(
-            'CREATE UNIQUE INDEX IF NOT EXISTS %I ON public.%I (mesin, operational_date, COALESCE(shift, ''1''))',
+            'CREATE UNIQUE INDEX IF NOT EXISTS %I ON public.%I (mesin, operational_date, COALESCE(NULLIF(shift, ''''), ''1''))',
             'uq_tb_mesin_' || t || '_operational_shift',
             'tb_mesin_' || t
         );

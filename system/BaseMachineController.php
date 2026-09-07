@@ -161,42 +161,21 @@ abstract class BaseMachineController extends SecureController
 	{
 		if (empty($parts_meta) || !$form_id) { return; }
 		$db = $this->GetModel();
-		// Ambil metadata lengkap dari master_part sesuai part yang aktif saat submit.
 		$field_names = array_keys($parts_meta);
 		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in');
 		$master_rows = $db->get('master_part');
 		if (empty($master_rows)) { return; }
 		try {
 			foreach ($master_rows as $row) {
-				$db->rawQuery(
-					'INSERT INTO "form_part_snapshot"
-						(machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan, snapshot_at)
-					VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-					ON CONFLICT (machine_key, form_id, field_name) DO NOTHING',
-					array(
-						$this->machineKey,
-						$form_id,
-						$row['field_name'],
-						$row['label'],
-						$row['section']      ?? null,
-						$row['metode']       ?? null,
-						$row['alat']         ?? null,
-						$row['standard']     ?? null,
-						$row['durasi']       ?? null,
-						$row['pelaksanaan']  ?? null,
-						$row['highlight']    ?? null,
-						$row['image_path']   ?? null,
-						$row['urutan']       ?? null,
-					)
-				);
+				$result = $db->rawQuery('INSERT INTO "form_part_snapshot" (machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan, snapshot_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT (machine_key, form_id, field_name) DO NOTHING', array($this->machineKey, $form_id, $row['field_name'], $row['label'], $row['section'] ?? null, $row['metode'] ?? null, $row['alat'] ?? null, $row['standard'] ?? null, $row['durasi'] ?? null, $row['pelaksanaan'] ?? null, $row['highlight'] ?? null, $row['image_path'] ?? null, $row['urutan'] ?? null));
+				if ($result === false) { throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan snapshot part.'); }
 			}
-		} catch (\Exception $e) {
-			// Tabel form_part_snapshot belum ada di environment lama -- jangan crash
-			// submit form. Migration harus dijalankan terpisah di environment target.
-			error_log('savePartSnapshot skipped (migration belum dijalankan?): ' . $e->getMessage());
+		} catch (\Throwable $e) {
+			$error = $e->getMessage();
+			if (stripos($error, '42P01') !== false || stripos($error, 'does not exist') !== false || stripos($error, 'relation "form_part_snapshot"') !== false) { error_log('savePartSnapshot skipped: ' . $error); return; }
+			throw new \RuntimeException('Gagal menyimpan snapshot part.', 0, $e);
 		}
 	}
-
 	/** Metadata PDF harus mengikuti snapshot part yang sama dengan report form. */
 	protected function partDetailsForRows($rows, $operational_date)
 	{
@@ -389,14 +368,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					return $this->redirect($table . '/view/' . $rec_id);
 				} catch (Throwable $e) {
 					$this->rollbackTransactionSafely($db, 'add ' . $this->machineKey);
-					error_log('add ' . $this->machineKey . ' failed: ' . $e->getMessage());
+					error_log('add ' . $this->machineKey . ' failed: ' . $e->getMessage() . ' | SQL Error: ' . ($db->getLastError() ?: 'none'));
 					$raw_err = ($db->getLastError() ?: '') . ' ' . $e->getMessage();
 					if (strpos($raw_err, '23505') !== false || stripos($raw_err, 'unique') !== false || stripos($raw_err, 'duplicate') !== false) {
 						$this->set_page_error(in_array('shift', $this->extraFields, true)
 							? 'Shift ini sudah diisi untuk tanggal operasional tersebut.'
 							: 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.');
 					} else {
-						$this->set_page_error($db->getLastError() ?: 'Gagal menyimpan form AM. Silakan coba kembali.');
+						$this->set_page_error('Gagal menyimpan form AM. Silakan coba kembali atau hubungi administrator.');
 					}
 				}
 			}
@@ -579,8 +558,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					return $this->redirect("$table/view/$rec_id");
 				} catch (Throwable $e) {
 					$this->rollbackTransactionSafely($db, 'edit_data ' . $this->machineKey);
-					error_log('edit_data ' . $this->machineKey . ' failed: ' . $e->getMessage());
-					$this->set_page_error($db->getLastError() ?: 'Gagal memperbarui form AM. Silakan coba kembali.');
+					error_log('edit_data ' . $this->machineKey . ' failed: ' . $e->getMessage() . ' | SQL Error: ' . ($db->getLastError() ?: 'none'));
+					$this->set_page_error('Gagal memperbarui form AM. Silakan coba kembali atau hubungi administrator.');
 				}
 			}
 		}
@@ -589,8 +568,35 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($record) {
 			$details = $db->rawQuery("SELECT k.* FROM {$this->kendalaTable()} k WHERE k.id_am=?", array($rec_id));
 			$record['abnormalitas'] = array(); foreach ($details as $detail) { $record['abnormalitas'][$detail['nama_bagian']] = $detail; }
+			// Preservasi input yang baru saja diketik user bila submit/update gagal
+			if (!empty($formdata) && is_array($formdata)) {
+				foreach ($formdata as $k => $v) {
+					if (!is_array($v) && !str_starts_with($k, 'kendala_') && !str_starts_with($k, 'kategori_') && !str_starts_with($k, 'korelasi_') && !str_starts_with($k, 'klasifikasi_') && !str_starts_with($k, 'no_wr_')) {
+						$record[$k] = $v;
+					}
+				}
+				if (!empty($formdata['perubahan'])) {
+					$record['perubahan'] = $formdata['perubahan'];
+				}
+				foreach ($this->parts as $field => $label) {
+					if (isset($formdata[$field])) {
+						$record[$field] = $formdata[$field];
+					}
+					if (!empty($_POST['kendala_' . $field]) || !empty($_POST['kategori_tag_' . $field]) || !empty($_POST['no_wr_' . $field])) {
+						$record['abnormalitas'][$field] = array(
+							'nama_bagian' => $field,
+							'kendala' => $_POST['kendala_' . $field] ?? '',
+							'kategori_tag' => $_POST['kategori_tag_' . $field] ?? null,
+							'korelasi_tag' => $_POST['korelasi_tag_' . $field] ?? null,
+							'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field] ?? null,
+							'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field] ?? null,
+							'no_wr' => $this->noWrForField($formdata, $field),
+						);
+					}
+				}
+			}
 		} else {
-			$this->set_page_error($db->getLastError() ?: 'No record found'); $record = array();
+			$this->set_page_error('Data form AM tidak ditemukan.'); $record = array();
 		}
 		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : $this->parts;
 		$record['part_details'] = !empty($record) ? $this->partDetailsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : array();

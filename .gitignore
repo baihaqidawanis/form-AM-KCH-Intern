@@ -22,3 +22,5 @@ test-results/
 error.log
 
 scratch/legacy-artifacts/
+
+vendor/
