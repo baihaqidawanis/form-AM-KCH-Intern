@@ -89,7 +89,7 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
                 <option value="" disabled selected>Pilih nama mesin ...</option>
                 <?php foreach ($machine_options as $option) {
                   $lbl = strtolower($option['label']);
-                  if (strpos($lbl, 'illapak') !== false && !in_array($lbl, array('illapak 1', 'illapak 2'))) { ?>
+                  if ((strpos($lbl, 'ilapak') !== false || strpos($lbl, 'illapak') !== false) && !in_array($lbl, array('ilapak 1', 'ilapak 2', 'illapak 1', 'illapak 2'))) { ?>
                     <option value="<?php echo $option['value']; ?>"><?php echo $option['label']; ?></option><?php }
                 } ?>
               </select></div>

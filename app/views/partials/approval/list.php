@@ -197,17 +197,17 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page2" role="tab" aria-selected="true">
-                                        Joeya<?php echo $approval_badge('joeya'); ?>
+                                        JOYEA<?php echo $approval_badge('joeya'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page3" role="tab" aria-selected="true">
-                                        Illapak 1 - 2<?php echo $approval_badge('illapak_1_2'); ?>
+                                        Ilapak 1 - 2<?php echo $approval_badge('illapak_1_2'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link " data-toggle="tab" href="#TabPage-2-Page4" role="tab" aria-selected="true">
-                                        Illapak 3 - 12<?php echo $approval_badge('illapak_3_12'); ?>
+                                        Ilapak 3 - 12<?php echo $approval_badge('illapak_3_12'); ?>
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -228,7 +228,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page2" role="tabpanel">
-                                    <h4 >Joeya</h4>
+                                    <h4 >JOYEA</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("joeya/list2?limit_count=20" , array( 'show_header' => false ));
@@ -236,7 +236,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page3" role="tabpanel">
-                                    <h4 >Illapak 1 - 2</h4>
+                                    <h4 >Ilapak 1 - 2</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("illapak_1_2/list2?limit_count=20" , array( 'show_header' => false ));
@@ -244,7 +244,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page4" role="tabpanel">
-                                    <h4 >Illapak 3 - 12</h4>
+                                    <h4 >Ilapak 3 - 12</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("illapak_3_12/list2?limit_count=20" , array( 'show_header' => false ));

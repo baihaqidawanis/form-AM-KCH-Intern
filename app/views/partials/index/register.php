@@ -109,7 +109,7 @@ $redirect_to = $this->redirect_to;
                                                                 // Prefix nama mesin per kategori, sesuai pengelompokan submenu di helpers/Menu.php.
                                                                 $area_machine_prefixes = array(
                                                                   'Compounding' => array('cosmec', 'fbd jaw chuan', 'fbd glatt', 'supermixer', 'granulator', 'storage tank', 'mixing tank'),
-                                                                  'Filling' => array('joeya', 'sig', 'illapak', 'unifill'),
+                                                                  'Filling' => array('joeya', 'sig', 'ilapak', 'illapak', 'unifill'),
                                                                   'Kemas' => array('jihcheng', 'jinsung'),
                                                                   'Wrapping dan Pack Cartoning' => array('chimei', 'temach', 'check weigher', 'conveyor sig', 'injekt kemas', 'inkjet kemas', 'best pack', 'cartoning', 'pack', 'wrapping'),
                                                                 );

@@ -94,7 +94,7 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
                 required id="ctrl-mesin" name="mesin" class="custom-select">
                 <option value="" disabled selected>Pilih nama mesin ...</option>
                 <?php foreach ($machine_options as $option) {
-                  if (in_array(strtolower($option['label']), array('illapak 1', 'illapak 2'))) { ?>
+                  if (in_array(strtolower($option['label']), array('ilapak 1', 'ilapak 2', 'illapak 1', 'illapak 2'))) { ?>
                     <option value="<?php echo $option['value']; ?>"><?php echo $option['label']; ?></option><?php }
                 } ?>
               </select></div>

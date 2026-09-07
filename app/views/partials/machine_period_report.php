@@ -6,8 +6,8 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
 // Tentukan Kategori Area berdasarkan machine_key
 $machine_key = $d['machine_key'] ?? '';
 $report_machine_labels = array(
-    'illapak_1_2' => array('illapak 1', 'illapak 2'),
-    'illapak_3_12' => array('illapak 3', 'illapak 4', 'illapak 5', 'illapak 6', 'illapak 7', 'illapak 8', 'illapak 9', 'illapak 10', 'illapak 11', 'illapak 12'),
+    'illapak_1_2' => array('ilapak 1', 'ilapak 2'),
+    'illapak_3_12' => array('ilapak 3', 'ilapak 4', 'ilapak 5', 'ilapak 6', 'ilapak 7', 'ilapak 8', 'ilapak 9', 'ilapak 10', 'ilapak 11', 'ilapak 12'),
     'sig' => array('sig 5', 'sig 6'),
     'cosmec' => array('cosmec'),
     'best_pack' => array('injekt kemas & best pack'),
@@ -30,7 +30,8 @@ $report_machine_labels = array(
 );
 if (isset($report_machine_labels[$machine_key])) {
     $machine_options = array_values(array_filter($machine_options, function ($option) use ($report_machine_labels, $machine_key) {
-        return in_array(strtolower(trim($option['label'])), $report_machine_labels[$machine_key], true);
+        $canonical_label = str_replace('illapak', 'ilapak', strtolower(trim($option['label'])));
+        return in_array($canonical_label, $report_machine_labels[$machine_key], true);
     }));
 }
 $area_name = 'FILLING';
