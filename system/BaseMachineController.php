@@ -418,14 +418,20 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
 		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
 		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
-		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('created_at', 'ASC')->get($sql);
+		// Satu form dapat direvisi berkali-kali. Baca versi paling lama lebih dulu agar
+		// assignment keyed di bawah selalu menyisakan kondisi terakhir sebagai current truth.
+		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('COALESCE(updated_at, created_at)', 'ASC')->get($sql);
 		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
 		$checks = array(); $all_approved = !empty($rows);
 		foreach ($rows as $row) {
 			if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
 			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
-				if (!empty($row[$field])) { $checks[$field][$day][] = array('shift' => $row['shift'] ?? null, 'value' => $row[$field]); }
+				if (!empty($row[$field])) {
+					$shift_key = trim((string)($row['shift'] ?? ''));
+					$shift_key = $shift_key === '' ? '__default__' : $shift_key;
+					$checks[$field][$day][$shift_key] = $row[$field];
+				}
 			}
 		}
 		$part_details = $this->partDetailsForRows($rows, $start);

@@ -23,11 +23,13 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
   <div class="container-fluid">
     <?php $this::display_page_errors(); ?>
     <div class="bg-light p-3">
-      <div class="mb-3">
-        <label class="mr-2">Filter mesin:</label>
-        <?php foreach ($machine_keys as $key => $label) { ?>
-          <a class="btn btn-sm <?php echo ($selected_machine === $key) ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="<?php print_link('master_part/index/' . $key) ?>"><?php echo $label; ?></a>
-        <?php } ?>
+      <div class="mb-3 d-flex flex-wrap align-items-center" style="gap: 8px 6px;">
+        <label class="mb-1 mr-2">Filter mesin:</label>
+        <div class="d-flex flex-wrap align-items-center" style="gap: 8px 6px;">
+          <?php foreach ($machine_keys as $key => $label) { ?>
+            <a class="btn btn-sm mb-1 <?php echo ($selected_machine === $key) ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="<?php print_link('master_part/index/' . $key) ?>"><?php echo $label; ?></a>
+          <?php } ?>
+        </div>
       </div>
       <div class="d-flex align-items-center mb-2">
         <h5 class="m-0"><?php echo $selected_label; ?></h5>

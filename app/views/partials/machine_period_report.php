@@ -142,9 +142,28 @@ if (!function_exists('get_period_image_src')) {
         }
         $number++;
         $field = $part['field_name'];
-        $shift_schedule = trim((string)($part['shift_schedule'] ?? '1'));
-        $shifts = array_filter(array_map('trim', explode(',', $shift_schedule)));
+        // Utamakan master schedule; bila legacy/default, pulihkan informasi multi-shift
+        // dari teks pelaksanaan atau dari data shift yang benar-benar ada pada periode ini.
+        $shift_schedule = trim((string)($part['shift_schedule'] ?? ''));
+        $shifts = array_values(array_unique(array_filter(array_map('trim', explode(',', $shift_schedule)), function ($shift) {
+          return in_array($shift, array('1', '2', '3'), true);
+        })));
+        $schedule_is_default = empty($shifts) || $shifts === array('1');
+        if ($schedule_is_default) {
+          $pelaksanaan = (string)($part['pelaksanaan'] ?? '');
+          if (preg_match('/(?<!\d)1\s*,\s*2(?:\s*,\s*3)?(?!\d)/', $pelaksanaan, $matches)) {
+            $shifts = array_values(array_unique(array_filter(array_map('trim', explode(',', $matches[0])))));
+          }
+        }
+        $period_shifts = array();
+        foreach (($d['checks'][$field] ?? array()) as $day_entries) {
+          foreach ((array)$day_entries as $shift_key => $value) {
+            if (in_array((string)$shift_key, array('2', '3'), true)) { $period_shifts[] = (string)$shift_key; }
+          }
+        }
+        if (!empty($period_shifts)) { $shifts = array_values(array_unique(array_merge($shifts, $period_shifts))); }
         if (empty($shifts)) { $shifts = array('1'); }
+        sort($shifts, SORT_NUMERIC);
         $is_multi_shift = count($shifts) > 1;
         $rowspan = count($shifts);
 
@@ -169,12 +188,14 @@ if (!function_exists('get_period_image_src')) {
             $entries = $d['checks'][$field][$day] ?? array();
             $cell_val = '';
             $c = '';
-            foreach ($entries as $e) {
-              if (!$is_multi_shift || (string)($e['shift'] ?? '') === (string)$first_shift || empty($e['shift'])) {
-                $c = ($e['value'] ?? '') === 'NOK' ? 'mark-nok' : 'mark-ok';
-                $cell_val = ($e['value'] ?? '') === 'NOK' ? '×' : '√';
-                break;
-              }
+            if ($is_multi_shift) {
+              $value = $entries[(string)$first_shift] ?? ($entries['__default__'] ?? '');
+              if ($value !== '') { $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok'; $cell_val = $value === 'NOK' ? '&times;' : '&radic;'; }
+            } elseif (!empty($entries)) {
+              // Untuk part single-shift, satu NOK pada hari tersebut selalu lebih penting daripada OK.
+              $value = in_array('NOK', $entries, true) ? 'NOK' : reset($entries);
+              $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
+              $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
             }
           ?>
             <td class="day" style="background:#fff;"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
@@ -192,12 +213,10 @@ if (!function_exists('get_period_image_src')) {
               $entries = $d['checks'][$field][$day] ?? array();
               $cell_val = '';
               $c = '';
-              foreach ($entries as $e) {
-                if ((string)($e['shift'] ?? '') === (string)$curr_shift) {
-                  $c = ($e['value'] ?? '') === 'NOK' ? 'mark-nok' : 'mark-ok';
-                  $cell_val = ($e['value'] ?? '') === 'NOK' ? '×' : '√';
-                  break;
-                }
+              $value = $entries[(string)$curr_shift] ?? '';
+              if ($value !== '') {
+                $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
+                $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
               }
             ?>
               <td class="day" style="background:#fff;"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
