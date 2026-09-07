@@ -6,7 +6,7 @@ $csrf_token = Csrf::$token;
 $current_page = $this->set_current_page_link();
 ?>
 <section class="page">
-  <div class="bg-light p-3 mb-3"><div class="container"><h4>View AM Illapak 1-2</h4></div></div>
+  <div class="bg-light p-3 mb-3"><div class="container"><h4>View AM Ilapak 1-2</h4></div></div>
   <div class="container">
     <?php $this::display_page_errors(); ?>
     <?php if (!empty($data['id_illapak_1_2'])) { ?>

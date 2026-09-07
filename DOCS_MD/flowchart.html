@@ -1,72 +1,79 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Flowchart Integrasi Form AM ke Breakdown Management (RTWT)</title>
+  <title>Activity Diagram RTWT Mesin (Layering Atas-Bawah)</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
-    mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
   </script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
+      font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+      background-color: #f4f4f5;
       padding: 30px;
       text-align: center;
+      color: #18181b;
     }
     h2 {
-      color: #0b4d75;
+      color: #09090b;
       margin-bottom: 5px;
     }
     p {
-      color: #666;
+      color: #71717a;
       margin-bottom: 25px;
     }
     .mermaid-container {
       background: #ffffff;
-      display: inline-block;
-      padding: 30px;
+      border: 1px solid #e4e4e7;
       border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      max-width: 95%;
+      padding: 30px;
+      display: inline-block;
+      max-width: 900px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
   </style>
 </head>
 <body>
 
-  <h2>Flowchart Integrasi Form AM ke Breakdown Management (RTWT)</h2>
-  <p>Alur End-to-End sesuai Kebutuhan QS Pulogadung (Mesin Productivity vs Dept Support)</p>
+  <h2>Activity Diagram RTWT Mesin (Plant Pulogadung)</h2>
+  <p>Layering 3 Tingkat (Atas - Tengah - Bawah) yang Pas dan Proporsional</p>
 
   <div class="mermaid-container">
-    <pre class="mermaid">
-graph TD
-    A["1. Operator Form AM Cek Mesin"] --> B{"Kondisi Part?"}
-    B -->|"Kondisi Baik (OK)"| C["Auto-Approved System (Selesai)"]
-    B -->|"Kondisi Tidak Baik (NOK)"| D["Input Kendala, Tag, No WR"]
-    D --> E["Submit Form AM"]
+    <div class="mermaid">
+flowchart TD
+    subgraph S1 ["1. LANTAI PRODUKSI (Form Autonomous Maintenance)"]
+        direction LR
+        A["Inspeksi Part Mesin"] --> B{"Kondisi Part?"}
+        B -->|"OK"| C["AM Selesai (Auto-Approved)"]
+        B -->|"NOK"| D["Input Tag, No. WR & Foto Temuan"]
+    end
 
-    E -->|"Integrasi Pipeline API"| F["Tiket RTWT Mesin Produksi"]
-    G["2. Karyawan Office Input Manual"] --> H["Tiket RTWT Dept Support (Office)"]
+    subgraph S2 ["2. SISTEM & PENUGASAN TEKNIK"]
+        direction LR
+        E[("Terima Data (API)<br>Tiket RTWT: OPEN")] --> F["Lead Teknik: Search &<br>Collective Assign"] --> G["Status Tiket:<br>ASSIGNED"]
+    end
 
-    F --> I["Teknik: Search & Collective Assign by Category"]
-    H --> J["Dept Head / GA: Assign PIC Pelaksana"]
+    subgraph S3 ["3. PERBAIKAN & VERIFIKASI PENUTUPAN (TEKNIK)"]
+        direction LR
+        H["Teknisi Perbaiki Mesin<br>(IN PROGRESS)"] --> I["Upload Foto Sesudah<br>& Uraian Tindakan"] --> J{"Verifikasi<br>Teknik?"}
+        J -->|"Revisi"| H
+        J -->|"Valid"| K["Verifikasi & CLOSE<br>(Status: CLOSED)"] --> L["Dashboard KPI QS<br>(% Closed)"]
+    end
 
-    I --> K["Notifikasi In-App & Draft Email ke PIC"]
-    J --> K
+    D ==>|"HTTP POST"| E
+    G ==>|"Disposisi Kerja"| H
 
-    K --> L["Status: IN PROGRESS (Perbaikan Fisik)"]
-    L --> M["Upload Foto Bukti & Tindakan Penanggulangan"]
-    M --> N["Submit untuk Verifikasi"]
+    style S1 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
+    style S2 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
+    style S3 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
 
-    N --> O{"Apa Kategori Temuan?"}
-    O -->|"Kategori Productivity / Mesin"| P["Verifikasi & CLOSED oleh TEKNIK"]
-    O -->|"Kategori 5R & HSE (Safety/K3)"| Q["Verifikasi & CLOSED oleh QS"]
+    classDef bw fill:#ffffff,stroke:#18181b,stroke-width:1.5px,color:#09090b;
+    classDef bwBold fill:#f4f4f5,stroke:#18181b,stroke-width:2px,color:#09090b,font-weight:bold;
 
-    P --> R["Status Resmi: CLOSED"]
-    Q --> R
-
-    R --> S["Dashboard Penilaian & Pencapaian KPI QS Pulogadung"]
-    </pre>
+    class A,C,D,F,G,H,I,K,L bw;
+    class B,E,J bwBold;
+    </div>
   </div>
 
 </body>

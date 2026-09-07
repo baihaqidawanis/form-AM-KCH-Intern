@@ -216,6 +216,11 @@ abstract class BaseMachineController extends SecureController
 	 * shift kerja. Daftar ini dipakai juga saat validasi/simpan, bukan hanya view,
 	 * supaya field yang sengaja dikirim dari browser tidak bisa melewati filter.
 	 */
+	protected function rollbackTransactionSafely($db, $context)
+	{
+		try { $db->rollback(); }
+		catch (Throwable $e) { error_log($context . ' rollback failed: ' . $e->getMessage()); }
+	}
 	protected function partsForAdd($formdata = null)
 	{
 		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
@@ -355,33 +360,45 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
 			// Mesin biasa hanya satu form per hari. Mesin shift tetap satu form per shift.
 			$valid_no_wr = $this->hasValidNoWrInput($formdata, $parts_for_add);
+			$is_duplicate = false;
 			if ($this->validated() && $valid_no_wr) {
 				$db->where('mesin', $modeldata['mesin'])->where('operational_date', $modeldata['operational_date']);
 				if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $modeldata['shift']); }
 				if ($db->has($sql)) {
+					$is_duplicate = true;
 					$this->view->page_error[] = in_array('shift', $this->extraFields, true) ? 'Shift ini sudah diisi untuk tanggal operasional tersebut.' : 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.';
 				}
 			}
-			if ($this->validated() && $valid_no_wr) {
-				$db->startTransaction();
-				$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
-				if ($rec_id) {
+			if ($this->validated() && $valid_no_wr && !$is_duplicate) {
+				try {
+					$db->startTransaction();
+					$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
+					if (!$rec_id) { throw new RuntimeException('Gagal menyimpan form AM.'); }
 					foreach ($parts_for_add as $field => $label) {
 						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
 						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
-							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()));
+							if (!$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
 						}
 					}
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
 					// label/section/metode/standard master_part di kemudian hari mengubah
 					// tampilan laporan lama. Dipanggil di dalam transaction yang sama.
 					$this->savePartSnapshot($rec_id, $parts_for_add);
-					$db->commit();
+					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
 					return $this->redirect($table . '/view/' . $rec_id);
+				} catch (Throwable $e) {
+					$this->rollbackTransactionSafely($db, 'add ' . $this->machineKey);
+					error_log('add ' . $this->machineKey . ' failed: ' . $e->getMessage());
+					$raw_err = ($db->getLastError() ?: '') . ' ' . $e->getMessage();
+					if (strpos($raw_err, '23505') !== false || stripos($raw_err, 'unique') !== false || stripos($raw_err, 'duplicate') !== false) {
+						$this->set_page_error(in_array('shift', $this->extraFields, true)
+							? 'Shift ini sudah diisi untuk tanggal operasional tersebut.'
+							: 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.');
+					} else {
+						$this->set_page_error($db->getLastError() ?: 'Gagal menyimpan form AM. Silakan coba kembali.');
+					}
 				}
-				$db->rollback();
-				$this->set_page_error();
 			}
 		}
 		$this->view->page_title = "Add New AM {$this->displayName}"; return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd()));
@@ -536,33 +553,34 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 			$valid_no_wr = $this->hasValidNoWrInput($formdata, $this->parts);
 			if ($this->validated() && $valid_no_wr) {
-				$db->startTransaction();
-				$db->where($idcol, $rec_id);
-				$bool = $db->update($sql, $modeldata);
-				$numRows = $db->getRowCount();
-				if ($bool) {
+				try {
+					$db->startTransaction();
+					$db->where($idcol, $rec_id);
+					$bool = $db->update($sql, $modeldata);
+					if (!$bool) { throw new RuntimeException('Gagal memperbarui form AM.'); }
 					$db->where($idcol, $rec_id);
 					$row = $db->getOne($sql, 'mesin');
+					if (!$row) { throw new RuntimeException('Record AM tidak ditemukan.'); }
 					$mesin_id = $row['mesin'];
 					$db->where('id_am', $rec_id);
-					$db->delete($this->kendalaTable());
+					$deleted = $db->delete($this->kendalaTable());
+					if ($deleted === false && $db->getLastError()) {
+						throw new RuntimeException('Gagal menghapus detail kendala lama: ' . $db->getLastError());
+					}
 					foreach ($this->parts as $field => $label) {
 						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
 						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
-							$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $mesin_id, 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()));
+							if (!$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $mesin_id, 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
 						}
 					}
-					$db->commit();
+					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('edit_data', 'true');
 					$this->set_flash_msg('Data berhasil diperbarui', 'success');
 					return $this->redirect("$table/view/$rec_id");
-				}
-				$db->rollback();
-				if ($db->getLastError()) {
-					$this->set_page_error();
-				} elseif (!$numRows) {
-					$page_error = 'Tidak ada perubahan data yang disimpan';
-					$this->set_page_error($page_error); $this->set_flash_msg($page_error, 'warning'); return $this->redirect("$table/view/$rec_id");
+				} catch (Throwable $e) {
+					$this->rollbackTransactionSafely($db, 'edit_data ' . $this->machineKey);
+					error_log('edit_data ' . $this->machineKey . ' failed: ' . $e->getMessage());
+					$this->set_page_error($db->getLastError() ?: 'Gagal memperbarui form AM. Silakan coba kembali.');
 				}
 			}
 		}

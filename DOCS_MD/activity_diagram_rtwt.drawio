@@ -1,0 +1,146 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="rtwt-activity-diagram" name="Activity Diagram RTWT Mesin">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- 3 SWIMLANES (KOLOM SEJAJAR PERSIS FOTO 4) -->
+        <mxCell id="lane1" value="Operator (Form AM)" style="swimlane;whiteSpace=wrap;html=1;startSize=40;horizontal=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontColor=#000000;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="240" height="820" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" value="Sistem (API &amp; Pipeline)" style="swimlane;whiteSpace=wrap;html=1;startSize=40;horizontal=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontColor=#000000;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="240" height="820" as="geometry" />
+        </mxCell>
+        <mxCell id="lane3" value="Tim Teknik (Maintenance)" style="swimlane;whiteSpace=wrap;html=1;startSize=40;horizontal=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=13;fontColor=#000000;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="520" y="40" width="240" height="820" as="geometry" />
+        </mxCell>
+
+        <!-- ELEMEN LANE 1 (OPERATOR) -->
+        <mxCell id="startNode" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="lane1">
+          <mxGeometry x="105" y="60" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="act1" value="Inspeksi Part Mesin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=12;fontColor=#000000;arcSize=20;" vertex="1" parent="lane1">
+          <mxGeometry x="45" y="115" width="150" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="dec1" value="Kondisi&#xa;Part?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;" vertex="1" parent="lane1">
+          <mxGeometry x="75" y="185" width="90" height="60" as="geometry" />
+        </mxCell>
+        <!-- OK PATH: DI SEBELAH KIRI (TIDAK MENIMPA NOK) -->
+        <mxCell id="actOK" value="AM Selesai&#xa;(Auto-Approved)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=10.5;fontColor=#000000;arcSize=20;" vertex="1" parent="lane1">
+          <mxGeometry x="10" y="270" width="95" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="endOK" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="lane1">
+          <mxGeometry x="45" y="340" width="25" height="25" as="geometry" />
+        </mxCell>
+        <!-- NOK PATH: DI BAWAH (JALUR TENGAH BEBAS) -->
+        <mxCell id="actNOK" value="Input Tag (Red/White),&#xa;No. WR &amp; Foto Temuan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;arcSize=20;" vertex="1" parent="lane1">
+          <mxGeometry x="25" y="400" width="190" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ELEMEN LANE 2 (SISTEM) -->
+        <mxCell id="actSys" value="Terima Data API&#xa;&amp; Generate Tiket (OPEN)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;arcSize=20;" vertex="1" parent="lane2">
+          <mxGeometry x="30" y="400" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="actClose" value="CLOSE oleh TEKNIK&#xa;(Status: CLOSED)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;fontStyle=1;arcSize=20;" vertex="1" parent="lane2">
+          <mxGeometry x="30" y="720" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="endFinal" value="" style="ellipse;html=1;shape=endState;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="lane2">
+          <mxGeometry x="105" y="795" width="30" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ELEMEN LANE 3 (TEKNIK) -->
+        <mxCell id="actAssign" value="Lead Teknik: Search &amp;&#xa;Collective Assign" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;arcSize=20;" vertex="1" parent="lane3">
+          <mxGeometry x="25" y="400" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="actDeliver" value="Deliver ke Sub-Dept:&#xa;• Maintenance (MTC)&#xa;• Utility | • Sparepart" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fcfcfc;strokeColor=#000000;strokeWidth=1.2;fontSize=10.5;fontColor=#000000;fontStyle=1;arcSize=20;" vertex="1" parent="lane3">
+          <mxGeometry x="25" y="478" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="actRepair" value="Teknisi Sub-Dept Perbaiki Mesin&#xa;(Status: IN PROGRESS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;arcSize=20;" vertex="1" parent="lane3">
+          <mxGeometry x="25" y="565" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="actPhoto" value="Upload Foto Sesudah&#xa;&amp; Uraian Tindakan" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;arcSize=20;" vertex="1" parent="lane3">
+          <mxGeometry x="25" y="640" width="190" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="dec2" value="Verifikasi&#xa;Teknik?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;strokeWidth=1.2;fontSize=11;fontColor=#000000;" vertex="1" parent="lane3">
+          <mxGeometry x="75" y="715" width="90" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- KONEKSI PANAH / EDGES -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="startNode" target="act1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="act1" target="dec1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- OK Edge: Belok Kiri ke Kotak AM Selesai -->
+        <mxCell id="eOK1" value="OK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;fontStyle=1;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dec1" target="actOK">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="98" y="255" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="eOK2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actOK" target="endOK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- NOK Edge: Lurus ke Bawah Langsung -->
+        <mxCell id="eNOK" value="NOK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;fontStyle=1;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dec1" target="actNOK">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="320" />
+              <mxPoint x="160" y="400" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Penyeberangan Lane 1 ke Lane 2 -->
+        <mxCell id="eCross1" value="HTTP POST" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=10.5;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="actNOK" target="actSys">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Penyeberangan Lane 2 ke Lane 3 -->
+        <mxCell id="eCross2" value="Notifikasi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=10.5;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="actSys" target="actAssign">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Alur di Lane 3 -->
+        <mxCell id="eT1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actAssign" target="actDeliver">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eT2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actDeliver" target="actRepair">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eT3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actRepair" target="actPhoto">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eT4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actPhoto" target="dec2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Loop Revisi Lane 3 -->
+        <mxCell id="eRev" value="Revisi" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;fontStyle=1;fontSize=11;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dec2" target="actRepair">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="735" y="775" />
+              <mxPoint x="735" y="615" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Penyeberangan Valid Lane 3 ke Lane 2 (Close) -->
+        <mxCell id="eValid" value="Valid" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.5;fontStyle=1;fontSize=10.5;fontColor=#000000;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="dec2" target="actClose">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Close ke End Final di Lane 2 -->
+        <mxCell id="eCloseEnd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#000000;strokeWidth=1.2;" edge="1" parent="1" source="actClose" target="endFinal">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

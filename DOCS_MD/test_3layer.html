@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</head>
+<body>
+<div class="mermaid">
+flowchart TD
+    subgraph S1 ["1. LANTAI PRODUKSI (Form AM)"]
+        direction LR
+        A["Inspeksi Part Mesin"] --> B{"Kondisi Part?"}
+        B -->|"OK"| C["AM Selesai"]
+        B -->|"NOK"| D["Input Tag, No. WR & Foto"]
+    end
+
+    subgraph S2 ["2. SISTEM & PENUGASAN TEKNIK"]
+        direction LR
+        E[("Terima Data (API)<br>Status: OPEN")] --> F["Lead Teknik: Search &<br>Collective Assign"] --> G["Status Tiket:<br>ASSIGNED"]
+    end
+
+    subgraph S3 ["3. PERBAIKAN & VERIFIKASI PENUTUPAN (TEKNIK)"]
+        direction LR
+        H["Teknisi Perbaiki Mesin<br>(IN PROGRESS)"] --> I["Upload Foto Sesudah<br>& Uraian Tindakan"] --> J{"Verifikasi<br>Teknik?"}
+        J -->|"Revisi"| H
+        J -->|"Valid"| K["CLOSE oleh TEKNIK<br>(Status: CLOSED)"] --> L["Dashboard KPI QS<br>(% Closed)"]
+    end
+
+    D ==>|"HTTP POST"| E
+    G ==>|"Disposisi Kerja"| H
+
+    style S1 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
+    style S2 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
+    style S3 fill:#fafafa,stroke:#71717a,stroke-width:1.5px;
+
+    classDef bw fill:#ffffff,stroke:#18181b,stroke-width:1.5px,color:#09090b;
+    classDef bwBold fill:#f4f4f5,stroke:#18181b,stroke-width:2px,color:#09090b,font-weight:bold;
+
+    class A,C,D,F,G,H,I,K,L bw;
+    class B,E,J bwBold;
+</div>
+</body>
+</html>

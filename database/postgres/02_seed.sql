@@ -3,20 +3,20 @@
 
 -- mesin (30 baris)
 INSERT INTO "mesin" ("id", "nama_mesin") OVERRIDING SYSTEM VALUE VALUES
-  ('3', 'Joeya'),
+  ('3', 'JOYEA'),
   ('4', 'SIG'),
-  ('5', 'Illapak 1'),
-  ('6', 'Illapak 2'),
-  ('7', 'Illapak 3'),
-  ('8', 'Illapak 4'),
-  ('9', 'Illapak 5'),
-  ('10', 'Illapak 6'),
-  ('11', 'Illapak 7'),
-  ('12', 'Illapak 8'),
-  ('13', 'Illapak 9'),
-  ('14', 'Illapak 10'),
-  ('15', 'Illapak 11'),
-  ('16', 'Illapak 12'),
+  ('5', 'Ilapak 1'),
+  ('6', 'Ilapak 2'),
+  ('7', 'Ilapak 3'),
+  ('8', 'Ilapak 4'),
+  ('9', 'Ilapak 5'),
+  ('10', 'Ilapak 6'),
+  ('11', 'Ilapak 7'),
+  ('12', 'Ilapak 8'),
+  ('13', 'Ilapak 9'),
+  ('14', 'Ilapak 10'),
+  ('15', 'Ilapak 11'),
+  ('16', 'Ilapak 12'),
   ('17', 'Unifill B'),
   ('31', 'Chimei'),
   ('32', 'Temach'),
@@ -124,8 +124,8 @@ INSERT INTO "mesin" ("nama_mesin") VALUES
   ('Chimei 4B (JS 2)'),
   ('Chimei 10A (JS 3)'),
   ('Chimei 11A (JS 4)'),
-  ('Chimei 6A (Illapak 1)'),
-  ('Chimei 9A (Illapak 11)'),
+  ('Chimei 6A (Ilapak 1)'),
+  ('Chimei 9A (Ilapak 11)'),
   ('Chimei 5B (Unifill B)'),
   ('Chimei 1A (SIG 6)')
 ON CONFLICT DO NOTHING;
@@ -202,7 +202,7 @@ VALUES
   ('cosmec', 'panel_pompa_hidrolik_mesin', 'Panel Pompa Hidrolik Mesin', 'STANDAR PENGECEKAN & PENGENCANGAN (INSPECTION & TIGHTENING)', 'Dicek', 'Visual Control', 'Tidak ada tetesan Oli', '2''', 'Harian (Setiap Awal Shift 1)', NULL, 'assets/images/cosmec/cosmec panel pompa hidrolik mesin.png', 7)
 ON CONFLICT ("machine_key", "field_name") DO NOTHING;
 
--- Jadwal shift Illapak 1-2: dua pemeriksaan ini dilakukan pada setiap awal shift.
+-- Jadwal shift Ilapak 1-2: dua pemeriksaan ini dilakukan pada setiap awal shift.
 UPDATE "master_part"
 SET "shift_schedule" = '1,2,3'
 WHERE "machine_key" = 'illapak_1_2'
@@ -442,7 +442,7 @@ INSERT INTO "master_part" ("machine_key", "field_name", "label", "section", "met
 ON CONFLICT ("machine_key", "field_name") DO NOTHING;
 
 -- Dijalankan setelah seluruh seed masuk, agar fresh install juga mengenali item
--- Illapak yang wajib dicek pada setiap awal shift.
+-- Ilapak yang wajib dicek pada setiap awal shift.
 UPDATE "master_part"
 SET "shift_schedule" = '1,2,3'
 WHERE "machine_key" = 'illapak_1_2'
@@ -450,3 +450,4 @@ WHERE "machine_key" = 'illapak_1_2'
 
 -- Default mesin biasa tetap Shift 1. Shift 2/3 diaktifkan melalui Master Data Part.
 UPDATE "master_part" SET "shift_schedule" = '1' WHERE "shift_schedule" IS NULL OR "shift_schedule" = '';
+UPDATE "master_part" SET "shift_schedule" = '1,2,3' WHERE "machine_key" = 'illapak_3_12' AND "field_name" IN ('position_indicator_sealing_vertical','vacum_sliter','alarm_temperature');

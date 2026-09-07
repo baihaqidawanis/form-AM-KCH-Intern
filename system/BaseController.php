@@ -565,9 +565,8 @@ class BaseController{
 			try{
 				$this->db->insert("audit_log", $modeldata);
 			}
-			catch(Exception $e){
-				throw new Exception($e);
-				//do something with the error
+			catch(Throwable $e){
+				error_log('Audit log failed: ' . $e->getMessage());
 			}
 		}
 		else if($this->log_location == "file"){

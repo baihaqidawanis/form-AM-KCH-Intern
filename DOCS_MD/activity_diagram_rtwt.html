@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Activity Diagram RTWT Mesin</title>
+  <style>
+    body {
+      background-color: #ffffff;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    svg {
+      background: #ffffff;
+      border: 1.5px solid #000000;
+      display: block;
+    }
+
+    .lane-title {
+      font-weight: bold;
+      font-size: 14px;
+      fill: #000000;
+      font-family: Arial, sans-serif;
+    }
+
+    .box-text {
+      font-size: 11.5px;
+      fill: #000000;
+      text-anchor: middle;
+      font-family: Arial, sans-serif;
+    }
+
+    .arrow-text {
+      font-size: 11px;
+      font-weight: bold;
+      fill: #000000;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+
+  <svg width="810" height="840" viewBox="0 0 810 840" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6"
+        orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#000" />
+      </marker>
+    </defs>
+
+    <!-- Garis Pembatas Kolom (Swimlanes) -->
+    <line x1="270" y1="0" x2="270" y2="840" stroke="#000" stroke-width="1.5" />
+    <line x1="540" y1="0" x2="540" y2="840" stroke="#000" stroke-width="1.5" />
+    <line x1="0" y1="50" x2="810" y2="50" stroke="#000" stroke-width="1.5" />
+
+    <!-- Header Kolom -->
+    <text x="135" y="32" text-anchor="middle" class="lane-title">Operator (Form AM)</text>
+    <text x="405" y="32" text-anchor="middle" class="lane-title">Sistem (API &amp; Pipeline)</text>
+    <text x="675" y="32" text-anchor="middle" class="lane-title">Tim Teknik (Maintenance)</text>
+
+    <!-- ==================== LANE 1: OPERATOR ==================== -->
+    <!-- Start Node -->
+    <circle cx="135" cy="80" r="10" fill="#000" />
+    <line x1="135" y1="90" x2="135" y2="115" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- Aksi 1: Inspeksi -->
+    <rect x="55" y="115" width="160" height="42" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="135" y="141" class="box-text">Inspeksi Part Mesin</text>
+    <line x1="135" y1="157" x2="135" y2="190" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- Decision 1: Kondisi Part -->
+    <polygon points="135,190 195,220 135,250 75,220" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="135" y="224" class="box-text">Kondisi Part?</text>
+
+    <!-- CABANG OK: SATU JALUR TUNGGAL BERSIH -->
+    <line x1="75" y1="220" x2="61" y2="220" stroke="#000" stroke-width="1.4" />
+    <line x1="61" y1="220" x2="61" y2="270" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+    <text x="42" y="213" class="arrow-text">OK</text>
+
+    <!-- Kotak AM Selesai -->
+    <rect x="12" y="270" width="98" height="44" rx="8" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="61" y="289" class="box-text">AM Selesai</text>
+    <text x="61" y="303" class="box-text" style="font-size:10px;fill:#555;">(Auto-Approved)</text>
+
+    <!-- End Node OK -->
+    <line x1="61" y1="314" x2="61" y2="345" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+    <circle cx="61" cy="355" r="9" fill="none" stroke="#000" stroke-width="1.4" />
+    <circle cx="61" cy="355" r="5.5" fill="#000" />
+
+    <!-- CABANG NOK: LURUS KE BAWAH TANPA MENYENTUH OK -->
+    <line x1="135" y1="250" x2="135" y2="400" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+    <text x="143" y="272" class="arrow-text">NOK</text>
+
+    <!-- Kotak Input Tag & Foto -->
+    <rect x="25" y="400" width="220" height="50" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="135" y="421" class="box-text">Input Tag (Red / White),</text>
+    <text x="135" y="438" class="box-text">No. WR &amp; Foto Temuan</text>
+
+    <!-- Penyeberangan ke LANE 2 (Sistem) -->
+    <line x1="245" y1="425" x2="315" y2="425" stroke="#000" stroke-width="1.6" marker-end="url(#arrow)" />
+    <text x="252" y="417" class="arrow-text" style="font-size:10px;">HTTP POST</text>
+
+
+    <!-- ==================== LANE 2: SISTEM ==================== -->
+    <rect x="315" y="400" width="180" height="50" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="405" y="421" class="box-text">Terima Data API,</text>
+    <text x="405" y="438" class="box-text">Generate Tiket (OPEN)</text>
+
+    <!-- Penyeberangan ke LANE 3 (Teknik) -->
+    <line x1="495" y1="425" x2="565" y2="425" stroke="#000" stroke-width="1.6" marker-end="url(#arrow)" />
+    <text x="502" y="417" class="arrow-text" style="font-size:10px;">Notifikasi</text>
+
+
+    <!-- ==================== LANE 3: TIM TEKNIK ==================== -->
+    <!-- 1. Lead Search & Klasifikasi -->
+    <rect x="565" y="400" width="220" height="52" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="675" y="421" class="box-text">Lead / Assigner: Filter &amp;</text>
+    <text x="675" y="438" class="box-text">Collective Assign (ASSIGNED)</text>
+
+    <line x1="675" y1="452" x2="675" y2="478" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- 2. Deliver ke Sub-Dept sesuai Klasifikasi (Req: Kak Ariana) -->
+    <rect x="565" y="478" width="220" height="64" rx="10" fill="#fcfcfc" stroke="#000" stroke-width="1.4" />
+    <text x="675" y="515" class="box-text" style="font-size:11px;">Deliver ke Sub-Dept Terkait:</text>
+
+
+    <line x1="675" y1="542" x2="675" y2="568" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- 3. Teknisi Sub-Dept Perbaiki Mesin -->
+    <rect x="565" y="568" width="220" height="50" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="675" y="589" class="box-text">Teknisi Sub-Dept Perbaiki Mesin</text>
+    <text x="675" y="605" class="box-text" style="font-size:10px;fill:#555;">(Status: IN PROGRESS)</text>
+
+    <line x1="675" y1="618" x2="675" y2="644" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- 4. Upload Bukti Perbaikan -->
+    <rect x="565" y="644" width="220" height="50" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="675" y="665" class="box-text">Upload Foto Bukti Sesudah</text>
+    <text x="675" y="681" class="box-text">&amp; Uraian Tindakan</text>
+
+    <line x1="675" y1="694" x2="675" y2="720" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- Decision 2: Verifikasi Teknik -->
+    <polygon points="675,720 735,745 675,770 615,745" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="675" y="749" class="box-text" style="font-size:11px;">Verifikasi?</text>
+
+    <!-- Loop Revisi -->
+    <line x1="735" y1="745" x2="795" y2="745" stroke="#000" stroke-width="1.4" />
+    <line x1="795" y1="745" x2="795" y2="593" stroke="#000" stroke-width="1.4" />
+    <line x1="795" y1="593" x2="788" y2="593" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+    <text x="745" y="737" class="arrow-text">Revisi</text>
+
+    <!-- Cabang Valid -> Balik ke LANE 2 -->
+    <line x1="615" y1="745" x2="505" y2="745" stroke="#000" stroke-width="1.6" marker-end="url(#arrow)" />
+    <text x="548" y="737" class="arrow-text">Valid</text>
+
+
+    <!-- ==================== LANE 2: CLOSE & DASHBOARD ==================== -->
+    <rect x="315" y="720" width="180" height="50" rx="10" fill="#fff" stroke="#000" stroke-width="1.4" />
+    <text x="405" y="741" class="box-text" style="font-weight:bold;">CLOSE oleh TEKNIK</text>
+    <text x="405" y="757" class="box-text" style="font-size:10px;fill:#555;">(Status: CLOSED)</text>
+
+    <line x1="405" y1="770" x2="405" y2="796" stroke="#000" stroke-width="1.4" marker-end="url(#arrow)" />
+
+    <!-- Final End Node -->
+    <circle cx="405" cy="808" r="10" fill="none" stroke="#000" stroke-width="1.4" />
+    <circle cx="405" cy="808" r="6" fill="#000" />
+    <text x="405" y="830" class="box-text" style="font-size:10.5px;fill:#333;">(Update Dashboard KPI % Closed)</text>
+  </svg>
+
+</body>
+
+</html>

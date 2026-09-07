@@ -23,7 +23,7 @@ $rec_id = !empty($data['id_illapak_1_2']) ? $data['id_illapak_1_2'] : null;
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Edit Data AM Illapak 1-2</h4>
+      <h4 class="record-title">Edit Data AM Ilapak 1-2</h4>
       <div>No: CR-PR-PR-1203.00 (25 Okt 2021)</div>
     </div>
   </div>

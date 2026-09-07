@@ -27,7 +27,7 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Add Autonomous Maintenance Illapak 1 - 2</h4>
+      <h4 class="record-title">Add Autonomous Maintenance Ilapak 1 - 2</h4>
       <div>No: CR-PR-PR-1203.00 (25 Okt 2021)</div>
     </div>
   </div>

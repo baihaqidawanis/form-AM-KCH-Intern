@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</head>
+<body>
+<div class="mermaid">
+graph TB
+    subgraph ATAS [" "]
+        direction LR
+        subgraph S1["1. Lantai Produksi (Form AM)"]
+            A["Inspeksi Part Mesin"] --> B{"Kondisi Part?"}
+            B -->|"OK"| C["AM Selesai (OK)"]
+            B -->|"NOK"| D["Input Tag, No. WR & Foto"]
+        end
+
+        subgraph S2["2. Pipeline API"]
+            D -->|"HTTP POST"| E[("Tiket RTWT Mesin<br>(Status: OPEN)")]
+        end
+
+        subgraph S3["3. Penugasan Teknik"]
+            E --> F["Lead Teknik: Collective Assign"]
+            F --> G["Status: ASSIGNED"]
+        end
+    end
+
+    G -->|"Disposisi Kerja"| H
+
+    subgraph BAWAH [" "]
+        direction LR
+        subgraph S4["4. Perbaikan Mesin"]
+            H["Teknisi Perbaiki Mesin (IN PROGRESS)"] --> I["Upload Foto Sesudah & Uraian"]
+        end
+
+        subgraph S5["5. Verifikasi & Closed"]
+            I --> J{"Verifikasi Teknik?"}
+            J -->|"Revisi"| H
+            J -->|"Valid"| K["Verifikasi & CLOSE oleh TEKNIK"]
+            K --> L["Status: CLOSED"]
+            L --> M["Dashboard KPI QS Pulogadung"]
+        end
+    end
+
+    style ATAS fill:none,stroke:none;
+    style BAWAH fill:none,stroke:none;
+    style S1 fill:#ffffff,stroke:#71717a,stroke-width:1px,stroke-dasharray: 4 4;
+    style S2 fill:#ffffff,stroke:#71717a,stroke-width:1px,stroke-dasharray: 4 4;
+    style S3 fill:#ffffff,stroke:#71717a,stroke-width:1px,stroke-dasharray: 4 4;
+    style S4 fill:#ffffff,stroke:#71717a,stroke-width:1px,stroke-dasharray: 4 4;
+    style S5 fill:#ffffff,stroke:#71717a,stroke-width:1px,stroke-dasharray: 4 4;
+
+    classDef bw fill:#ffffff,stroke:#18181b,stroke-width:1.5px,color:#09090b;
+    classDef bwBold fill:#f4f4f5,stroke:#18181b,stroke-width:2px,color:#09090b,font-weight:bold;
+
+    class A,C,D,F,G,H,I,L,M bw;
+    class B,E,J,K bwBold;
+</div>
+</body>
+</html>

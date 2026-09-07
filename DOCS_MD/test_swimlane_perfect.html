@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</head>
+<body>
+<div class="mermaid">
+flowchart TD
+    %% Tiga Kolom Swimlane seperti Foto ke-4
+    subgraph L1 ["Operator (Form AM)"]
+        Start(( )) --> A["Inspeksi Part Mesin"]
+        A --> B{"Kondisi<br>Part?"}
+        B -->|"OK"| End1((( )))
+        B -->|"NOK"| C["Input Tag, No. WR<br>& Foto Temuan"]
+    end
+
+    subgraph L2 ["Sistem (API & RTWT)"]
+        D[("Terima Data API<br>Tiket: OPEN")]
+        K["Update Dashboard KPI<br>QS Pulogadung"] --> End2((( )))
+    end
+
+    subgraph L3 ["Tim Teknik (Maintenance)"]
+        E["Lead: Collective Assign<br>Tiket: ASSIGNED"]
+        F["Teknisi Perbaiki Mesin<br>Status: IN PROGRESS"]
+        G["Upload Foto Sesudah<br>& Uraian Perbaikan"]
+        H{"Verifikasi<br>Teknik?"}
+        I["CLOSE oleh TEKNIK<br>Tiket: CLOSED"]
+
+        E --> F --> G --> H
+        H -->|"Revisi"| F
+        H -->|"Valid"| I
+    end
+
+    %% Kunci perataan sejajar atas (Top Alignment Lock)
+    Start ~~~ D ~~~ E
+
+    %% Alur Kerja Lintas Kolom
+    C ==>|"Submit Temuan"| D
+    D ==>|"Disposisi Tugas"| E
+    I ==>|"Hitung % Closed"| K
+
+    %% Styling Mirip Foto 4 (Black & White Formal)
+    style L1 fill:#ffffff,stroke:#000000,stroke-width:1.5px;
+    style L2 fill:#ffffff,stroke:#000000,stroke-width:1.5px;
+    style L3 fill:#ffffff,stroke:#000000,stroke-width:1.5px;
+    
+    style Start fill:#000000,stroke:#000000;
+    style End1 fill:#ffffff,stroke:#000000,stroke-width:2px;
+    style End2 fill:#ffffff,stroke:#000000,stroke-width:2px;
+
+    classDef default fill:#ffffff,stroke:#000000,stroke-width:1.2px,color:#000000;
+</div>
+</body>
+</html>

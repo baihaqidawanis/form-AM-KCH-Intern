@@ -3,7 +3,7 @@
 class Illapak_3_12Controller extends BaseMachineController
 {
 	protected $machineKey = 'illapak_3_12';
-	protected $displayName = 'Illapak 3 - 12';
+	protected $displayName = 'Ilapak 3 - 12';
 	// Disimpan di header AM supaya riwayat pemeriksaan tetap bisa diaudit per shift.
 	protected $extraFields = array('shift');
 	protected $parts = array(

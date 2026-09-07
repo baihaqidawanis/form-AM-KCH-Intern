@@ -3,7 +3,7 @@
 class JoeyaController extends BaseMachineController
 {
 	protected $machineKey = 'joeya';
-	protected $displayName = 'Joeya';
+	protected $displayName = 'JOYEA';
 	protected $parts = array(
 
 		'sealing_horizontal' => 'Sealing Horizontal',
