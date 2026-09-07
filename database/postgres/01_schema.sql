@@ -1110,21 +1110,32 @@ CREATE TABLE IF NOT EXISTS "kendala_conveyor_sig" (
   PRIMARY KEY ("id_kendala")
 );
 
--- Semua tabel form AM selalu memiliki kolom shift. Kolom ini dipakai hanya
--- bila konfigurasi master_part suatu mesin memakai Shift 2 atau Shift 3.
+-- Baseline fresh start: seluruh mesin mendukung shift dinamis, tanggal
+-- operasional, Nomor WR, dan hard guard duplikat pada level PostgreSQL.
 DO $$
-DECLARE form_table text;
+DECLARE
+    t text;
 BEGIN
-  FOR form_table IN
-    SELECT table_name FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name LIKE 'tb_mesin_%'
-  LOOP
-    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS shift varchar(1) DEFAULT NULL', form_table);
-    EXECUTE format('ALTER TABLE %I ADD COLUMN IF NOT EXISTS operational_date date NULL', form_table);
-    EXECUTE format('CREATE INDEX IF NOT EXISTS %I ON %I (mesin, operational_date)', 'idx_' || form_table || '_operational_date', form_table);
-  END LOOP;
+    FOREACH t IN ARRAY ARRAY[
+        'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b',
+        'chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5',
+        'best_pack', 'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer',
+        'storage_tank', 'storage_tank_tetrapak', 'mixing_tank', 'granulator',
+        'check_weigher', 'conveyor_sig'
+    ]
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS shift varchar(1) DEFAULT NULL', 'tb_mesin_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS operational_date date NULL', 'tb_mesin_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS no_wr varchar(20) DEFAULT NULL', 'kendala_' || t);
+
+        -- Nama lama dibersihkan agar schema tetap idempotent pada database dev.
+        EXECUTE format('DROP INDEX IF EXISTS public.%I', 'uq_tb_mesin_' || t || '_operational');
+        EXECUTE format('DROP INDEX IF EXISTS public.%I', 'uq_tb_mesin_' || t || '_operational_shift');
+        EXECUTE format('DROP INDEX IF EXISTS public.%I', 'uq_' || t || '_operational_shift');
+        EXECUTE format(
+            'CREATE UNIQUE INDEX IF NOT EXISTS %I ON public.%I (mesin, operational_date, COALESCE(shift, ''1''))',
+            'uq_tb_mesin_' || t || '_operational_shift',
+            'tb_mesin_' || t
+        );
+    END LOOP;
 END $$;
-
-CREATE UNIQUE INDEX IF NOT EXISTS "uq_illapak_1_2_operational_shift" ON "tb_mesin_illapak_1_2" ("mesin", "operational_date", "shift") WHERE "shift" IS NOT NULL;
-
-
