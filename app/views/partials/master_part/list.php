@@ -68,7 +68,15 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
                 <td class="urutan-cell"><?php echo $r['urutan']; ?></td>
                 <td>
                   <a class="btn btn-sm btn-outline-primary" href="<?php print_link('master_part/edit/' . $r['id']) ?>"><i class="fa fa-edit"></i></a>
-<?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i> Takeout</a><?php } else { ?><span class="badge badge-secondary">Taken out</span><?php } ?>
+<?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i> Takeout</a><?php } else { ?>
+  <span class="badge badge-secondary" title="Di-takeout <?php echo htmlspecialchars($r['taken_out_at']); ?><?php echo !empty($r['takeout_reason']) ? ': ' . htmlspecialchars($r['takeout_reason']) : ''; ?>">Taken out</span>
+  <a class="btn btn-sm btn-outline-success"
+    href="<?php print_link('master_part/reactivate/' . $r['id'] . '?csrf_token=' . Csrf::$token); ?>"
+    onclick="return confirm('Aktifkan kembali part ini agar muncul di form AM baru?');"
+    title="Aktifkan kembali part ke form AM">
+    <i class="fa fa-undo"></i> Aktifkan Kembali
+  </a>
+<?php } ?>
                 </td>
               </tr>
             <?php } ?>

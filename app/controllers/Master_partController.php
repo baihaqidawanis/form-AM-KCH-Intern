@@ -225,8 +225,13 @@ class Master_partController extends SecureController
 			}
 			if (!empty($modeldata['machine_key'])) {
 				$db->where('machine_key', $modeldata['machine_key'])->where('field_name', isset($modeldata['field_name']) ? $modeldata['field_name'] : '');
-				if ($db->has($this->tablename)) {
-					$this->view->page_error[] = 'Part dengan Field Name ini sudah ada buat mesin tersebut.';
+				$existing_part = $db->getOne($this->tablename, array('id', 'taken_out_at'));
+				if ($existing_part) {
+					if (empty($existing_part['taken_out_at'])) {
+						$this->view->page_error[] = 'Part dengan Field Name ini sudah ada dan sedang aktif untuk mesin tersebut.';
+					} else {
+						$this->view->page_error[] = 'Part dengan Field Name ini sudah ada di daftar arsip/takeout. Silakan gunakan tombol Aktifkan Kembali pada baris part tersebut di daftar Master Part alih-alih membuat baru.';
+					}
 				}
 			}
 			if ($this->validated()) {
@@ -333,6 +338,33 @@ class Master_partController extends SecureController
 		Csrf::cross_check();
 		$this->set_flash_msg('Penghapusan fisik part dilarang demi kepatuhan audit trail GMP. Silakan gunakan fitur Takeout untuk menonaktifkan part.', 'warning');
 		return $this->redirect('master_part');
+	}
+
+	/** Aktifkan kembali part takeout tanpa menghapus definisi atau riwayat AM. */
+	function reactivate($rec_id = null)
+	{
+		Csrf::cross_check();
+		$db = $this->GetModel(); $this->rec_id = $rec_id;
+		$db->where('id', $rec_id);
+		$part = $db->getOne($this->tablename, array('id', 'machine_key', 'taken_out_at'));
+		if (!$part) {
+			$this->set_flash_msg('Part tidak ditemukan.', 'warning');
+			return $this->redirect('master_part');
+		}
+		$back_url = 'master_part/index/' . $part['machine_key'];
+		if (empty($part['taken_out_at'])) {
+			$this->set_flash_msg('Part ini sudah aktif.', 'warning');
+			return $this->redirect($back_url);
+		}
+		$db->where('id', $rec_id)->where('taken_out_at', null, 'IS NOT');
+		$update_data = array('taken_out_at' => null, 'taken_out_by' => null, 'takeout_reason' => null, 'active_from' => date('Y-m-d'), 'updated_at' => datetime_now());
+		if ($db->update($this->tablename, $update_data)) {
+			$this->write_to_log('reactivate', 'true');
+			$this->set_flash_msg('Part berhasil diaktifkan kembali dan kini aktif di form AM.', 'success');
+			return $this->redirect($back_url);
+		}
+		$this->set_page_error($db->getLastError() ?: 'Part tidak dapat diaktifkan kembali.');
+		return $this->redirect($back_url);
 	}
 
 	/**
