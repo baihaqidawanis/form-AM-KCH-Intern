@@ -639,7 +639,14 @@ function number_to_words($val, $lang = "en")
 function set_cookie($name, $value, $days = 30)
 {
 	$expiretime = time() + (86400 * $days);
-	setcookie(APP_ID . $name, $value, $expiretime, "/");
+	$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+	setcookie(APP_ID . $name, $value, array(
+		'expires'  => $expiretime,
+		'path'     => '/',
+		'secure'   => $secure,
+		'httponly'  => true,
+		'samesite' => 'Lax',
+	));
 }
 
 /**
@@ -660,7 +667,14 @@ function get_cookie($name)
  */
 function clear_cookie($name)
 {
-	setcookie(APP_ID . $name, "", time() - 3600, "/");
+	$secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+	setcookie(APP_ID . $name, "", array(
+		'expires'  => time() - 3600,
+		'path'     => '/',
+		'secure'   => $secure,
+		'httponly'  => true,
+		'samesite' => 'Lax',
+	));
 	return true;
 }
 function array_change_key_name($array, $newkey, $oldkey)

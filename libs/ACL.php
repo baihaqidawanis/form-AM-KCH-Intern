@@ -27,7 +27,6 @@ class ACL
 			'chimei' => '*', 'temach' => '*', 'check_weigher' => '*', 'conveyor_sig' => '*', 'jihcheng' => '*', 'jinsung_1_4' => '*', 'jinsung_5' => '*', 'best_pack' => '*',
 			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'granulator' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
 			'approval' => '*',
-			'users' => '*',
 			'roles' => '*', 'tag' => '*',
 		),
 

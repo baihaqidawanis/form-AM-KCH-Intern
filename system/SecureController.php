@@ -44,7 +44,13 @@ class SecureController extends BaseController{
 				$db->where("login_session_key", hash_value($session_key));
 				$user = $db->getOne("users");
 				if (!empty($user)) {
-					set_session("user_data", $user);
+					// Blok akun yang sudah dinonaktifkan dari auto-login via stale cookie
+					if (($user['account_status'] ?? '') !== 'Active') {
+						clear_cookie("login_session_key");
+					} else {
+						set_session("user_data", $user);
+						session_regenerate_id(true); // cegah session fixation
+					}
 				}
 			}
 		}

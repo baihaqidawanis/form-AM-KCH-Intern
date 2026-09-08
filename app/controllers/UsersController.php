@@ -137,6 +137,10 @@ class UsersController extends SecureController{
      * @return BaseView
      */
 	function add($formdata = null){
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			$this->set_page_error("Akses ditolak: Hanya Administrator yang berhak.");
+			return $this->redirect("users");
+		}
 		if($formdata){
 			$db = $this->GetModel();
 			$tablename = $this->tablename;
@@ -404,6 +408,10 @@ class UsersController extends SecureController{
 
 	function delete($rec_id = null){
 		Csrf::cross_check();
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			$this->set_page_error("Akses ditolak: Hanya Administrator yang berhak.");
+			return $this->redirect("users");
+		}
 		$request = $this->request;
 		$db = $this->GetModel();
 		$tablename = $this->tablename;

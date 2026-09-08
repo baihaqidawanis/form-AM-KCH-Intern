@@ -52,11 +52,11 @@ class PasswordmanagerController extends BaseController{
 				$mailbody = str_ireplace("{{username}}", $user_name, $mailbody);
 				$mailbody = str_ireplace("{{link}}" , $reset_link,$mailbody);
 				$mailbody = str_ireplace("{{sitename}}" , $sitename,$mailbody);
-				// Mode internal: user membuka form reset langsung, lalu akun menjadi
-				// pending_activation sampai administrator mengaktifkannya. Kode SMTP
-				// tetap dipertahankan untuk saat USE_SMTP=true diaktifkan kembali.
+				// Mode internal: TIDAK redirect langsung ke token (mencegah enumerasi akun).
+				// Administrator harus menyampaikan link reset secara manual kepada user.
 				if (!USE_SMTP) {
-					return $this->redirect('passwordmanager/updatepassword?key=' . urlencode($password_reset_key));
+					$this->set_flash_msg('Permintaan reset password telah diproses. Hubungi Administrator untuk langkah selanjutnya.', 'info');
+					return $this->render_view("passwordmanager/index.php", null, "info_layout.php");
 				}
 				$mailer = new Mailer;
 				if($mailer->send_mail($user['email'], $mailtitle, $mailbody) == true){
@@ -67,7 +67,8 @@ class PasswordmanagerController extends BaseController{
 				}
 			}
 			else{
-				$this->set_page_error("Jika data terdaftar di sistem internal, silakan lanjutkan pengaturan ulang password.");
+				// Pesan generik agar attacker tidak bisa tahu apakah akun ada/tidak
+				$this->set_flash_msg('Jika data terdaftar, permintaan reset telah diproses. Hubungi Administrator.', 'info');
 				$this->render_view("passwordmanager/index.php", null, "info_layout.php");
 			}
 		}

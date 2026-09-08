@@ -53,16 +53,12 @@ class FilehelperController extends BaseController
 
 	function removefile()
 	{
-		if (!empty($this->post->filepath)) {
-			try {
-				$filepath = $this->post->filepath;
-				$file_dir = str_ireplace(SITE_ADDR, "", $filepath);
-				echo unlink($file_dir);
-			} catch (Exception $e) {
-				echo 'Message: ' . $e->getMessage();
-			}
-		}
+		// SECURITY: endpoint dinonaktifkan karena rentan arbitrary file deletion.
+		// filepath dari POST dijalankan unlink() tanpa autentikasi dan validasi path.
+		http_response_code(403);
+		render_error('Endpoint dinonaktifkan demi keamanan.', 403);
 	}
+
 
 	function resizeimg()
 	{
