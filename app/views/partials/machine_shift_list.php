@@ -42,7 +42,9 @@ foreach ($records as $row) {
       </tr></thead>
       <tbody><?php if ($groups) { $i = 0; foreach ($groups as $report) { $i++; $record_ids=array(); $shifts=array(); $creators=array(); $nok=false; $all_approved=true; $updaters=array(); $updated_at=null; $approval_date=null; $report_created_at=null;
         foreach ($report['rows'] as $row) {
-          $record_ids[] = $row[$d->id_column]; if ($report_created_at === null || $row['created_at'] < $report_created_at) { $report_created_at = $row['created_at']; } $shifts[] = 'Shift ' . ($row['shift'] ?: '-'); $creators[] = $row['user_create'];
+          $record_ids[] = $row[$d->id_column]; if ($report_created_at === null || $row['created_at'] < $report_created_at) { $report_created_at = $row['created_at']; }
+          $shift_val = !empty($row['shift']) ? $row['shift'] : '1'; $shifts[] = 'Shift ' . $shift_val;
+          $creators[] = $row['user_create'];
           if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
           if (!empty($row['updated_at'])) { $updated_at = $row['updated_at']; }
           if (!empty($row['user_perubah'])) { $updaters[] = $row['user_perubah']; }
@@ -51,7 +53,7 @@ foreach ($records as $row) {
         }
       ?><tr class="<?php echo $nok ? 'table-danger' : ''; ?>">
         <?php if ($can_delete_reports) { ?><td class="td-checkbox"><label class="custom-control custom-checkbox custom-control-inline"><input class="optioncheck custom-control-input" value="<?php echo htmlspecialchars(implode(',', $record_ids)); ?>" type="checkbox" aria-label="Pilih report harian"><span class="custom-control-label"></span></label></td><?php } ?>
-        <td><?php echo $i; ?></td><td><?php echo format_am_date($report_created_at ?: $report['date']); ?></td><td><?php echo htmlspecialchars($report['machine_name']); ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($creators))); ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($shifts))); ?></td>
+        <?php $shifts = array_values(array_unique($shifts)); natsort($shifts); ?><td><?php echo $i; ?></td><td><?php echo format_am_date($report_created_at ?: $report['date']); ?></td><td><?php echo htmlspecialchars($report['machine_name']); ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($creators))); ?></td><td><?php echo htmlspecialchars(implode(', ', $shifts)); ?></td>
         <td><?php echo $nok ? '<span class="badge badge-danger">Ada NOK</span>' : '<span class="badge badge-success"><i class="fa fa-check-circle"></i> OK</span>'; ?></td>
         <td><?php echo $all_approved ? 'Approved' : '-'; ?></td><td><?php echo $all_approved ? 'System' : '-'; ?></td><td><?php echo $all_approved && $approval_date ? format_am_date($approval_date) : '-'; ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($updaters)) ?: '-'); ?></td><td><?php echo $updated_at ? format_am_date($updated_at) : '-'; ?></td>
         <td><a class="btn btn-sm btn-success" href="<?php print_link($d->machine_key . '/daily_report?mesin=' . urlencode($report['mesin']) . '&date=' . urlencode($report['date'])); ?>">Buka Report Harian</a></td>

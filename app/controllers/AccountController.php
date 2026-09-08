@@ -57,7 +57,6 @@ class AccountController extends SecureController{
 				'username' => 'required',
 				'area' => 'required',
 				'mesin' => 'required',
-				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
@@ -67,6 +66,19 @@ class AccountController extends SecureController{
 				'pict' => 'sanitize_string',
 			);
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
+			if (isset($modeldata['pict']) && trim($modeldata['pict']) !== '') {
+				$pict = ltrim(str_replace('\\', '/', trim($modeldata['pict'])), '/');
+				if (!preg_match('#^uploads/(files|photos)/[^/]+\.(jpe?g|png|webp)$#i', $pict)) {
+					$this->view->page_error[] = 'File foto profil tidak valid.';
+				} else {
+					$uploads_root = realpath(ROOT . 'uploads');
+					$file = realpath(ROOT . $pict);
+					if (!$uploads_root || !$file || strpos($file, $uploads_root . DIRECTORY_SEPARATOR) !== 0) {
+						$this->view->page_error[] = 'File foto profil tidak ditemukan.';
+					} else { $modeldata['pict'] = $pict; }
+				}
+			} else { unset($modeldata['pict']); }
+
 			//Check if Duplicate Record Already Exit In The Database
 			if(isset($modeldata['username'])){
 				$db->where("username", $modeldata['username'])->where("id_user", $rec_id, "!=");
@@ -107,21 +119,52 @@ class AccountController extends SecureController{
      */
 	function change_email($formdata = null){
 		if($formdata){
-			$email = trim($formdata['email']);
-			$db = $this->GetModel();
-			$rec_id = $this->rec_id = USER_ID; //get current user id from session
-			$tablename = $this->tablename;
-			$db->where ("id_user", $rec_id);
-			$result = $db->update($tablename, array('email' => $email ));
-			if($result){
-				$this->write_to_log("emailchange", "true");
-				$this->set_flash_msg("Email address changed successfully", "success");
-				$this->redirect("account");
-			}
-			else{
-				$this->set_page_error("Email not changed");
+			$email = trim((string)($formdata['email'] ?? ''));
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$this->set_page_error('Format email tidak valid.');
+			} else {
+				$db = $this->GetModel();
+				$db->where('email', $email)->where('id_user', USER_ID, '!=');
+				if ($db->has($this->tablename)) {
+					$this->set_page_error('Email sudah digunakan.');
+				} else {
+					$db->where('id_user', USER_ID);
+					if($db->update($this->tablename, array('email' => $email))){
+						$user = get_session('user_data'); $user['email'] = $email; set_session('user_data', $user);
+						$this->write_to_log('change_email', 'true');
+						$this->set_flash_msg('Email berhasil diperbarui.', 'success');
+						return $this->redirect('account');
+					}
+					$this->set_page_error($db->getLastError() ?: 'Email tidak dapat diperbarui.');
+				}
 			}
 		}
-		return $this->render_view("account/change_email.php");
+		return $this->render_view('account/change_email.php');
 	}
+
+	function change_password($formdata = null){
+		if ($formdata) {
+			$old_password = (string)($formdata['old_password'] ?? '');
+			$new_password = (string)($formdata['new_password'] ?? '');
+			$confirm_password = (string)($formdata['confirm_password'] ?? '');
+			$db = $this->GetModel(); $db->where('id_user', USER_ID);
+			$user = $db->getOne($this->tablename, array('password'));
+			if (!$user || !password_verify($old_password, $user['password'])) { $this->set_page_error('Password saat ini tidak sesuai.'); }
+			elseif ($new_password !== $confirm_password) { $this->set_page_error('Konfirmasi password baru tidak sesuai.'); }
+			elseif (!is_valid_password_complexity($new_password)) { $this->set_page_error('Password minimal 8 karakter dan harus mengandung huruf besar, huruf kecil, angka, dan karakter spesial.'); }
+			elseif (password_verify($new_password, $user['password'])) { $this->set_page_error('Password baru tidak boleh sama dengan password saat ini.'); }
+			else {
+				$db->where('id_user', USER_ID);
+				$data = array('password' => password_hash($new_password, PASSWORD_DEFAULT), 'password_reset_key' => null, 'password_expire_date' => null, 'login_session_key' => null);
+				if ($db->update($this->tablename, $data)) {
+					clear_cookie('login_session_key'); session_regenerate_id(true);
+					$this->write_to_log('change_password', 'true'); $this->set_flash_msg('Password berhasil diubah.', 'success');
+					return $this->redirect('account');
+				}
+				$this->set_page_error($db->getLastError() ?: 'Password tidak dapat diperbarui.');
+			}
+		}
+		return $this->render_view('account/change_password.php');
+	}
+
 }

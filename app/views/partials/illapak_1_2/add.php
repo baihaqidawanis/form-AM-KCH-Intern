@@ -73,7 +73,7 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
                     <label class="font-weight-bold mb-1" for="ctrl-shift-selector">Shift <span class="text-danger">*</span></label>
                     <select required id="ctrl-shift-selector" name="shift" class="custom-select d-block" style="max-width: 360px;">
                       <option value="" selected>Pilih shift ...</option>
-                      <option value="1">Shift 1</option><option value="2">Shift 2</option><option value="3">Shift 3</option>
+                      <?php foreach (($this->configured_shifts ?? array('1')) as $shift_option) { ?><option value="<?php echo $shift_option; ?>">Shift <?php echo $shift_option; ?></option><?php } ?>
                     </select>
                   </div>
                   <div class="pt-1">

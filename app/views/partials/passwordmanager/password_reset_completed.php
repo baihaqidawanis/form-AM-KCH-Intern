@@ -10,13 +10,13 @@
 						<i class="fa fa-lock fa-3x text-warning mb-3"></i>
 						<h5>Akun Menunggu Aktivasi Administrator</h5>
 						<p class="text-muted">
-							Password baru Anda telah tersimpan secara aman. Untuk menjaga keamanan sistem internal, silakan hubungi <strong>Administrator</strong> atau <strong>Supervisor</strong> Anda untuk mengaktifkan kembali akun Anda.
+							Password baru Anda telah tersimpan secara aman. Untuk menjaga keamanan sistem internal, silakan hubungi <strong>Administrator</strong> Anda untuk mengaktifkan kembali akun Anda.
 						</p>
 					</div>
 					<div class="alert alert-light border text-left p-3 my-3">
 						<h6 class="font-weight-bold text-dark mb-2"><i class="fa fa-info-circle text-primary"></i> Langkah Selanjutnya:</h6>
 						<ol class="pl-3 mb-0 text-muted" style="font-size: 13.5px;">
-							<li>Kirimkan pesan ke Administrator/Supervisor terkait bahwa Anda telah melakukan reset password.</li>
+							<li>Kirimkan pesan ke Administrator terkait bahwa Anda telah melakukan reset password.</li>
 							<li>Administrator akan melakukan verifikasi dan mengklik tombol <strong>Aktivasi</strong> di menu Users.</li>
 							<li>Setelah diaktifkan, Anda dapat langsung login menggunakan password baru Anda.</li>
 						</ol>

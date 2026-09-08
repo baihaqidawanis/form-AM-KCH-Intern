@@ -1,3 +1,14 @@
+<?php
+$header_avatar = null;
+$header_pict = get_active_user('pict');
+if (!empty($header_pict)) {
+    $header_pict = ltrim(str_replace('\\', '/', $header_pict), '/');
+    if (preg_match('#^uploads/(files|photos)/[^/]+\.(jpe?g|png|webp)$#i', $header_pict)) {
+        $header_file = realpath(ROOT . $header_pict); $header_root = realpath(ROOT . 'uploads');
+        if ($header_file && $header_root && strpos($header_file, $header_root . DIRECTORY_SEPARATOR) === 0 && is_file($header_file)) { $header_avatar = get_link($header_pict); }
+    }
+}
+?>
 <div id="topbar" class="navbar navbar-expand-md fixed-top navbar-dark bg-primary">
     <div class="container-fluid">
         <a class="navbar-brand" href="<?php print_link(HOME_PAGE) ?>">
@@ -16,7 +27,7 @@
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                            <span class="avatar-icon"><i class="fa fa-user"></i></span> 
+                            <span class="avatar-icon"><?php if ($header_avatar) { ?><img src="<?php echo htmlspecialchars($header_avatar, ENT_QUOTES, 'UTF-8'); ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover"><?php } else { ?><i class="fa fa-user"></i><?php } ?></span>
                             <span>Hi <?php echo ucwords(get_active_user('nama', USER_NAME)); ?> !</span>
                         </a>
                         <ul class="dropdown-menu">
@@ -38,7 +49,7 @@
         <ul class="nav navbar-nav w-100 flex-column align-self-start">
             <li class="menu-profile text-center nav-item">
                 <a class="avatar" href="<?php print_link('account') ?>">
-                    <span class="avatar-icon"><i class="fa fa-user"></i></span>
+                    <span class="avatar-icon"><?php if ($header_avatar) { ?><img src="<?php echo htmlspecialchars($header_avatar, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto profil" style="width:64px;height:64px;border-radius:50%;object-fit:cover"><?php } else { ?><i class="fa fa-user"></i><?php } ?></span>
                 </a>
                 <h5 class="user-name">Hi
                     <?php echo ucwords(get_active_user('nama', USER_NAME)); ?>

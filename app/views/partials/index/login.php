@@ -35,7 +35,7 @@
                             </div>
                             
                             <div class="col-6">
-                                <a href="<?php print_link('passwordmanager') ?>" class="text-danger"> Reset Password?</a>
+                                <a href="<?php print_link('passwordmanager') ?>" class="text-danger"> Lupa Password?</a>
                             </div>
                             
                         </div>

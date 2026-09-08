@@ -878,6 +878,17 @@ function make_readable($string = '')
  * Print Out Full Address of a Link
  * @return null
  */
+/**
+ * Return the full address of an application link without printing it.
+ * Use this when the URL must be escaped as an HTML attribute.
+ */
+function get_link($link = "")
+{
+	if (empty($link)) { return ""; }
+	if (filter_var($link, FILTER_VALIDATE_URL) !== FALSE) { return $link; }
+	return rtrim(SITE_ADDR, '/') . '/' . ltrim($link, '/');
+}
+
 function print_link($link = "")
 {
 	

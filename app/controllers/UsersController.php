@@ -156,8 +156,6 @@ class UsersController extends SecureController{
 				'area' => 'required',
 				'mesin' => 'required',
 				'password' => 'required',
-				'account_status' => 'required',
-				'user_role_id' => 'required',
 				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
@@ -166,8 +164,6 @@ class UsersController extends SecureController{
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
-				'account_status' => 'sanitize_string',
-				'user_role_id' => 'sanitize_string',
 				'pict' => 'sanitize_string',
 			);
 			$this->filter_vals = true; //set whether to remove empty fields
@@ -218,6 +214,10 @@ class UsersController extends SecureController{
      * @return array
      */
 	function edit($rec_id = null, $formdata = null){
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			http_response_code(403);
+			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
 		$request = $this->request;
 		$db = $this->GetModel();
 		$this->rec_id = $rec_id;
@@ -297,6 +297,10 @@ class UsersController extends SecureController{
      * @return array
      */
 	function editfield($rec_id = null, $formdata = null){
+		if (intval(get_active_user('user_role_id')) !== 1) {
+			http_response_code(403);
+			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
 		$db = $this->GetModel();
 		$this->rec_id = $rec_id;
 		$tablename = $this->tablename;
@@ -306,7 +310,7 @@ class UsersController extends SecureController{
 			return null;
 		}
 		//editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id","pict");
+		$fields = $this->fields = array("id_user","nama","username","area","mesin","pict");
 		$page_error = null;
 		if($formdata){
 			$postdata = array();

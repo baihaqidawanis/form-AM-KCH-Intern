@@ -35,7 +35,7 @@ class IndexController extends BaseController
 			//cuma Administrator/Supervisor yang bisa buka lewat halaman Users.
 			$user_status = strtolower($user['account_status']);
 			if ($user_status == "blocked") {
-				return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi administrator.");
+				return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi Administrator.");
 			}
 			//Verify User Password Text With DB Password Hash Value.
 			//Uses PHP password_verify() function with default options
@@ -44,7 +44,10 @@ class IndexController extends BaseController
 			if (password_verify($password_text, $password_hash)) {
 				//check if user account has been activated by administrator
 				if ($user_status != "active") {
-					return $this->login_fail("Your account is not active. Please contact system administrator for more information");
+					if (in_array($user_status, array('pending_activation', 'pending'), true)) {
+						return $this->login_fail('Akun Anda sedang dinonaktifkan sementara dan menunggu aktivasi oleh Administrator.');
+					}
+					return $this->login_fail('Akun Anda tidak aktif. Silakan hubungi Administrator.');
 				}
 				//Password benar -- reset counter gagal login
 				if (!empty($user['failed_login_attempts'])) {
@@ -83,7 +86,7 @@ class IndexController extends BaseController
 				$db->where("id_user", $user['id_user']);
 				$db->update($tablename, $update);
 				if ($attempts >= 3) {
-					return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi administrator.");
+					return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi Administrator.");
 				}
 				return $this->login_fail("Username or password not correct");
 			}

@@ -55,6 +55,23 @@ abstract class BaseMachineController extends SecureController
 		$db->where('machine_key', $this->machineKey)->where("(shift_schedule LIKE '%2%' OR shift_schedule LIKE '%3%')");
 		return $db->has('master_part');
 	}
+	/** Shift yang benar-benar tersedia pada part aktif mesin ini. */
+	protected function getConfiguredShifts()
+	{
+		$db = $this->GetModel();
+		$rows = $db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->get('master_part', null, array('shift_schedule'));
+		$shifts = array('1');
+		foreach ($rows as $row) {
+			foreach (explode(',', (string)($row['shift_schedule'] ?? '')) as $shift) {
+				$shift = trim($shift);
+				if (in_array($shift, array('1', '2', '3'), true)) { $shifts[] = $shift; }
+			}
+		}
+		$shifts = array_values(array_unique($shifts));
+		sort($shifts, SORT_NUMERIC);
+		return $shifts;
+	}
+
 	private function loadDynamicParts()
 	{
 		$db = $this->GetModel();
@@ -205,7 +222,8 @@ abstract class BaseMachineController extends SecureController
 		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
 		$shift = is_array($formdata) ? (string) ($formdata['shift'] ?? '') : (string) ($this->request->shift ?? '');
 		$this->view->uses_shift = true; $this->view->selected_shift = $shift;
-		if (!in_array($shift, array('1', '2', '3'), true)) { return array(); }
+		$this->view->configured_shifts = $this->getConfiguredShifts();
+		if (!in_array($shift, $this->view->configured_shifts, true)) { return array(); }
 		$db = $this->GetModel(); $parts = array();
 		$rows = $db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part', null, array('field_name', 'label', 'shift_schedule'));
 		foreach ($rows as $row) { $shifts = array_filter(array_map('trim', explode(',', (string) $row['shift_schedule']))); if (in_array($shift, $shifts, true)) { $parts[$row['field_name']] = $row['label']; } }
@@ -216,7 +234,7 @@ abstract class BaseMachineController extends SecureController
 	protected function addContextError($formdata)
 	{
 		if (!in_array('shift', $this->extraFields, true)) { return null; }
-		return in_array((string) ($formdata['shift'] ?? ''), array('1', '2', '3'), true) ? null : 'Shift wajib dipilih (1, 2, atau 3).';
+		return in_array((string) ($formdata['shift'] ?? ''), $this->getConfiguredShifts(), true) ? null : 'Shift yang dipilih tidak tersedia untuk mesin ini.';
 	}
 
 	private function page_data($records, $total)
@@ -453,7 +471,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db->where('mesin', $mesin)->where('operational_date', $date);
 		if ($has_shift_history) {
-			$db->orderBy('shift', 'ASC');
+			$db->orderBy("COALESCE(NULLIF(shift, ''), '1')", 'ASC');
 		}
 		$rows = $db->orderBy('created_at', 'ASC')->get($sql);
 		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
