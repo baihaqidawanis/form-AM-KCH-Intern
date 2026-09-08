@@ -973,6 +973,7 @@ CREATE TABLE IF NOT EXISTS "form_part_snapshot" (
   "pelaksanaan" text NULL,
   "highlight" varchar(100) NULL,
   "image_path" text NULL,
+  "shift_schedule" varchar(10) NOT NULL DEFAULT '1',
   "urutan" integer NULL,
   "snapshot_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "uq_form_part_snapshot" UNIQUE ("machine_key", "form_id", "field_name")

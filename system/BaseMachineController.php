@@ -24,6 +24,7 @@ abstract class BaseMachineController extends SecureController
 	 * @var array
 	 */
 	protected $extraFields = array();
+	private $hasRetriedTransientRead = false;
 
 	function __construct()
 	{
@@ -186,6 +187,11 @@ abstract class BaseMachineController extends SecureController
 			foreach ($master_rows as $row) {
 				$result = $db->rawQuery('INSERT INTO "form_part_snapshot" (machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan, snapshot_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT (machine_key, form_id, field_name) DO NOTHING', array($this->machineKey, $form_id, $row['field_name'], $row['label'], $row['section'] ?? null, $row['metode'] ?? null, $row['alat'] ?? null, $row['standard'] ?? null, $row['durasi'] ?? null, $row['pelaksanaan'] ?? null, $row['highlight'] ?? null, $row['image_path'] ?? null, $row['urutan'] ?? null));
 				if ($result === false) { throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan snapshot part.'); }
+				$snapshot_schedule = trim((string)($row['shift_schedule'] ?? '')) ?: '1';
+				$db->where('machine_key', $this->machineKey)->where('form_id', $form_id)->where('field_name', $row['field_name']);
+				if ($db->update('form_part_snapshot', array('shift_schedule' => $snapshot_schedule)) === false) {
+					throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan jadwal shift snapshot.');
+				}
 			}
 		} catch (\Throwable $e) {
 			$error = $e->getMessage();
@@ -217,6 +223,40 @@ abstract class BaseMachineController extends SecureController
 		try { $db->rollback(); }
 		catch (Throwable $e) { error_log($context . ' rollback failed: ' . $e->getMessage()); }
 	}
+
+	/** Retry sekali setelah DDL hanya untuk error prepared-plan PostgreSQL yang terbukti transient. */
+	private function retryTransientSchemaRead(\PDOException $e, $context)
+	{
+		if ($this->hasRetriedTransientRead) { return false; }
+		$code = (string)$e->getCode(); $message = strtolower($e->getMessage());
+		$is_cached_plan = $code === '0A000' && strpos($message, 'cached plan must not change result type') !== false;
+		$is_missing_prepared = $code === '26000' && strpos($message, 'prepared statement') !== false;
+		if (!$is_cached_plan && !$is_missing_prepared) { return false; }
+		$this->hasRetriedTransientRead = true;
+		error_log('Transient PostgreSQL schema read retry [' . $context . '] SQLSTATE=' . $code . ': ' . $e->getMessage());
+		// PDODb tidak persistent, tetapi instance request ini tetap diganti agar
+		// SELECT kedua diprepare lewat koneksi baru tanpa plan lama.
+		$this->db = null;
+		return true;
+	}
+
+	/** Jadwal shift historis per part untuk membedakan data tidak dijadwalkan dari belum diisi. */
+	protected function partShiftSchedulesForRows($rows, $operational_date)
+	{
+		$schedules = array();
+		foreach ($rows as $row) {
+			$row_date = $row['operational_date'] ?? $operational_date;
+			$record_id = $row[$this->idColumn()] ?? null;
+			foreach ($this->partDetailsForRecord($row_date, $row['created_at'] ?? null, $row[$this->idColumn()] ?? null) as $part) {
+				$field = $part['field_name'] ?? null;
+				if (!$field || !$record_id) { continue; }
+				$values = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
+				$values = array_values(array_intersect($values, array('1', '2', '3')));
+				$schedules[$record_id][$field] = $values ?: array('1');
+			}
+		}
+		return $schedules;
+	}
 	protected function partsForAdd($formdata = null)
 	{
 		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
@@ -226,7 +266,10 @@ abstract class BaseMachineController extends SecureController
 		if (!in_array($shift, $this->view->configured_shifts, true)) { return array(); }
 		$db = $this->GetModel(); $parts = array();
 		$rows = $db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part', null, array('field_name', 'label', 'shift_schedule'));
-		foreach ($rows as $row) { $shifts = array_filter(array_map('trim', explode(',', (string) $row['shift_schedule']))); if (in_array($shift, $shifts, true)) { $parts[$row['field_name']] = $row['label']; } }
+		foreach ($rows as $row) {
+			$shifts = array_filter(array_map('trim', explode(',', (string)($row['shift_schedule'] ?? '')))) ?: array('1');
+			if (in_array($shift, $shifts, true)) { $parts[$row['field_name']] = $row['label']; }
+		}
 		return $parts;
 	}
 
@@ -406,6 +449,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
 		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->historicalPartFields(), $this->extraFields)));
+		try {
 		if ($value) { $db->where($rec_id, urldecode($value)); } else { $db->where("$sql.$idcol", urldecode($rec_id)); }
 		$record = $db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->getOne($sql, $fields);
 		if ($record) {
@@ -415,7 +459,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if (!$record) { $record = array(); }
 		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : $this->parts;
 		$this->view->page_title = "View AM {$this->displayName}"; $this->set_report_props("View AM {$this->displayName}");
-		return $this->render_view("$table/view.php", $record);
+			return $this->render_view("$table/view.php", $record);
+		} catch (\PDOException $e) {
+			if ($this->retryTransientSchemaRead($e, 'view ' . $this->machineKey)) { return $this->view($rec_id, $value); }
+			throw $e;
+		}
 	}
 
 	/** Cetak check sheet resmi untuk Periode 1 (1-16) atau Periode 2 (17-akhir bulan). */
@@ -466,6 +514,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$mesin = intval($this->request->mesin ?? 0); $date = trim((string)($this->request->date ?? ''));
 		if (!$mesin || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) { return $this->redirect($this->machineKey); }
 		// Hitung sebelum query laporan dibuat: PDODb memakai query builder yang
+		try {
 		// sama, sehingga filter mesin/tanggal tidak boleh terbawa ke master_part.
 		$has_shift_history = $this->machineHasShiftHistory();
 		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
@@ -476,7 +525,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$rows = $db->orderBy('created_at', 'ASC')->get($sql);
 		$machine = $db->where('id', $mesin)->getOne('mesin', array('nama_mesin'));
 		$this->view->page_title = 'Report Harian ' . $this->displayName;
-		return $this->render_view('machine_daily_report.php', array('display_name' => $this->displayName, 'machine_key' => $this->machineKey, 'machine_name' => $machine['nama_mesin'] ?? '-', 'operational_date' => $date, 'rows' => $rows, 'parts' => $this->partsForRows($rows, $date), 'id_column' => $idcol));
+			return $this->render_view('machine_daily_report.php', array('display_name' => $this->displayName, 'machine_key' => $this->machineKey, 'machine_name' => $machine['nama_mesin'] ?? '-', 'operational_date' => $date, 'rows' => $rows, 'parts' => $this->partsForRows($rows, $date), 'part_shift_schedules' => $this->partShiftSchedulesForRows($rows, $date), 'id_column' => $idcol));
+		} catch (\PDOException $e) {
+			if ($this->retryTransientSchemaRead($e, 'daily_report ' . $this->machineKey)) { return $this->daily_report(); }
+			throw $e;
+		}
 	}
 
 	function edit($rec_id = null, $formdata = null)
