@@ -23,6 +23,7 @@ class Master_mesinController extends SecureController
 			       CASE WHEN h.id IS NOT NULL THEN 'DEAKTIVASI' ELSE 'AKTIF' END AS status_operasional 
 			FROM mesin m 
 			LEFT JOIN riwayat_status_mesin h ON h.mesin_id = m.id AND h.ended_at IS NULL 
+			WHERE m.nama_mesin NOT IN ('Chimei', 'SIG', 'Storage Tank', 'Mixing Tank')
 			ORDER BY m.nama_mesin ASC
 		");
 		$this->view->page_title = 'Status Operasional Mesin';

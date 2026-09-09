@@ -541,12 +541,13 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			->orderBy('started_at', 'ASC')
 			->get('riwayat_status_mesin');
 
+		$today_str = $this->operationalDate();
 		$deactivated_days = array();
 		for ($d_num = $start_day; $d_num <= $end_day; $d_num++) {
 			$day_str = sprintf('%04d-%02d-%02d', $year, $month, $d_num);
 			foreach ($deactivation_rows as $dr) {
 				$s_date = substr($dr['started_at'], 0, 10);
-				$e_date = !empty($dr['ended_at']) ? substr($dr['ended_at'], 0, 10) : '9999-12-31';
+				$e_date = !empty($dr['ended_at']) ? substr($dr['ended_at'], 0, 10) : $today_str;
 				if ($day_str >= $s_date && $day_str <= $e_date) {
 					$deactivated_days[$d_num] = $dr;
 					break;
