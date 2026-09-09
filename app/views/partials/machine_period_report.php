@@ -64,26 +64,68 @@ if (!function_exists('get_period_image_src')) {
     <div class="col-md-2 form-group"><label>Periode</label><select class="custom-select" name="period"><option value="1">1 (1–16)</option><option value="2">2 (17–akhir bulan)</option></select></div>
     <div class="col-md-2 form-group align-self-end"><button class="btn btn-primary">Tampilkan Check Sheet</button></div>
   </form>
-<?php } else { ?>
+<?php } else { 
+  $part_count = count($d['parts'] ?? array());
+  if ($part_count > 12) {
+      // 13-16 parts (e.g. Illapak) - ultra compact to ensure strict 1-page fit
+      $css_sheet_fs = '6.2px';
+      $css_pad = '0.8px 1.5px';
+      $css_head_fs = '8.5px';
+      $css_subhead_fs = '7px';
+      $css_img_h = '14px';
+      $css_img_w = '32px';
+      $css_sig_h = '14px';
+      $css_meta_h = '13px';
+      $css_section_fs = '6.5px';
+      $css_section_pad = '1px';
+      $css_page_margin = '2mm 3mm';
+  } elseif ($part_count > 9) {
+      // 10-12 parts - medium compact
+      $css_sheet_fs = '6.6px';
+      $css_pad = '1.8px 2px';
+      $css_head_fs = '9px';
+      $css_subhead_fs = '7.5px';
+      $css_img_h = '20px';
+      $css_img_w = '38px';
+      $css_sig_h = '18px';
+      $css_meta_h = '14px';
+      $css_section_fs = '6.8px';
+      $css_section_pad = '1.5px';
+      $css_page_margin = '3mm 3.5mm';
+  } else {
+      // 1-9 parts (e.g. Chimei, Cosmec, Granulator) - generous height to fill paper
+      $css_sheet_fs = '7px';
+      $css_pad = '3.5px 2.5px';
+      $css_head_fs = '10px';
+      $css_subhead_fs = '8px';
+      $css_img_h = '28px';
+      $css_img_w = '44px';
+      $css_sig_h = '24px';
+      $css_meta_h = '16px';
+      $css_section_fs = '7px';
+      $css_section_pad = '2px';
+      $css_page_margin = '3.5mm 4mm';
+  }
+?>
   <div id="page-report-body" class="check-sheet">
     <style>
-      @page { size: A4 landscape; margin: 3.5mm 4mm; }
+      @page { size: A4 landscape; margin: <?php echo $css_page_margin; ?>; }
       html, body { margin: 0; padding: 0; font-family: "DejaVu Sans", Arial, sans-serif; }
-      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 6.8px; }
+      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; }
       table, .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
-      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 2.5px; vertical-align: middle; }
-      .head { font-size: 10px; font-weight: bold; text-align: center; line-height: 1.15; }
-      .subhead { font-size: 8px; font-weight: bold; text-align: center; }
-      .section { font-size: 7px; font-weight: bold; text-align: center; background: #fff; padding: 2px; }
-      .meta td { height: 16px; font-size: 7.5px; padding: 1px 3px; }
+      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: <?php echo $css_pad; ?>; vertical-align: middle; }
+      .head { font-size: <?php echo $css_head_fs; ?>; font-weight: bold; text-align: center; line-height: 1.15; }
+      .subhead { font-size: <?php echo $css_subhead_fs; ?>; font-weight: bold; text-align: center; }
+      .section { font-size: <?php echo $css_section_fs; ?>; font-weight: bold; text-align: center; background: #fff; padding: <?php echo $css_section_pad; ?>; }
+      .meta td { height: <?php echo $css_meta_h; ?>; font-size: 7.5px; padding: 1px 3px; }
       .photo { width: 5%; text-align: center; padding: 1px; }
-      .photo img { max-width: 44px; max-height: 30px; display: block; margin: 0 auto; }
+      .photo img { max-width: <?php echo $css_img_w; ?>; max-height: <?php echo $css_img_h; ?>; display: block; margin: 0 auto; }
       .day { width: 1.5%; text-align: center; padding: 1px 0; font-size: 7px; }
       .mark-ok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-nok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .cell-deactive { background: #fff3cd !important; }
-      .signature { height: 20px; }
+      .signature { height: <?php echo $css_sig_h; ?>; }
     </style>
     <table>
       <tr>
@@ -200,9 +242,9 @@ if (!function_exists('get_period_image_src')) {
         $pelaksanaan_label = $is_multi_shift ? 'Awal Shift ' . $first_shift : $part['pelaksanaan'];
         ?>
         <tr>
-          <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center;">
+          <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;">
             <?php if (!empty($part['image_path'])) { ?>
-              <img style="max-width:58px;max-height:36px" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>">
+              <img style="max-width:<?php echo $css_img_w; ?>;max-height:<?php echo $css_img_h; ?>;" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>">
             <?php } ?>
           </td>
           <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td>
@@ -310,8 +352,9 @@ if (!function_exists('get_period_image_src')) {
     </div>
   </div>
   <div class="mt-3">
-    <a class="btn btn-secondary" href="<?php print_link($d['machine_key'] . '/period_report'); ?>">Ganti Periode</a>
-    <a class="btn btn-danger" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'pdf'))); ?>">Export PDF</a>
-    <a class="btn btn-success" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'excel'))); ?>">Export Excel</a>
+    <a class="btn btn-secondary" href="<?php print_link($d['machine_key'] . '/period_report'); ?>"><i class="fa fa-arrow-left"></i> Ganti Periode</a>
+    <a class="btn btn-danger" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'pdf'))); ?>" title="PDF di-rotate 90 derajat mengikuti kontur vertikal A4 saat dicetak"><i class="fa fa-file-pdf-o"></i> Export PDF (Rotated A4)</a>
+    <a class="btn btn-outline-danger" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'pdf', 'rotate' => '0'))); ?>" title="PDF format landscape standar tanpa rotasi"><i class="fa fa-file-pdf-o"></i> PDF Landscape</a>
+    <a class="btn btn-success" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'excel'))); ?>"><i class="fa fa-file-excel-o"></i> Export Excel</a>
   </div>
 <?php } ?></div></section>

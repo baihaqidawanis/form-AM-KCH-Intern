@@ -575,6 +575,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$this->view->page_title = 'Check Sheet ' . $this->displayName;
 		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-P' . $period, 'landscape');
 		$this->view->report_layout = 'check_sheet_layout.php';
+		// Default rotation 270 degrees so the check sheet fits the vertical A4 paper contour
+		// and displays naturally when turning mobile device to landscape. Support &rotate=0 for standard landscape.
+		$rotate = isset($_GET['rotate']) ? intval($_GET['rotate']) : 270;
+		if ($rotate !== 0) {
+			$this->view->report_rotate = $rotate;
+		}
 		return $this->render_view('machine_period_report.php', $data);
 	}
 

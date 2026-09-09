@@ -84,6 +84,11 @@ class BaseView
 	 * @var string
 	 */
 	public $report_paper_size = "A4";
+	/**
+	 * Set PDF page rotation in degrees (0, 90, 180, 270)
+	 * @var int|null
+	 */
+	public $report_rotate = null;
 
 	/**
 	 * Record fields which will not be exported
@@ -321,7 +326,19 @@ class BaseView
 				$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
 				$dompdf->render();
 				ob_end_clean();
-				$dompdf->stream("$filename.pdf");
+				if (!empty($this->report_rotate)) {
+					$pdf_output = $dompdf->output();
+					$rot = intval($this->report_rotate);
+					$pdf_output = preg_replace('/\/Type\s*\/Page\b/', '/Type /Page /Rotate ' . $rot, $pdf_output);
+					header("Cache-Control: private");
+					header("Content-Type: application/pdf");
+					header("Content-Disposition: inline; filename=\"$filename.pdf\"");
+					header("Content-Length: " . strlen($pdf_output));
+					header("Connection: close");
+					echo $pdf_output;
+				} else {
+					$dompdf->stream("$filename.pdf");
+				}
 				return;
 			} catch (Throwable $pdf_err) {
 				ob_end_clean();
@@ -335,7 +352,19 @@ class BaseView
 					$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
 					$dompdf->render();
 					ob_end_clean();
-					$dompdf->stream("$filename.pdf");
+					if (!empty($this->report_rotate)) {
+						$pdf_output = $dompdf->output();
+						$rot = intval($this->report_rotate);
+						$pdf_output = preg_replace('/\/Type\s*\/Page\b/', '/Type /Page /Rotate ' . $rot, $pdf_output);
+						header("Cache-Control: private");
+						header("Content-Type: application/pdf");
+						header("Content-Disposition: inline; filename=\"$filename.pdf\"");
+						header("Content-Length: " . strlen($pdf_output));
+						header("Connection: close");
+						echo $pdf_output;
+					} else {
+						$dompdf->stream("$filename.pdf");
+					}
 					return;
 				}
 				throw $pdf_err;
