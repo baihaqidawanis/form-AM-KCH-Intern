@@ -67,22 +67,23 @@ if (!function_exists('get_period_image_src')) {
 <?php } else { ?>
   <div id="page-report-body" class="check-sheet">
     <style>
-      @page { size: A4 landscape; margin: 3mm 4mm; }
+      @page { size: A4 landscape; margin: 3.5mm 4mm; }
       html, body { margin: 0; padding: 0; font-family: "DejaVu Sans", Arial, sans-serif; }
       .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 6.8px; }
       table, .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
-      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 1.5px 2px; vertical-align: middle; }
+      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 2.5px; vertical-align: middle; }
       .head { font-size: 10px; font-weight: bold; text-align: center; line-height: 1.15; }
       .subhead { font-size: 8px; font-weight: bold; text-align: center; }
-      .section { font-size: 7px; font-weight: bold; text-align: center; background: #fff; padding: 1.5px; }
+      .section { font-size: 7px; font-weight: bold; text-align: center; background: #fff; padding: 2px; }
       .meta td { height: 16px; font-size: 7.5px; padding: 1px 3px; }
-      .photo { width: 54px; text-align: center; padding: 1px; }
-      .day { width: 16px; text-align: center; padding: 1px; }
+      .photo { width: 5%; text-align: center; padding: 1px; }
+      .photo img { max-width: 44px; max-height: 30px; display: block; margin: 0 auto; }
+      .day { width: 1.5%; text-align: center; padding: 1px 0; font-size: 7px; }
       .mark-ok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-nok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .cell-deactive { background: #fff3cd !important; }
-      .signature { height: 16px; }
+      .signature { height: 20px; }
     </style>
     <table>
       <tr>
@@ -139,14 +140,14 @@ if (!function_exists('get_period_image_src')) {
     <table>
       <thead>
         <tr>
-          <th>Gambar</th>
-          <th style="width:18px;">No</th>
-          <th>Nama Part</th>
-          <th>Alat</th>
-          <th>Metode</th>
-          <th>Standar</th>
-          <th style="width:28px;">Durasi</th>
-          <th style="width:90px;">Pelaksanaan</th>
+          <th style="width: 5.0%;">Gambar</th>
+          <th style="width: 1.8%;">No</th>
+          <th style="width: 20.0%;">Nama Part</th>
+          <th style="width: 6.5%;">Alat</th>
+          <th style="width: 5.5%;">Metode</th>
+          <th style="width: 26.0%;">Standar</th>
+          <th style="width: 2.2%;">Durasi</th>
+          <th style="width: 9.0%;">Pelaksanaan</th>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { ?>
             <th class="day"><?php echo $day; ?></th>
           <?php } ?>
