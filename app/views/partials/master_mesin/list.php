@@ -132,6 +132,11 @@ $csrf_token = Csrf::$token;
                         </select>
                     </div>
 
+                    <div class="form-group" id="group-reason-custom" style="display: none;">
+                        <label class="font-weight-bold" for="deactivate-reason-custom">Sebutkan Alasan Lainnya <span class="text-danger">*</span></label>
+                        <input type="text" id="deactivate-reason-custom" name="reason_custom" class="form-control" placeholder="Tuliskan alasan spesifik penonaktifan mesin...">
+                    </div>
+
                     <div class="form-group">
                         <label class="font-weight-bold" for="deactivate-notes">Catatan Tambahan (Opsional)</label>
                         <textarea id="deactivate-notes" name="notes" class="form-control" rows="3" placeholder="Misal: estimasi overhaul selesai 3 hari..."></textarea>
@@ -151,12 +156,33 @@ $csrf_token = Csrf::$token;
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var buttons = document.querySelectorAll('.btn-deactivate');
+    var reasonSelect = document.getElementById('deactivate-reason');
+    var customGroup = document.getElementById('group-reason-custom');
+    var customInput = document.getElementById('deactivate-reason-custom');
+
+    if (reasonSelect && customGroup && customInput) {
+        reasonSelect.addEventListener('change', function() {
+            if (this.value === 'Lainnya') {
+                customGroup.style.display = 'block';
+                customInput.setAttribute('required', 'required');
+                customInput.focus();
+            } else {
+                customGroup.style.display = 'none';
+                customInput.removeAttribute('required');
+                customInput.value = '';
+            }
+        });
+    }
+
     buttons.forEach(function(btn) {
         btn.addEventListener('click', function() {
             var id = this.getAttribute('data-id');
             var nama = this.getAttribute('data-nama');
             document.getElementById('deactivate-mesin-id').value = id;
             document.getElementById('deactivate-mesin-nama').innerText = nama;
+            if (reasonSelect) { reasonSelect.value = ''; }
+            if (customGroup) { customGroup.style.display = 'none'; }
+            if (customInput) { customInput.removeAttribute('required'); customInput.value = ''; }
             if (window.$) {
                 $('#modalDeactivate').modal('show');
             }

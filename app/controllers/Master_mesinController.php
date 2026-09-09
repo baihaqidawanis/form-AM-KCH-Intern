@@ -36,6 +36,7 @@ class Master_mesinController extends SecureController
 		}
 		$id = intval($formdata['mesin_id'] ?? 0);
 		$reason = trim((string)($formdata['reason'] ?? ''));
+		if ($reason === 'Lainnya') { $custom_reason = trim((string)($formdata['reason_custom'] ?? '')); $reason = $custom_reason === '' ? '' : 'Lainnya: ' . $custom_reason; }
 		if (!$id || $reason === '') {
 			$this->set_page_error('Mesin dan alasan wajib diisi.');
 			return $this->redirect('master_mesin');
@@ -57,10 +58,8 @@ class Master_mesinController extends SecureController
 			if (!$history) {
 				throw new RuntimeException('Gagal menyimpan riwayat deaktivasi.');
 			}
-			if (!$db->where('id', $id)->update('mesin', array('status_operasional' => 'DEAKTIVASI', 'current_deactivation_id' => $history))) {
-				throw new RuntimeException('Gagal memperbarui status cache mesin.');
-			}
 			$db->commit();
+			try { $db->where('id', $id)->update('mesin', array('status_operasional' => 'DEAKTIVASI', 'current_deactivation_id' => $history)); } catch (Throwable $e) { error_log('Machine cache deactivate skipped: ' . $e->getMessage()); }
 			$this->set_flash_msg('Mesin berhasil dideaktivasi.', 'success');
 		} catch (Throwable $e) {
 			$db->rollback();
@@ -93,10 +92,8 @@ class Master_mesinController extends SecureController
 			))) {
 				throw new RuntimeException('Gagal memperbarui riwayat aktivasi.');
 			}
-			if (!$db->where('id', $id)->update('mesin', array('status_operasional' => 'AKTIF', 'current_deactivation_id' => null))) {
-				throw new RuntimeException('Gagal memperbarui status cache mesin.');
-			}
 			$db->commit();
+			try { $db->where('id', $id)->update('mesin', array('status_operasional' => 'AKTIF', 'current_deactivation_id' => null)); } catch (Throwable $e) { error_log('Machine cache reactivate skipped: ' . $e->getMessage()); }
 			$this->set_flash_msg('Mesin berhasil diaktifkan kembali.', 'success');
 		} catch (Throwable $e) {
 			$db->rollback();
