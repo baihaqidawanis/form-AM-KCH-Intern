@@ -67,21 +67,22 @@ if (!function_exists('get_period_image_src')) {
 <?php } else { ?>
   <div id="page-report-body" class="check-sheet">
     <style>
-      @page { size: A4 landscape; margin: 5mm; }
+      @page { size: A4 landscape; margin: 4mm; }
+      html, body { margin: 0; padding: 0; font-family: "DejaVu Sans", Arial, sans-serif; }
       .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 7px; }
-      .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
-      .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
-      .check-sheet .head { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.2; }
-      .check-sheet .subhead { font-size: 8.5px; font-weight: bold; text-align: center; }
-      .check-sheet .section { font-size: 7.5px; font-weight: bold; text-align: center; background: #fff; padding: 3px; }
-      .check-sheet .meta td { height: 20px; font-size: 8px; }
-      .check-sheet .photo { width: 62px; text-align: center; }
-      .check-sheet .day { width: 16px; text-align: center; padding: 1px; }
-      .check-sheet .mark-ok { color: #000; font-weight: bold; font-size: 9px; }
-      .check-sheet .mark-nok { color: #000; font-weight: bold; font-size: 9px; }
-      .check-sheet .mark-deactive { color: #856404; font-weight: bold; font-size: 10px; }
-      .check-sheet .cell-deactive { background: #fff3cd !important; }
-      .check-sheet .signature { height: 24px; }
+      table, .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
+      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
+      .head { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.2; }
+      .subhead { font-size: 8.5px; font-weight: bold; text-align: center; }
+      .section { font-size: 7.5px; font-weight: bold; text-align: center; background: #fff; padding: 2px; }
+      .meta td { height: 18px; font-size: 8px; }
+      .photo { width: 58px; text-align: center; }
+      .day { width: 16px; text-align: center; padding: 1px; }
+      .mark-ok { color: #000; font-weight: bold; font-size: 9px; }
+      .mark-nok { color: #000; font-weight: bold; font-size: 9px; }
+      .mark-deactive { color: #856404; font-weight: bold; font-size: 10px; }
+      .cell-deactive { background: #fff3cd !important; }
+      .signature { height: 18px; }
     </style>
     <table>
       <tr>
@@ -198,18 +199,18 @@ if (!function_exists('get_period_image_src')) {
         $pelaksanaan_label = $is_multi_shift ? 'Awal Shift ' . $first_shift : $part['pelaksanaan'];
         ?>
         <tr>
-          <td class="photo" rowspan="<?php echo $rowspan; ?>" style="background:#fff; text-align:center;">
+          <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center;">
             <?php if (!empty($part['image_path'])) { ?>
-              <img style="max-width:58px;max-height:38px" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>">
+              <img style="max-width:58px;max-height:36px" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>">
             <?php } ?>
           </td>
-          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; background:#fff; font-weight:bold;"><?php echo $number; ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="background:#fff; font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="background:#fff;"><?php echo htmlspecialchars($part['alat']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="background:#fff;"><?php echo htmlspecialchars($part['metode']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="background:#fff;"><?php echo htmlspecialchars($part['standard']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="background:#fff; text-align:center;"><?php echo htmlspecialchars($part['durasi']); ?></td>
-          <td style="background:#fff; font-weight:bold;"><?php echo htmlspecialchars($pelaksanaan_label); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td>
+          <td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center;"><?php echo htmlspecialchars($part['durasi']); ?></td>
+          <td style="font-weight:bold;"><?php echo htmlspecialchars($pelaksanaan_label); ?></td>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
             $is_deactive = isset($d['deactivated_days'][$day]);
             $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
@@ -217,7 +218,7 @@ if (!function_exists('get_period_image_src')) {
             $entries = $d['checks'][$field][$day] ?? array();
             $cell_val = '';
             $c = '';
-            $cell_style = 'background:#fff;';
+            $cell_style = '';
             if ($is_deactive) {
               $cell_style = 'background:#fff3cd !important; text-align:center;';
               $cell_val = '&mdash;';
@@ -242,7 +243,7 @@ if (!function_exists('get_period_image_src')) {
           $sub_pelaksanaan = 'Awal Shift ' . $curr_shift;
           ?>
           <tr>
-            <td style="background:#fff; font-weight:bold;"><?php echo htmlspecialchars($sub_pelaksanaan); ?></td>
+            <td style="font-weight:bold;"><?php echo htmlspecialchars($sub_pelaksanaan); ?></td>
             <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
               $is_deactive = isset($d['deactivated_days'][$day]);
               $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
@@ -250,7 +251,7 @@ if (!function_exists('get_period_image_src')) {
               $entries = $d['checks'][$field][$day] ?? array();
               $cell_val = '';
               $c = '';
-              $cell_style = 'background:#fff;';
+              $cell_style = '';
               if ($is_deactive) {
                 $cell_style = 'background:#fff3cd !important; text-align:center;';
                 $cell_val = '&mdash;';
@@ -275,7 +276,7 @@ if (!function_exists('get_period_image_src')) {
         <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
           $is_deactive = isset($d['deactivated_days'][$day]);
         ?>
-          <td style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : 'background:#fff;'; ?>">
+          <td style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : ''; ?>">
             <?php if ($is_deactive) { echo 'DEAKTIF'; } ?>
           </td>
         <?php } ?>

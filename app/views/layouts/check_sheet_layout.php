@@ -23,7 +23,7 @@
 	</style>
 </head>
 <body>
-	<div id="report-body">
+	<div id="report-body" class="check-sheet">
 		<?php $this->render_body(); ?>
 	</div>
 	<?php if ($this->force_print) { ?>
