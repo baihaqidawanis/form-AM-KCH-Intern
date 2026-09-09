@@ -71,7 +71,7 @@ $page_element_id = 'unifill_b-add-' . random_str();
                 required id="ctrl-mesin" name="mesin" class="custom-select">
                 <option value="" disabled selected>Pilih nama mesin ...</option>
                 <?php foreach ($machine_options as $option) {
-                  if (stripos($option['label'], 'unifill') !== false) { ?>
+                  if (in_array(strtolower(trim($option['label'])), array('unifill a', 'unifill b'), true)) { ?>
                     <option value="<?php echo $option['value']; ?>"><?php echo $option['label']; ?></option><?php }
                 } ?>
               </select></div>

@@ -44,6 +44,9 @@ class Illapak_1_2Controller extends BaseMachineController
 	 */
 	protected function partsForAdd($formdata = null)
 	{
+		$this->view->uses_shift = true;
+		$this->view->configured_shifts = $this->getConfiguredShifts();
+
 		$shift = $this->selectedShift($formdata);
 		$this->view->selected_shift = $shift;
 		if (!$shift) { return array(); }
