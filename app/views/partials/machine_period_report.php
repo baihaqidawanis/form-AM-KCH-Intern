@@ -67,27 +67,27 @@ if (!function_exists('get_period_image_src')) {
 <?php } else { ?>
   <div id="page-report-body" class="check-sheet">
     <style>
-      @page { size: A4 landscape; margin: 4mm; }
+      @page { size: A4 landscape; margin: 3mm 4mm; }
       html, body { margin: 0; padding: 0; font-family: "DejaVu Sans", Arial, sans-serif; }
-      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 7px; }
+      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 6.8px; }
       table, .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
-      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
-      .head { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.2; }
-      .subhead { font-size: 8.5px; font-weight: bold; text-align: center; }
-      .section { font-size: 7.5px; font-weight: bold; text-align: center; background: #fff; padding: 2px; }
-      .meta td { height: 18px; font-size: 8px; }
-      .photo { width: 58px; text-align: center; }
+      th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 1.5px 2px; vertical-align: middle; }
+      .head { font-size: 10px; font-weight: bold; text-align: center; line-height: 1.15; }
+      .subhead { font-size: 8px; font-weight: bold; text-align: center; }
+      .section { font-size: 7px; font-weight: bold; text-align: center; background: #fff; padding: 1.5px; }
+      .meta td { height: 16px; font-size: 7.5px; padding: 1px 3px; }
+      .photo { width: 54px; text-align: center; padding: 1px; }
       .day { width: 16px; text-align: center; padding: 1px; }
-      .mark-ok { color: #000; font-weight: bold; font-size: 9px; }
-      .mark-nok { color: #000; font-weight: bold; font-size: 9px; }
-      .mark-deactive { color: #856404; font-weight: bold; font-size: 10px; }
+      .mark-ok { color: #000; font-weight: bold; font-size: 8.5px; }
+      .mark-nok { color: #000; font-weight: bold; font-size: 8.5px; }
+      .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .cell-deactive { background: #fff3cd !important; }
-      .signature { height: 18px; }
+      .signature { height: 16px; }
     </style>
     <table>
       <tr>
-        <td style="width:14%; text-align:center; vertical-align:middle; padding:3px;">
-          <img src="<?php echo get_period_image_src('assets/images/logo.png'); ?>" style="max-height:36px; max-width:90px;" alt="Logo Bintang Toedjoe">
+        <td style="width:14%; text-align:center; vertical-align:middle; padding:2px;">
+          <img src="<?php echo get_period_image_src('assets/images/logo.png'); ?>" style="max-height:30px; max-width:85px;" alt="Logo Bintang Toedjoe">
         </td>
         <td class="head" style="width:26%; text-align:center;">
           PT. BINTANG TOEDJOE<br>
@@ -96,17 +96,17 @@ if (!function_exists('get_period_image_src')) {
         <td class="head" style="width:42%; text-align:center;">
           AUTONOMOUS MAINTENANCE STANDARD<br>
           <span class="subhead">Check Sheet Kerja</span><br>
-          <em style="font-size:8px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
+          <em style="font-size:7.5px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
         <td style="width:18%; padding:0; vertical-align:top; border:none;">
           <table style="width:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
             <tr>
-              <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:8px; padding:2px;">
+              <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:7.5px; padding:1px;">
                 Diperiksa Oleh
               </td>
             </tr>
             <tr>
-              <td colspan="2" style="border:none; border-bottom:1px solid #000; height:34px; vertical-align:bottom; text-align:center; font-size:7.5px; padding-bottom:2px;">
+              <td colspan="2" style="border:none; border-bottom:1px solid #000; height:20px; vertical-align:bottom; text-align:center; font-size:7px; padding-bottom:1px;">
                 (Operator Produksi)
               </td>
             </tr>
@@ -283,16 +283,16 @@ if (!function_exists('get_period_image_src')) {
       </tr>
       </tbody>
     </table>
-    <table style="width:100%; margin-top:4px; border:none;">
+    <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:7px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
-        <td style="border:none; text-align:right; font-size:7px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
+        <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>
     <?php if (!empty($d['deactivation_records'])) { ?>
-    <div style="margin-top: 4px; padding: 3px 6px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; font-size: 7.5px;">
+    <div style="margin-top: 2px; padding: 2px 4px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; font-size: 6.8px;">
       <strong style="color: #856404;"><i class="fa fa-info-circle"></i> Catatan Deaktivasi Mesin pada Periode Ini:</strong>
-      <ul style="margin: 2px 0 0 15px; padding: 0;">
+      <ul style="margin: 1px 0 0 12px; padding: 0;">
       <?php foreach ($d['deactivation_records'] as $dr) { ?>
         <li>
           Periode: <strong><?php echo date('d/m/Y H:i', strtotime($dr['started_at'])); ?></strong> s/d <strong><?php echo !empty($dr['ended_at']) ? date('d/m/Y H:i', strtotime($dr['ended_at'])) : 'Sekarang (Masih Deaktivasi)'; ?></strong>
@@ -304,8 +304,8 @@ if (!function_exists('get_period_image_src')) {
       </ul>
     </div>
     <?php } ?>
-    <div style="text-align:center; margin-top:3px;">
-      <?php if (!empty($d['all_approved'])) { ?><span style="border:1.5px solid #198754; color:#198754; font-weight:bold; font-size:10px; padding:1px 12px; display:inline-block; border-radius:3px; letter-spacing:1px;">APPROVED</span><?php } else { ?><span style="border:1.5px solid #d9534f; color:#d9534f; font-weight:bold; font-size:10px; padding:1px 12px; display:inline-block; border-radius:3px; letter-spacing:1px;">MENUNGGU APPROVAL</span><?php } ?>
+    <div style="text-align:center; margin-top:2px;">
+      <?php if (!empty($d['all_approved'])) { ?><span style="border:1.5px solid #198754; color:#198754; font-weight:bold; font-size:8.5px; padding:0px 10px; display:inline-block; border-radius:3px; letter-spacing:1px;">APPROVED</span><?php } else { ?><span style="border:1.5px solid #d9534f; color:#d9534f; font-weight:bold; font-size:8.5px; padding:0px 10px; display:inline-block; border-radius:3px; letter-spacing:1px;">MENUNGGU APPROVAL</span><?php } ?>
     </div>
   </div>
   <div class="mt-3">
