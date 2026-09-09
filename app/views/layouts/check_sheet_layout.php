@@ -6,7 +6,7 @@
 	<style>
 		@page {
 			size: A4 landscape;
-			margin: 3mm 4mm;
+			margin: 3.5mm 5mm;
 		}
 		html, body {
 			margin: 0;
