@@ -6,15 +6,20 @@
 	<style>
 		@page {
 			size: A4 landscape;
-			margin: 4mm 6mm;
+			margin: 3.5mm 8mm;
 		}
 		html, body {
 			margin: 0;
-			padding: 0;
+			padding: 3.5mm 8mm;
 			font-family: "DejaVu Sans", Arial, Helvetica, sans-serif;
 			background: #fff;
 			-webkit-print-color-adjust: exact;
 			print-color-adjust: exact;
+		}
+		@media print {
+			body {
+				padding: 0 !important;
+			}
 		}
 		#report-body {
 			margin: 0;

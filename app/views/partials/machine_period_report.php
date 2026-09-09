@@ -101,7 +101,7 @@ if (!function_exists('get_period_image_src')) {
       $css_meta_h = '13px';
       $css_section_fs = '6.5px';
       $css_section_pad = '1px';
-      $css_page_margin = '2.5mm 4mm';
+      $css_page_margin = '3mm 6mm';
   } elseif ($part_count > 9) {
       // 10-12 parts - medium compact
       $css_sheet_fs = '6.5px';
@@ -114,28 +114,29 @@ if (!function_exists('get_period_image_src')) {
       $css_meta_h = '13px';
       $css_section_fs = '6.6px';
       $css_section_pad = '1.2px';
-      $css_page_margin = '3.5mm 5mm';
+      $css_page_margin = '3.5mm 7mm';
   } else {
-      // 1-9 parts (e.g. Chimei, Cosmec, Granulator) - perfectly balanced to avoid bottom cutoff
-      $css_sheet_fs = '6.8px';
-      $css_pad = '2px 2px';
-      $css_head_fs = '9.5px';
-      $css_subhead_fs = '7.5px';
-      $css_img_h = '22px';
-      $css_img_w = '40px';
-      $css_sig_h = '18px';
-      $css_meta_h = '14px';
-      $css_section_fs = '6.8px';
-      $css_section_pad = '1.5px';
-      $css_page_margin = '4mm 6mm';
+      // 1-9 parts (e.g. Chimei, Cosmec, Granulator) - spacious, restored non-gepeng height
+      $css_sheet_fs = '7px';
+      $css_pad = '3px 2.5px';
+      $css_head_fs = '10px';
+      $css_subhead_fs = '8px';
+      $css_img_h = '28px';
+      $css_img_w = '44px';
+      $css_sig_h = '22px';
+      $css_meta_h = '16px';
+      $css_section_fs = '7px';
+      $css_section_pad = '2px';
+      $css_page_margin = '3.5mm 8mm';
   }
 ?>
   <div id="page-report-body" class="check-sheet">
     <style>
       @page { size: A4 landscape; margin: <?php echo $css_page_margin; ?>; }
-      html, body { margin: 0; padding: 0; font-family: "DejaVu Sans", Arial, sans-serif; }
+      html, body { margin: 0; padding: <?php echo $css_page_margin; ?>; font-family: "DejaVu Sans", Arial, sans-serif; }
+      @media print { body { padding: 0 !important; } }
       .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; }
-      table, .check-sheet table { width: 99.8%; margin: 0 auto; border-collapse: collapse; margin-bottom: 0px; box-sizing: border-box; }
+      table, .check-sheet table { width: 100%; margin: 0 auto; border-collapse: collapse; margin-bottom: 0px; box-sizing: border-box; }
       th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: <?php echo $css_pad; ?>; vertical-align: middle; }
       .head { font-size: <?php echo $css_head_fs; ?>; font-weight: bold; text-align: center; line-height: 1.15; }
       .subhead { font-size: <?php echo $css_subhead_fs; ?>; font-weight: bold; text-align: center; }
