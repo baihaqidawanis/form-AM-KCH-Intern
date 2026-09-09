@@ -23,6 +23,7 @@ class ACL
 
 		// 3 = Supervisor: akses Home, AM (full CRUD), Users, Approval, Panduan (URS 2.2) — TANPA Audit Trail
 		3 => array(
+			'master_mesin' => '*',
 			'sig' => '*', 'joeya' => '*', 'illapak_1_2' => '*', 'illapak_3_12' => '*', 'unifill_b' => '*',
 			'chimei' => '*', 'temach' => '*', 'check_weigher' => '*', 'conveyor_sig' => '*', 'jihcheng' => '*', 'jinsung_1_4' => '*', 'jinsung_5' => '*', 'best_pack' => '*',
 			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'granulator' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
@@ -32,6 +33,7 @@ class ACL
 
 		// 2 = Manager: akses Home, AM (view saja, tidak bisa tambah form), Approval, Panduan (URS 2.2 & 4.2)
 		2 => array(
+			'master_mesin' => '*',
 			'sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
 			'joeya' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
 			'illapak_1_2' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),

@@ -49,14 +49,18 @@ class Illapak_1_2Controller extends BaseMachineController
 
 		$shift = $this->selectedShift($formdata);
 		$this->view->selected_shift = $shift;
-		if (!$shift) { return array(); }
+		if (!$shift) {
+			return array();
+		}
 
 		$db = $this->GetModel();
 		$rows = $db->where('machine_key', $this->machineKey)->where('taken_out_at', null, 'IS')->orderBy('urutan', 'ASC')->get('master_part', null, array('field_name', 'label', 'shift_schedule'));
 		$parts = array();
 		foreach ($rows as $row) {
 			$allowed_shifts = array_filter(array_map('trim', explode(',', (string) $row['shift_schedule'])));
-			if (in_array($shift, $allowed_shifts, true)) { $parts[$row['field_name']] = $row['label']; }
+			if (in_array($shift, $allowed_shifts, true)) {
+				$parts[$row['field_name']] = $row['label'];
+			}
 		}
 		return $parts;
 	}

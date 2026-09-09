@@ -356,6 +356,50 @@
 				});
 			})();
 			<?php } ?>
+
+			// Banner peringatan dan penguncian form AM jika mesin sedang DIDEAKTIVASI
+			(function(){
+				var deactivatedMap = <?php echo !empty($this->deactivated_units) ? json_encode($this->deactivated_units) : '{}'; ?>;
+				$(function(){
+					var $mesinCtrl = $('select[name="mesin"], input[name="mesin"]').first();
+					if (!$mesinCtrl.length) { return; }
+					var $form = $mesinCtrl.closest('form');
+					if (!$form.length) { return; }
+
+					function checkDeactivation() {
+						var val = parseInt($mesinCtrl.val(), 10);
+						var info = deactivatedMap[val];
+						var $banner = $('#machine-deactivation-banner');
+						var $submitBtns = $form.find('button[type="submit"], input[type="submit"]');
+
+						if (info) {
+							if (!$banner.length) {
+								$banner = $('<div id="machine-deactivation-banner" class="alert alert-warning border-warning shadow-sm mb-3"></div>');
+								$form.prepend($banner);
+							}
+							var notesHtml = info.notes ? '<div class="small mt-1 text-secondary"><strong>Catatan:</strong> ' + $('<div>').text(info.notes).html() + '</div>' : '';
+							$banner.html(
+								'<div class="d-flex align-items-start">' +
+								'  <div class="mr-3 text-warning"><i class="fa fa-exclamation-triangle fa-2x"></i></div>' +
+								'  <div class="flex-grow-1">' +
+								'    <h5 class="alert-heading font-weight-bold mb-1" style="font-size:15px; color:#856404;">PERHATIAN: Mesin Ini Sedang DIDEAKTIVASI!</h5>' +
+								'    <p class="mb-1" style="font-size:13px;">Unit <strong>' + $('<div>').text(info.nama_mesin).html() + '</strong> dinonaktifkan sementara untuk: <strong class="badge badge-warning text-dark font-weight-bold" style="font-size:12px;">' + $('<div>').text(info.reason).html() + '</strong> oleh <strong>' + $('<div>').text(info.action_by_username).html() + '</strong> sejak ' + $('<div>').text(info.started_at).html() + '.</p>' +
+								notesHtml +
+								'    <div class="small text-danger font-weight-bold mt-2"><i class="fa fa-lock"></i> Pengisian Form AM pada unit ini DIKUNCI hingga mesin diaktifkan kembali oleh Supervisor/Admin.</div>' +
+								'  </div>' +
+								'</div>'
+							).show();
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Unit mesin sedang deaktif');
+						} else {
+							if ($banner.length) { $banner.hide(); }
+							$submitBtns.prop('disabled', false).removeClass('disabled').removeAttr('title');
+						}
+					}
+
+					$mesinCtrl.on('change input', checkDeactivation);
+					checkDeactivation();
+				});
+			})();
 		</script>
 		<?php 
 			Html ::  page_js('popper.js');

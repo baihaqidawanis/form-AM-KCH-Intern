@@ -166,6 +166,12 @@ class Menu
 		),
 
 		array(
+			'path' => 'master_mesin',
+			'label' => 'Status Operasional Mesin',
+			'icon' => '<i class="fa fa-power-off"></i>'
+		),
+
+		array(
 			'path' => 'panduan_pengisian_am',
 			'label' => 'Panduan Pengisian AM',
 			'icon' => '<i class="fa fa-book"></i>'

@@ -79,6 +79,8 @@ if (!function_exists('get_period_image_src')) {
       .check-sheet .day { width: 16px; text-align: center; padding: 1px; }
       .check-sheet .mark-ok { color: #000; font-weight: bold; font-size: 9px; }
       .check-sheet .mark-nok { color: #000; font-weight: bold; font-size: 9px; }
+      .check-sheet .mark-deactive { color: #856404; font-weight: bold; font-size: 10px; }
+      .check-sheet .cell-deactive { background: #fff3cd !important; }
       .check-sheet .signature { height: 24px; }
     </style>
     <table>
@@ -185,10 +187,18 @@ if (!function_exists('get_period_image_src')) {
           <td rowspan="<?php echo $rowspan; ?>" style="background:#fff; text-align:center;"><?php echo htmlspecialchars($part['durasi']); ?></td>
           <td style="background:#fff; font-weight:bold;"><?php echo htmlspecialchars($pelaksanaan_label); ?></td>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
+            $is_deactive = isset($d['deactivated_days'][$day]);
+            $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
+            $tooltip = $is_deactive ? 'DEAKTIVASI: ' . htmlspecialchars($deact['reason'] ?? '') . ' | Oleh: ' . htmlspecialchars($deact['action_by_username'] ?? '-') . ' (' . htmlspecialchars($deact['started_at'] ?? '') . ')' : '';
             $entries = $d['checks'][$field][$day] ?? array();
             $cell_val = '';
             $c = '';
-            if ($is_multi_shift) {
+            $cell_style = 'background:#fff;';
+            if ($is_deactive) {
+              $cell_style = 'background:#fff3cd !important; text-align:center;';
+              $cell_val = '&mdash;';
+              $c = 'mark-deactive';
+            } elseif ($is_multi_shift) {
               $value = $entries[(string)$first_shift] ?? ($entries['__default__'] ?? '');
               if ($value !== '') { $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok'; $cell_val = $value === 'NOK' ? '&times;' : '&radic;'; }
             } elseif (!empty($entries)) {
@@ -198,7 +208,7 @@ if (!function_exists('get_period_image_src')) {
               $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
             }
           ?>
-            <td class="day" style="background:#fff;"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
+            <td class="day" style="<?php echo $cell_style; ?>" <?php if ($is_deactive) { ?>title="<?php echo $tooltip; ?>"<?php } ?>><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
           <?php } ?>
         </tr>
         <?php
@@ -210,16 +220,26 @@ if (!function_exists('get_period_image_src')) {
           <tr>
             <td style="background:#fff; font-weight:bold;"><?php echo htmlspecialchars($sub_pelaksanaan); ?></td>
             <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
+              $is_deactive = isset($d['deactivated_days'][$day]);
+              $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
+              $tooltip = $is_deactive ? 'DEAKTIVASI: ' . htmlspecialchars($deact['reason'] ?? '') . ' | Oleh: ' . htmlspecialchars($deact['action_by_username'] ?? '-') . ' (' . htmlspecialchars($deact['started_at'] ?? '') . ')' : '';
               $entries = $d['checks'][$field][$day] ?? array();
               $cell_val = '';
               $c = '';
-              $value = $entries[(string)$curr_shift] ?? '';
-              if ($value !== '') {
-                $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
-                $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
+              $cell_style = 'background:#fff;';
+              if ($is_deactive) {
+                $cell_style = 'background:#fff3cd !important; text-align:center;';
+                $cell_val = '&mdash;';
+                $c = 'mark-deactive';
+              } else {
+                $value = $entries[(string)$curr_shift] ?? '';
+                if ($value !== '') {
+                  $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
+                  $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
+                }
               }
             ?>
-              <td class="day" style="background:#fff;"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
+              <td class="day" style="<?php echo $cell_style; ?>" <?php if ($is_deactive) { ?>title="<?php echo $tooltip; ?>"<?php } ?>><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
             <?php } ?>
           </tr>
           <?php
@@ -228,18 +248,37 @@ if (!function_exists('get_period_image_src')) {
       ?>
       <tr>
         <td class="signature" colspan="8" style="font-weight:bold; text-align:center;">Paraf Pelaksana</td>
-        <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { ?>
-          <td style="background:#fff;"></td>
+        <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
+          $is_deactive = isset($d['deactivated_days'][$day]);
+        ?>
+          <td style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : 'background:#fff;'; ?>">
+            <?php if ($is_deactive) { echo 'DEAKTIF'; } ?>
+          </td>
         <?php } ?>
       </tr>
       </tbody>
     </table>
     <table style="width:100%; margin-top:4px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:7px; padding:0;">*dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun</td>
+        <td style="border:none; text-align:left; font-size:7px; padding:0;">*dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun &nbsp;|&nbsp; <strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
         <td style="border:none; text-align:right; font-size:7px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>
+    <?php if (!empty($d['deactivation_records'])) { ?>
+    <div style="margin-top: 4px; padding: 3px 6px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; font-size: 7.5px;">
+      <strong style="color: #856404;"><i class="fa fa-info-circle"></i> Catatan Deaktivasi Mesin pada Periode Ini:</strong>
+      <ul style="margin: 2px 0 0 15px; padding: 0;">
+      <?php foreach ($d['deactivation_records'] as $dr) { ?>
+        <li>
+          Periode: <strong><?php echo date('d/m/Y H:i', strtotime($dr['started_at'])); ?></strong> s/d <strong><?php echo !empty($dr['ended_at']) ? date('d/m/Y H:i', strtotime($dr['ended_at'])) : 'Sekarang (Masih Deaktivasi)'; ?></strong>
+          &mdash; Alasan: <strong><?php echo htmlspecialchars($dr['reason']); ?></strong>
+          <?php if (!empty($dr['notes'])) { echo ' (<em>' . htmlspecialchars($dr['notes']) . '</em>)'; } ?>
+          &mdash; Oleh: <strong><?php echo htmlspecialchars($dr['action_by_username']); ?></strong>
+        </li>
+      <?php } ?>
+      </ul>
+    </div>
+    <?php } ?>
     <div style="text-align:center; margin-top:3px;">
       <?php if (!empty($d['all_approved'])) { ?><span style="border:1.5px solid #198754; color:#198754; font-weight:bold; font-size:10px; padding:1px 12px; display:inline-block; border-radius:3px; letter-spacing:1px;">APPROVED</span><?php } else { ?><span style="border:1.5px solid #d9534f; color:#d9534f; font-weight:bold; font-size:10px; padding:1px 12px; display:inline-block; border-radius:3px; letter-spacing:1px;">MENUNGGU APPROVAL</span><?php } ?>
     </div>

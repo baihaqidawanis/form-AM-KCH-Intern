@@ -362,10 +362,21 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return true;
 	}
 
+	protected function isUnitDeactivated($mesin_id, $operational_date)
+	{
+		try {
+			$db = $this->GetModel();
+			$db->where('mesin_id', intval($mesin_id))->where('started_at', $operational_date . ' 23:59:59', '<=')->where('(ended_at IS NULL OR ended_at >= ?)', array($operational_date . ' 00:00:00'));
+			return $db->has('riwayat_status_mesin');
+		} catch (Throwable $e) { error_log('Deactivation guard skipped: ' . $e->getMessage()); return false; }
+	}
+
 	function add($formdata = null)
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		if ($formdata) {
+			$deactivated_unit = isset($formdata['mesin']) && $this->isUnitDeactivated(intval($formdata['mesin']), $this->operationalDate());
+			if ($deactivated_unit) { $this->set_page_error('Unit mesin sedang DEAKTIVASI. Pemeriksaan AM tidak dapat disimpan.'); return $this->redirect($table . '/add'); }
 			$context_error = $this->addContextError($formdata);
 			if ($context_error) {
 				$this->view->page_error[] = $context_error;
@@ -441,7 +452,28 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				}
 			}
 		}
-		$this->view->page_title = "Add New AM {$this->displayName}"; return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd()));
+		$today = $this->operationalDate();
+		$deactive_units = $this->GetModel()->rawQuery("
+			SELECT r.mesin_id, m.nama_mesin, r.reason, r.started_at, r.notes, r.action_by_username
+			FROM riwayat_status_mesin r
+			JOIN mesin m ON m.id = r.mesin_id
+			WHERE r.started_at <= ? AND (r.ended_at IS NULL OR r.ended_at >= ?)
+		", array($today . ' 23:59:59', $today . ' 00:00:00'));
+
+		$deactive_map = array();
+		foreach ($deactive_units as $du) {
+			$deactive_map[intval($du['mesin_id'])] = array(
+				'mesin_id' => intval($du['mesin_id']),
+				'nama_mesin' => $du['nama_mesin'],
+				'reason' => $du['reason'],
+				'notes' => $du['notes'],
+				'started_at' => $du['started_at'],
+				'action_by_username' => $du['action_by_username']
+			);
+		}
+		$this->view->deactivated_units = $deactive_map;
+		$this->view->page_title = "Add New AM {$this->displayName}";
+		return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd(), 'deactivated_units' => $deactive_map));
 	}
 
 	function view($rec_id = null, $value = null)
@@ -501,7 +533,43 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 		}
 		$part_details = $this->partDetailsForRows($rows, $start);
-		$data = array('selection_only' => false, 'machine_key' => $this->machineKey, 'display_name' => $this->displayName, 'machine_name' => $machine['nama_mesin'] ?? '-', 'year' => $year, 'month' => $month, 'period' => $period, 'start_day' => $start_day, 'end_day' => $end_day, 'parts' => $this->partsForRows($rows, $start), 'part_details' => $part_details, 'checks' => $checks);
+
+		// Ambil riwayat status deaktivasi unit ini pada rentang periode
+		$deactivation_rows = $db->where('mesin_id', $mesin)
+			->where('started_at', $end . ' 23:59:59', '<=')
+			->where('(ended_at IS NULL OR ended_at >= ?)', array($start . ' 00:00:00'))
+			->orderBy('started_at', 'ASC')
+			->get('riwayat_status_mesin');
+
+		$deactivated_days = array();
+		for ($d_num = $start_day; $d_num <= $end_day; $d_num++) {
+			$day_str = sprintf('%04d-%02d-%02d', $year, $month, $d_num);
+			foreach ($deactivation_rows as $dr) {
+				$s_date = substr($dr['started_at'], 0, 10);
+				$e_date = !empty($dr['ended_at']) ? substr($dr['ended_at'], 0, 10) : '9999-12-31';
+				if ($day_str >= $s_date && $day_str <= $e_date) {
+					$deactivated_days[$d_num] = $dr;
+					break;
+				}
+			}
+		}
+
+		$data = array(
+			'selection_only' => false,
+			'machine_key' => $this->machineKey,
+			'display_name' => $this->displayName,
+			'machine_name' => $machine['nama_mesin'] ?? '-',
+			'year' => $year,
+			'month' => $month,
+			'period' => $period,
+			'start_day' => $start_day,
+			'end_day' => $end_day,
+			'parts' => $this->partsForRows($rows, $start),
+			'part_details' => $part_details,
+			'checks' => $checks,
+			'deactivated_days' => $deactivated_days,
+			'deactivation_records' => $deactivation_rows
+		);
 		$data['all_approved'] = $all_approved;
 		$this->view->page_title = 'Check Sheet ' . $this->displayName;
 		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-P' . $period, 'landscape');
