@@ -97,10 +97,34 @@ if (!function_exists('get_period_image_src')) {
           <span class="subhead">Check Sheet Kerja</span><br>
           <em style="font-size:8px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
-        <td class="subhead" style="width:18%; text-align:center; padding:2px;">
-          Diperiksa Oleh<br><br>
-          (Operator Produksi)<br>
-          <div style="border-top:1px solid #000; margin-top:2px; padding-top:2px;">SPV/Fasilitator<br>Bulan/Tahun</div>
+        <td style="width:18%; padding:0; vertical-align:top; border:1px solid #000;">
+          <table style="width:100%; height:100%; border-collapse:collapse; margin:0; border:none;">
+            <tr>
+              <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:8px; padding:2px;">
+                Diperiksa Oleh
+              </td>
+            </tr>
+            <tr>
+              <td colspan="2" style="border:none; border-bottom:1px solid #000; height:34px; vertical-align:bottom; text-align:center; font-size:7.5px; padding-bottom:2px;">
+                (Operator Produksi)
+              </td>
+            </tr>
+            <tr>
+              <td style="border:none; border-right:1px solid #000; border-bottom:1px solid #000; width:50%; font-size:7px; font-weight:bold; padding:2px 3px; text-align:left;">
+                SPV/Fasilitator
+              </td>
+              <td style="border:none; border-bottom:1px solid #000; width:50%; font-size:7px; padding:2px 3px; text-align:center;">
+              </td>
+            </tr>
+            <tr>
+              <td style="border:none; border-right:1px solid #000; width:50%; font-size:7px; font-weight:bold; padding:2px 3px; text-align:left;">
+                Bulan/Tahun
+              </td>
+              <td style="border:none; width:50%; font-size:7px; padding:2px 3px; text-align:center;">
+                <?php echo $month_names[$d['month']] . ' ' . $d['year']; ?>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -260,7 +284,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:4px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:7px; padding:0;">*dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun &nbsp;|&nbsp; <strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
+        <td style="border:none; text-align:left; font-size:7px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
         <td style="border:none; text-align:right; font-size:7px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>

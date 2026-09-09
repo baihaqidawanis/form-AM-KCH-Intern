@@ -309,21 +309,37 @@ class BaseView
 		elseif ($page_format == "pdf") {
 			$report_body = $this->parse_report_html(); //get exportable content
 			$filename = $this->report_filename;
-			// Buffer and discard any stray output (e.g. PHP deprecation notices
-			// from the dompdf library itself) so it can't get prepended to the
-			// binary PDF stream below and corrupt the downloaded file.
+			if (!extension_loaded('gd')) {
+				// Strip <img> tags if GD extension is not available to avoid fatal error in dompdf
+				$report_body = preg_replace('/<img[^>]+>/i', '', $report_body);
+			}
 			ob_start();
-			$dompdf = new Dompdf();
-			$dompdf->loadHtml($report_body);
-			$dompdf->set_option('isRemoteEnabled', true); //allow to display external images
-			// (Optional) Setup the paper size and orientation
-			$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
-			// Render the HTML as PDF
-			$dompdf->render();
-			ob_end_clean();
-			// Output the generated PDF to Browser
-			$dompdf->stream("$filename.pdf");
-			return;
+			try {
+				$dompdf = new Dompdf();
+				$dompdf->loadHtml($report_body);
+				$dompdf->set_option('isRemoteEnabled', true); //allow to display external images
+				$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
+				$dompdf->render();
+				ob_end_clean();
+				$dompdf->stream("$filename.pdf");
+				return;
+			} catch (Throwable $pdf_err) {
+				ob_end_clean();
+				// Fallback: if render failed (e.g. image/GD issue), retry once cleanly without images
+				if (stripos($report_body, '<img') !== false) {
+					$clean_body = preg_replace('/<img[^>]+>/i', '', $report_body);
+					ob_start();
+					$dompdf = new Dompdf();
+					$dompdf->loadHtml($clean_body);
+					$dompdf->set_option('isRemoteEnabled', true);
+					$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
+					$dompdf->render();
+					ob_end_clean();
+					$dompdf->stream("$filename.pdf");
+					return;
+				}
+				throw $pdf_err;
+			}
 		}
 		elseif ($page_format == "word") {
 			$report_body = $this->parse_report_html(); //get exportable content
