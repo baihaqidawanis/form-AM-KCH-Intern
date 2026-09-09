@@ -26,6 +26,7 @@ abstract class BaseMachineController extends SecureController
 	protected $extraFields = array();
 	private $hasRetriedTransientRead = false;
 
+	private $snapshotSchema = null;
 	function __construct()
 	{
 		parent::__construct();
@@ -167,36 +168,55 @@ abstract class BaseMachineController extends SecureController
 		return (!empty($parts) || !empty($rows)) ? $parts : $this->partsForRecord($operational_date);
 	}
 
+	/** Preflight skema dilakukan sebelum transaksi AM dimulai agar query gagal tidak meng-abort PostgreSQL transaction. */
+	private function snapshotSchema()
+	{
+		if ($this->snapshotSchema !== null) { return $this->snapshotSchema; }
+		try {
+			$rows = $this->GetModel()->rawQuery("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot') AS has_snapshot_table, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot' AND column_name = 'shift_schedule') AS has_shift_schedule");
+			$row = $rows[0] ?? array();
+			$truthy = array(true, 1, '1', 't', 'true');
+			$this->snapshotSchema = array(
+				'table' => in_array($row['has_snapshot_table'] ?? null, $truthy, true),
+				'shift_schedule' => in_array($row['has_shift_schedule'] ?? null, $truthy, true)
+			);
+		} catch (\Throwable $e) {
+			error_log('Snapshot schema preflight skipped: ' . $e->getMessage());
+			$this->snapshotSchema = array('table' => false, 'shift_schedule' => false);
+		}
+		return $this->snapshotSchema;
+	}
+
 	/**
 	 * Simpan snapshot metadata part ke form_part_snapshot saat form di-submit.
-	 * Dipanggil sekali di dalam transaction add(), setelah INSERT record berhasil.
-	 * Kalau tabel belum ada (environment lama sebelum migration), error diabaikan
-	 * dengan try/catch -- alur submit tetap berhasil, fallback ke resolver lama.
+	 * Skema sudah diperiksa sebelum BEGIN; tabel lama tetap kompatibel tanpa
+	 * shift_schedule. Error write lain diteruskan agar transaksi di-rollback.
 	 * @param int   $form_id   ID record baru yang baru saja di-INSERT
 	 * @param array $parts_meta Hasil partsForRecord() pada saat submit (field_name => label)
 	 */
-	protected function savePartSnapshot($form_id, $parts_meta)
+	protected function savePartSnapshot($form_id, $parts_meta, $snapshot_schema = null)
 	{
 		if (empty($parts_meta) || !$form_id) { return; }
+		$schema = $snapshot_schema ?: $this->snapshotSchema();
+		if (empty($schema['table'])) { return; }
 		$db = $this->GetModel();
 		$field_names = array_keys($parts_meta);
 		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in');
 		$master_rows = $db->get('master_part');
 		if (empty($master_rows)) { return; }
-		try {
-			foreach ($master_rows as $row) {
-				$result = $db->rawQuery('INSERT INTO "form_part_snapshot" (machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan, snapshot_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT (machine_key, form_id, field_name) DO NOTHING', array($this->machineKey, $form_id, $row['field_name'], $row['label'], $row['section'] ?? null, $row['metode'] ?? null, $row['alat'] ?? null, $row['standard'] ?? null, $row['durasi'] ?? null, $row['pelaksanaan'] ?? null, $row['highlight'] ?? null, $row['image_path'] ?? null, $row['urutan'] ?? null));
-				if ($result === false) { throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan snapshot part.'); }
-				$snapshot_schedule = trim((string)($row['shift_schedule'] ?? '')) ?: '1';
-				$db->where('machine_key', $this->machineKey)->where('form_id', $form_id)->where('field_name', $row['field_name']);
-				if ($db->update('form_part_snapshot', array('shift_schedule' => $snapshot_schedule)) === false) {
-					throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan jadwal shift snapshot.');
-				}
+		foreach ($master_rows as $row) {
+			$columns = 'machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan';
+			$values = '?,?,?,?,?,?,?,?,?,?,?,?,?';
+			$params = array($this->machineKey, $form_id, $row['field_name'], $row['label'], $row['section'] ?? null, $row['metode'] ?? null, $row['alat'] ?? null, $row['standard'] ?? null, $row['durasi'] ?? null, $row['pelaksanaan'] ?? null, $row['highlight'] ?? null, $row['image_path'] ?? null, $row['urutan'] ?? null);
+			if (!empty($schema['shift_schedule'])) {
+				$columns .= ', shift_schedule';
+				$values .= ',?';
+				$params[] = trim((string) ($row['shift_schedule'] ?? '')) ?: '1';
 			}
-		} catch (\Throwable $e) {
-			$error = $e->getMessage();
-			if (stripos($error, '42P01') !== false || stripos($error, 'does not exist') !== false || stripos($error, 'relation "form_part_snapshot"') !== false) { error_log('savePartSnapshot skipped: ' . $error); return; }
-			throw new \RuntimeException('Gagal menyimpan snapshot part.', 0, $e);
+			$query = 'INSERT INTO "form_part_snapshot" (' . $columns . ', snapshot_at) VALUES (' . $values . ',CURRENT_TIMESTAMP) ON CONFLICT (machine_key, form_id, field_name) DO NOTHING';
+			if ($db->rawQuery($query, $params) === false) {
+				throw new \RuntimeException($db->getLastError() ?: 'Gagal menyimpan snapshot part.');
+			}
 		}
 	}
 	/** Metadata PDF harus mengikuti snapshot part yang sama dengan report form. */
@@ -421,6 +441,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				}
 			}
 			if ($this->validated() && $valid_no_wr && !$is_duplicate) {
+				$snapshot_schema = $this->snapshotSchema();
 				try {
 					$db->startTransaction();
 					$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
@@ -434,7 +455,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
 					// label/section/metode/standard master_part di kemudian hari mengubah
 					// tampilan laporan lama. Dipanggil di dalam transaction yang sama.
-					$this->savePartSnapshot($rec_id, $parts_for_add);
+					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema);
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
 					return $this->redirect($table . '/view/' . $rec_id);
@@ -621,15 +642,32 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$modeldata = $this->validate_form($postdata);
 			$modeldata['updated_at'] = datetime_now(); $modeldata['tanggal_perubahan'] = datetime_now(); $modeldata['user_approve'] = USER_NAME;
 			if ($this->validated()) {
+				$current = $db->where("$sql.$idcol", $rec_id)->getOne($sql, array('approval', 'user_approve', 'tanggal_perubahan'));
+				if (!$current) {
+					$this->set_flash_msg('Checklist tidak ditemukan atau sudah tidak tersedia.', 'warning');
+					return $this->redirect($table);
+				}
+				if (($current['approval'] ?? null) === 'Approved') {
+					$approved_by = trim((string) ($current['user_approve'] ?? '')) ?: 'Supervisor lain';
+					$this->set_flash_msg("Checklist ini sudah disetujui lebih dulu oleh {$approved_by}. Tindakan Anda tidak menimpa data.", 'warning');
+					return $this->redirect($table);
+				}
 				$db->where("$sql.$idcol", $rec_id);
+				$db->where("($sql.approval IS NULL OR $sql.approval <> ?)", array('Approved'));
 				$bool = $db->update($sql, $modeldata);
 				$numRows = $db->getRowCount();
 				if ($bool && $numRows) { $this->write_to_log('edit', 'true'); $this->set_flash_msg('Approval berhasil diperbarui', 'success'); return $this->redirect($table); }
 				if ($db->getLastError()) {
 					$this->set_page_error();
 				} elseif (!$numRows) {
-					$page_error = 'No record updated';
-					$this->set_page_error($page_error); $this->set_flash_msg($page_error, 'warning'); return $this->redirect($table);
+					$latest = $db->where("$sql.$idcol", $rec_id)->getOne($sql, array('approval', 'user_approve', 'tanggal_perubahan'));
+					if (($latest['approval'] ?? null) === 'Approved') {
+						$approved_by = trim((string) ($latest['user_approve'] ?? '')) ?: 'Supervisor lain';
+						$this->set_flash_msg("Checklist ini sudah disetujui lebih dulu oleh {$approved_by}. Tindakan Anda tidak menimpa data.", 'warning');
+					} else {
+						$this->set_flash_msg('Checklist tidak dapat diperbarui karena statusnya berubah. Silakan muat ulang halaman.', 'warning');
+					}
+					return $this->redirect($table);
 				}
 			}
 		}

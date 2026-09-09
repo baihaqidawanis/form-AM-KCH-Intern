@@ -125,7 +125,7 @@ class Menu
 				),
 				array(
 					'path' => 'best_pack',
-					'label' => 'Inkjet Kemas & Best Pack',
+					'label' => 'Best Pack',
 					'icon' => ''
 				),
 				array(

@@ -400,6 +400,62 @@
 					checkDeactivation();
 				});
 			})();
+			// Cegah double-submit pada koneksi lambat tanpa mengabaikan validasi HTML5.
+			(function(){
+				$(function(){
+					$(document).on('submit', 'form', function(e){
+						var form = this;
+						var $form = $(form);
+						if ($form.data('antiDoubleSubmitLocked')) {
+							e.preventDefault();
+							return false;
+						}
+						if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+							if (typeof form.reportValidity === 'function') {
+								form.reportValidity();
+							}
+							return;
+						}
+						var $buttons = $form.find('button[type="submit"], input[type="submit"]');
+						if (!$buttons.length) {
+							return;
+						}
+						$form.data('antiDoubleSubmitLocked', true);
+						$buttons.each(function(){
+							var $button = $(this);
+							$button.data('antiDoubleSubmitOriginalDisabled', $button.prop('disabled'));
+							if ($button.is('button')) {
+								$button.data('antiDoubleSubmitLabel', $button.html());
+								$button.html('<i class="fa fa-spinner fa-spin mr-1"></i> Memproses...');
+							} else {
+								$button.data('antiDoubleSubmitLabel', $button.val());
+								$button.val('Memproses...');
+							}
+							$button.prop('disabled', true).addClass('disabled').attr('aria-busy', 'true');
+						});
+						setTimeout(function(){
+							if (!$form.data('antiDoubleSubmitLocked')) {
+								return;
+							}
+							$buttons.each(function(){
+								var $button = $(this);
+								var wasDisabled = $button.data('antiDoubleSubmitOriginalDisabled');
+								if (!wasDisabled) {
+									$button.prop('disabled', false).removeClass('disabled').removeAttr('aria-busy');
+								}
+								if ($button.is('button')) {
+									$button.html($button.data('antiDoubleSubmitLabel'));
+								} else {
+									$button.val($button.data('antiDoubleSubmitLabel'));
+								}
+								$button.removeData('antiDoubleSubmitLabel').removeData('antiDoubleSubmitOriginalDisabled');
+							});
+							$form.removeData('antiDoubleSubmitLocked');
+						}, 15000);
+					});
+				});
+			})();
+
 		</script>
 		<?php 
 			Html ::  page_js('popper.js');

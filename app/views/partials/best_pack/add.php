@@ -4,6 +4,7 @@ $tag_options = $model->sig_kategori_tag_option_list();
 $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
+$unit_options = $model->GetModel()->rawQuery("SELECT id, nama_mesin FROM mesin WHERE nama_mesin LIKE 'Kemas Best Pack - %' OR nama_mesin LIKE 'Best Pack (non Inkjet) - %' ORDER BY id ASC");
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data
@@ -25,7 +26,7 @@ $page_element_id = 'best_pack-add-' . random_str();
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Add Autonomous Maintenance Inkjet Kemas &amp; Best Pack</h4>
+      <h4 class="record-title">Add Autonomous Maintenance Best Pack</h4>
       <div>No: CR-PR-PR-1203.00 (25 Okt 2021)</div>
     </div>
   </div>
@@ -60,7 +61,16 @@ $page_element_id = 'best_pack-add-' . random_str();
 <?php } ?>
           <form id="best_pack-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("best_pack/add?csrf_token=$csrf_token") ?>" method="post"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
-            <input type="hidden" name="mesin" value="35">
+            <div class="form-group">
+              <label for="ctrl-mesin">Unit Mesin <span class="text-danger">*</span></label>
+              <select required class="custom-select" id="ctrl-mesin" name="mesin">
+                <option value="" disabled selected>Pilih Mesin ...</option>
+                <?php foreach ($unit_options as $unit) { $is_non_inkjet = strpos($unit['nama_mesin'], 'Best Pack (non Inkjet) - ') === 0; ?>
+                  <option value="<?php echo $unit['id']; ?>" data-non-inkjet="<?php echo $is_non_inkjet ? '1' : '0'; ?>"><?php echo htmlspecialchars($unit['nama_mesin']); ?></option>
+                <?php } ?>
+              </select>
+              <small class="form-text text-muted">Unit Kemas Best Pack memakai Inkjet; unit Best Pack non Inkjet tidak memakai Print Head Inkjet.</small>
+            </div>
 
             <?php foreach ($sections as $section_title => $section_fields) {
   $visible_fields = array_filter($section_fields, function($f) use ($parts) { return isset($parts[$f]); });
@@ -176,6 +186,15 @@ $page_element_id = 'best_pack-add-' . random_str();
 </section>
 <script>
 $(function () {
+  function toggleInkjetPart() {
+    var isNonInkjet = $('#ctrl-mesin option:selected').data('non-inkjet') === 1;
+    var inkjetCard = $('.part-card[data-part="print_head_inkjet"]');
+    inkjetCard.toggle(!isNonInkjet);
+    inkjetCard.find('input, select, textarea').prop('disabled', isNonInkjet);
+  }
+  $('#ctrl-mesin').on('change', toggleInkjetPart);
+  toggleInkjetPart();
+
   $('.part-kondisi').on('change', function () {
     var card = $(this).closest('.part-card'),
         box = card.find('.kendala-box'),

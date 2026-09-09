@@ -21,6 +21,7 @@ test-results/
 .phpunit.result.cache
 error.log
 
-scratch/legacy-artifacts/
+scratch/
+helpers/cache/
 
 vendor/

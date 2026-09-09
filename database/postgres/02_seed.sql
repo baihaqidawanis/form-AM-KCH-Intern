@@ -69,7 +69,18 @@ INSERT INTO "mesin" ("id", "nama_mesin") OVERRIDING SYSTEM VALUE VALUES
   ('80', 'MT Silverson'),
   ('81', 'MT Tetrapak 1'),
   ('82', 'MT Tetrapak 2'),
-  ('83', 'MT Tetrapak 3')
+  ('83', 'MT Tetrapak 3'),
+  ('84', 'Kemas Best Pack - Ilapak 1'),
+  ('85', 'Kemas Best Pack - SIG 5'),
+  ('86', 'Kemas Best Pack - SIG 6'),
+  ('87', 'Kemas Best Pack - Joyea'),
+  ('88', 'Best Pack (non Inkjet) - Jinsung 1'),
+  ('89', 'Best Pack (non Inkjet) - Jinsung 2'),
+  ('90', 'Best Pack (non Inkjet) - Jinsung 3'),
+  ('91', 'Best Pack (non Inkjet) - Jinsung 4'),
+  ('92', 'Best Pack (non Inkjet) - Jinsung 5'),
+  ('93', 'Best Pack (non Inkjet) - Unifill B'),
+  ('94', 'Best Pack (non Inkjet) - Ilapak 11')
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"mesin"', 'id'), COALESCE((SELECT MAX("id") FROM "mesin"), 1));
 

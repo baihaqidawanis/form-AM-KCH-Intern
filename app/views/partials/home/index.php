@@ -140,7 +140,7 @@ $current_page = $this->set_current_page_link();
                                     $wrapping_pack_machines = array(
                                         array('path' => 'chimei', 'label' => 'Chimei', 'count' => $comp_model->getcount_chimei()),
                                         array('path' => 'temach', 'label' => 'Temach', 'count' => $comp_model->getcount_temach()),
-                                        array('path' => 'best_pack', 'label' => 'Inkjet Kemas & Best Pack', 'count' => $comp_model->getcount_best_pack()),
+                                        array('path' => 'best_pack', 'label' => 'Best Pack', 'count' => $comp_model->getcount_best_pack()),
                                         array('path' => 'check_weigher', 'label' => 'Check Weigher', 'count' => $comp_model->getcount_check_weigher()),
                                         array('path' => 'conveyor_sig', 'label' => 'Conveyor SIG', 'count' => $comp_model->getcount_conveyor_sig()),
                                     );

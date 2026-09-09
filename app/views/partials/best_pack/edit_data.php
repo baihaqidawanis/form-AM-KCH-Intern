@@ -23,7 +23,7 @@ $rec_id = !empty($data['id_best_pack']) ? $data['id_best_pack'] : null;
 <section class="page" id="<?php echo $page_element_id; ?>">
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
-      <h4 class="record-title">Edit Data AM Inkjet Kemas & Best Pack</h4>
+      <h4 class="record-title">Edit Data AM Best Pack</h4>
     </div>
   </div>
   <div class="container-fluid">

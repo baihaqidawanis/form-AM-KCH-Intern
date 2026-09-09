@@ -384,7 +384,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-4-Page3" role="tabpanel">
-                                    <h4 >Inkjet Kemas & Best Pack</h4>
+                                    <h4 >Best Pack</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("best_pack/list2?limit_count=20" , array( 'show_header' => false ));
