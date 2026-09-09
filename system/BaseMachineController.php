@@ -574,6 +574,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$data['all_approved'] = $all_approved;
 		$this->view->page_title = 'Check Sheet ' . $this->displayName;
 		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-P' . $period, 'landscape');
+		$this->view->report_layout = 'check_sheet_layout.php';
 		return $this->render_view('machine_period_report.php', $data);
 	}
 

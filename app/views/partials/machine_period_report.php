@@ -67,8 +67,8 @@ if (!function_exists('get_period_image_src')) {
 <?php } else { ?>
   <div id="page-report-body" class="check-sheet">
     <style>
-      @page { size: A4 landscape; margin: 6mm; }
-      .check-sheet { font-family: Arial, sans-serif; color: #000; font-size: 7px; }
+      @page { size: A4 landscape; margin: 5mm; }
+      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: 7px; }
       .check-sheet table { width: 100%; border-collapse: collapse; margin-bottom: 0px; }
       .check-sheet th, .check-sheet td { border: 1px solid #000; padding: 2px 3px; vertical-align: middle; }
       .check-sheet .head { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.2; }
@@ -98,7 +98,7 @@ if (!function_exists('get_period_image_src')) {
           <em style="font-size:8px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
         <td style="width:18%; padding:0; vertical-align:top; border:none;">
-          <table style="width:100%; height:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
+          <table style="width:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
             <tr>
               <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:8px; padding:2px;">
                 Diperiksa Oleh

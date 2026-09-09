@@ -688,7 +688,8 @@ class BaseView
 			$orignalLibEntityLoader = libxml_disable_entity_loader(true);
 		}
 		$doc = new \DOMDocument();
-		@$doc->loadHTML($page_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOEMPTYTAG);
+		$encoded_html = mb_convert_encoding($page_html, 'HTML-ENTITIES', 'UTF-8');
+		@$doc->loadHTML($encoded_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOEMPTYTAG);
 		if (\PHP_VERSION_ID < 80000) {
 			libxml_disable_entity_loader($orignalLibEntityLoader);
 		}
