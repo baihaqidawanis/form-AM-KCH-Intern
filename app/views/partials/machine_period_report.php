@@ -133,8 +133,10 @@ if (!function_exists('get_period_image_src')) {
   <div id="page-report-body" class="check-sheet">
     <style>
       @page { size: A4 landscape; margin: <?php echo $css_page_margin; ?>; }
-      html, body { margin: 0; padding: <?php echo $css_page_margin; ?>; font-family: "DejaVu Sans", Arial, sans-serif; }
-      @media print { body { padding: 0 !important; } }
+      @media print {
+        html, body { margin: 0; padding: <?php echo $css_page_margin; ?>; font-family: "DejaVu Sans", Arial, sans-serif; }
+        body { padding: 0 !important; }
+      }
       .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; }
       table, .check-sheet table { width: 100%; margin: 0 auto; border-collapse: collapse; margin-bottom: 0px; box-sizing: border-box; }
       th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: <?php echo $css_pad; ?>; vertical-align: middle; }
@@ -151,6 +153,7 @@ if (!function_exists('get_period_image_src')) {
       .cell-deactive { background: #fff3cd !important; }
       .signature { height: <?php echo $css_sig_h; ?>; }
     </style>
+
     <table>
       <tr>
         <td style="width:14%; text-align:center; vertical-align:middle; padding:2px;">

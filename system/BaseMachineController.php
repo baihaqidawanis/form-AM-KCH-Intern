@@ -366,7 +366,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		try {
 			$db = $this->GetModel();
-			$db->where('mesin_id', intval($mesin_id))->where('started_at', $operational_date . ' 23:59:59', '<=')->where('(ended_at IS NULL OR ended_at >= ?)', array($operational_date . ' 00:00:00'));
+			$db->where('mesin_id', intval($mesin_id))->where('ended_at', null, 'IS');
 			return $db->has('riwayat_status_mesin');
 		} catch (Throwable $e) { error_log('Deactivation guard skipped: ' . $e->getMessage()); return false; }
 	}
@@ -457,7 +457,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			SELECT r.mesin_id, m.nama_mesin, r.reason, r.started_at, r.notes, r.action_by_username
 			FROM riwayat_status_mesin r
 			JOIN mesin m ON m.id = r.mesin_id
-			WHERE r.started_at <= ? AND (r.ended_at IS NULL OR r.ended_at >= ?)
+			WHERE r.ended_at IS NULL AND ?::text IS NOT NULL AND ?::text IS NOT NULL
 		", array($today . ' 23:59:59', $today . ' 00:00:00'));
 
 		$deactive_map = array();
@@ -547,13 +547,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$day_str = sprintf('%04d-%02d-%02d', $year, $month, $d_num);
 			foreach ($deactivation_rows as $dr) {
 				$s_date = substr($dr['started_at'], 0, 10);
-				$e_date = !empty($dr['ended_at']) ? substr($dr['ended_at'], 0, 10) : $today_str;
-				if ($day_str >= $s_date && $day_str <= $e_date) {
+				// Aturan kuning:
+				// - ended_at NULL (masih deaktif): kuning hanya untuk hari yang SUDAH LEWAT
+				//   atau HARI INI. Hari besok/future tetap putih karena belum pasti masih down.
+				//   Besoknya, jika masih deaktif, baru otomatis kuning.
+				// - ended_at ada: kuning jika deaktivasi melewati tengah malam hari itu
+				//   (artinya masih down di akhir hari). Jika mulai & selesai hari yang sama → putih.
+				$still_active_at_end_of_day = empty($dr['ended_at'])
+					? ($day_str >= $s_date && $day_str <= $today_str) // sudah lewat/hari ini & masih aktif
+					: ($day_str >= $s_date && substr($dr['ended_at'], 0, 10) > $day_str); // berakhir setelah hari ini
+				if ($still_active_at_end_of_day) {
 					$deactivated_days[$d_num] = $dr;
 					break;
 				}
 			}
 		}
+
 
 		$data = array(
 			'selection_only' => false,
