@@ -104,30 +104,30 @@ if (!function_exists('get_period_image_src')) {
       $css_page_margin = '2.5mm 4mm';
   } elseif ($part_count > 9) {
       // 10-12 parts - medium compact
-      $css_sheet_fs = '6.6px';
-      $css_pad = '1.8px 2px';
+      $css_sheet_fs = '6.5px';
+      $css_pad = '1.5px 1.8px';
       $css_head_fs = '9px';
+      $css_subhead_fs = '7.2px';
+      $css_img_h = '18px';
+      $css_img_w = '36px';
+      $css_sig_h = '16px';
+      $css_meta_h = '13px';
+      $css_section_fs = '6.6px';
+      $css_section_pad = '1.2px';
+      $css_page_margin = '3.5mm 5mm';
+  } else {
+      // 1-9 parts (e.g. Chimei, Cosmec, Granulator) - perfectly balanced to avoid bottom cutoff
+      $css_sheet_fs = '6.8px';
+      $css_pad = '2px 2px';
+      $css_head_fs = '9.5px';
       $css_subhead_fs = '7.5px';
-      $css_img_h = '20px';
-      $css_img_w = '38px';
+      $css_img_h = '22px';
+      $css_img_w = '40px';
       $css_sig_h = '18px';
       $css_meta_h = '14px';
       $css_section_fs = '6.8px';
       $css_section_pad = '1.5px';
-      $css_page_margin = '3mm 4.5mm';
-  } else {
-      // 1-9 parts (e.g. Chimei, Cosmec, Granulator) - generous height to fill paper
-      $css_sheet_fs = '7px';
-      $css_pad = '3.5px 2.5px';
-      $css_head_fs = '10px';
-      $css_subhead_fs = '8px';
-      $css_img_h = '28px';
-      $css_img_w = '44px';
-      $css_sig_h = '24px';
-      $css_meta_h = '16px';
-      $css_section_fs = '7px';
-      $css_section_pad = '2px';
-      $css_page_margin = '3.5mm 5mm';
+      $css_page_margin = '4mm 6mm';
   }
 ?>
   <div id="page-report-body" class="check-sheet">

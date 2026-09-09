@@ -326,19 +326,19 @@ class BaseView
 				$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
 				$dompdf->render();
 				ob_end_clean();
+				$pdf_output = $dompdf->output();
 				if (!empty($this->report_rotate)) {
-					$pdf_output = $dompdf->output();
 					$rot = intval($this->report_rotate);
 					$pdf_output = preg_replace('/\/Type\s*\/Page\b/', '/Type /Page /Rotate ' . $rot, $pdf_output);
+				}
+				if (!headers_sent()) {
 					header("Cache-Control: private");
 					header("Content-Type: application/pdf");
 					header("Content-Disposition: inline; filename=\"$filename.pdf\"");
 					header("Content-Length: " . strlen($pdf_output));
 					header("Connection: close");
-					echo $pdf_output;
-				} else {
-					$dompdf->stream("$filename.pdf");
 				}
+				echo $pdf_output;
 				return;
 			} catch (Throwable $pdf_err) {
 				ob_end_clean();
@@ -352,19 +352,19 @@ class BaseView
 					$dompdf->setPaper($this->report_paper_size, $this->report_orientation);
 					$dompdf->render();
 					ob_end_clean();
+					$pdf_output = $dompdf->output();
 					if (!empty($this->report_rotate)) {
-						$pdf_output = $dompdf->output();
 						$rot = intval($this->report_rotate);
 						$pdf_output = preg_replace('/\/Type\s*\/Page\b/', '/Type /Page /Rotate ' . $rot, $pdf_output);
+					}
+					if (!headers_sent()) {
 						header("Cache-Control: private");
 						header("Content-Type: application/pdf");
 						header("Content-Disposition: inline; filename=\"$filename.pdf\"");
 						header("Content-Length: " . strlen($pdf_output));
 						header("Connection: close");
-						echo $pdf_output;
-					} else {
-						$dompdf->stream("$filename.pdf");
 					}
+					echo $pdf_output;
 					return;
 				}
 				throw $pdf_err;
