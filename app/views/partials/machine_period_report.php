@@ -97,8 +97,8 @@ if (!function_exists('get_period_image_src')) {
           <span class="subhead">Check Sheet Kerja</span><br>
           <em style="font-size:8px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
-        <td style="width:18%; padding:0; vertical-align:top; border:1px solid #000;">
-          <table style="width:100%; height:100%; border-collapse:collapse; margin:0; border:none;">
+        <td style="width:18%; padding:0; vertical-align:top; border:none;">
+          <table style="width:100%; height:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
             <tr>
               <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:8px; padding:2px;">
                 Diperiksa Oleh
