@@ -6,12 +6,32 @@
 defined('ROOT') or exit('No direct script access allowed');
 class ACL
 {
-	
+	/**
+	 * Pemetaan area penugasan user ke modul mesin AM.
+	 * Key disimpan dalam format normal agar pencocokan case-insensitive dan
+	 * toleran terhadap spasi berlebih.
+	 * @var array<string,array<int,string>>
+	 */
+	public static $area_machines = array(
+		'compounding' => array(
+			'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer', 'granulator',
+			'storage_tank', 'storage_tank_tetrapak', 'mixing_tank'
+		),
+		'filling' => array(
+			'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b'
+		),
+		'kemas' => array(
+			'jihcheng', 'jinsung_1_4', 'jinsung_5'
+		),
+		'wrapping dan pack cartoning' => array(
+			'chimei', 'temach', 'best_pack', 'check_weigher', 'conveyor_sig'
+		),
+	);
 
 	/**
 	 * Array of user roles (role_id) and page access, sesuai matrix akses URS
 	 * (Tabel 4 — Administrator, Manager, Supervisor, Staff/Operator).
-	 * Key = role_id (lihat tabel `roles`: 1=Administrator, 2=Manager, 3=Supervisor, 4=Staff/Operator).
+	 * Key = role_id: 1=Administrator, 2=Manager, 3=Supervisor, 4=Staff, 5=Operator.
 	 * Value "*" = akses semua halaman & aksi untuk role tsb.
 	 * Value array asosiatif per halaman: "*" = semua aksi, atau array aksi spesifik (list/list2/view/add/edit/...).
 	 * Halaman yang tidak didaftarkan untuk suatu role otomatis FORBIDDEN (default-deny).
@@ -29,58 +49,87 @@ class ACL
 			'cosmec' => '*', 'fbd_jaw_chuan' => '*', 'fbd_glatt' => '*', 'supermixer' => '*', 'granulator' => '*', 'storage_tank' => '*', 'storage_tank_tetrapak' => '*', 'mixing_tank' => '*',
 			'approval' => '*',
 			'roles' => '*', 'tag' => '*',
+			'users' => array('export_specimen'),
 		),
 
 		// 2 = Manager: akses Home, AM (view saja, tidak bisa tambah form), Approval, Panduan (URS 2.2 & 4.2)
 		2 => array(
 			'master_mesin' => '*',
-			'sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'joeya' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'illapak_1_2' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'illapak_3_12' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'unifill_b' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'chimei' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'temach' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'check_weigher' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'conveyor_sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'jihcheng' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'jinsung_1_4' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'jinsung_5' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'best_pack' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'cosmec' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'fbd_glatt' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'supermixer' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'granulator' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'storage_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
-			'mixing_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report'),
+			'sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'joeya' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_1_2' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_3_12' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'unifill_b' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'chimei' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'temach' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'check_weigher' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'conveyor_sig' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jihcheng' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_1_4' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_5' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'best_pack' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'cosmec' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_glatt' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'supermixer' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'granulator' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'mixing_tank' => array('list', 'list2', 'view', 'edit', 'editfield', 'edit_data', 'delete', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
 			'approval' => '*',
+			'users' => array('export_specimen'),
 		),
 
-		// 4 = Staff/Operator: akses Home, AM (view + isi form + edit_data record sendiri), Panduan (URS 2.2 & 3.1) — tidak approval/delete
+		// 4 = Staff: akses Home, AM (view + isi form + edit_data record sendiri), Panduan (URS 2.2 & 3.1)
 		4 => array(
-			'sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'joeya' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'illapak_1_2' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'illapak_3_12' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'unifill_b' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'chimei' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'temach' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'check_weigher' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'conveyor_sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'jihcheng' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'jinsung_1_4' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'jinsung_5' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'best_pack' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'cosmec' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'fbd_glatt' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'supermixer' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'granulator' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'storage_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
-			'mixing_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report'),
+			'sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'joeya' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_1_2' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_3_12' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'unifill_b' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'chimei' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'temach' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'check_weigher' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'conveyor_sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jihcheng' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_1_4' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_5' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'best_pack' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'cosmec' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_glatt' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'supermixer' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'granulator' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'mixing_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'users' => array('export_specimen'),
+		),
+
+		// 5 = Operator: akses operasional AM + TTD Digital Operator
+		5 => array(
+			'sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'joeya' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_1_2' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'illapak_3_12' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'unifill_b' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'chimei' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'temach' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'check_weigher' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'conveyor_sig' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jihcheng' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_1_4' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'jinsung_5' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'best_pack' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'cosmec' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_jaw_chuan' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'fbd_glatt' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'supermixer' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'granulator' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'storage_tank_tetrapak' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'mixing_tank' => array('list', 'list2', 'view', 'add', 'edit_data', 'daily_report', 'period_report', 'sign_period', 'cancel_period_signature'),
+			'users' => array('export_specimen'),
 		),
 	);
 
@@ -95,7 +144,7 @@ class ACL
 	 * Halaman ini selalu boleh diakses siapapun yang sudah login, apapun role-nya.
 	 * @var array
 	 */
-	public static $exclude_page_check = array("", "index", "home", "account", "info", "masterdetail", "panduan_pengisian_am");
+	public static $exclude_page_check = array("", "index", "home", "account", "info", "masterdetail", "panduan_pengisian_am", "verify");
 
 	/**
 	 * Init page properties
@@ -125,12 +174,16 @@ class ACL
 			$arr_path = explode("/", $path);
 			$page = strtolower($arr_path[0]);
 
+			$user_role = intval(USER_ROLE); // Get user defined role_id (int) from session value
+			if (!self::is_machine_allowed($page, $user_role, get_active_user('area'))) {
+				return FORBIDDEN;
+			}
+
 			//If user is accessing excluded access contrl pages
 			if (in_array($page, self::$exclude_page_check)) {
 				return AUTHORIZED;
 			}
 
-			$user_role = USER_ROLE; // Get user defined role_id (int) from session value
 			if (array_key_exists($user_role, $rp)) {
 				$action = (!empty($arr_path[1]) ? $arr_path[1] : "list");
 				if ($action == "index") {
@@ -150,6 +203,37 @@ class ACL
 				return NOROLE;
 			}
 		}
+	}
+
+	/** Normalisasi nama area dari data user. */
+	private static function normalize_area($area)
+	{
+		return strtolower(trim((string)preg_replace('/\s+/', ' ', (string)$area)));
+	}
+
+	/**
+	 * Defense tunggal untuk ACL route dan controller API.
+	 * Role selain Staff/Operator tidak dibatasi area.
+	 */
+	public static function is_machine_allowed($page, $user_role = null, $user_area = null)
+	{
+		$role = $user_role === null ? intval(USER_ROLE) : intval($user_role);
+		if (!in_array($role, array(4, 5), true)) {
+			return true;
+		}
+
+		$machine = strtolower(trim((string)$page, '/'));
+		$machine = explode('/', $machine)[0];
+		$all_machines = array();
+		foreach (self::$area_machines as $machines) {
+			$all_machines = array_merge($all_machines, $machines);
+		}
+		if (!in_array($machine, $all_machines, true)) {
+			return true;
+		}
+
+		$area = self::normalize_area($user_area === null ? get_active_user('area') : $user_area);
+		return isset(self::$area_machines[$area]) && in_array($machine, self::$area_machines[$area], true);
 	}
 
 	/**

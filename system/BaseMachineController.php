@@ -585,11 +585,75 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 
+		// Kumpulkan paraf penanggung jawab terakhir: revisi mengalihkan atribusi
+		// dari pembuat awal kepada user_perubah.
+		$daily_paraf = array();
+		$daily_operators = array();
+		$operator_names = array();
+		foreach ($rows as $row) {
+			$day = intval((new DateTime($row['operational_date']))->format('j'));
+			$active_user = !empty($row['user_perubah']) ? $row['user_perubah'] : ($row['user_create'] ?? '');
+			if ($active_user !== '') {
+				$daily_operators[$day] = $active_user;
+				$operator_names[] = $active_user;
+			}
+		}
+
+		$operator_profiles = array();
+		if (!empty($operator_names)) {
+			$unique_ops = array_values(array_unique($operator_names));
+			$placeholders = implode(',', array_fill(0, count($unique_ops), '?'));
+			$user_records = $db->rawQuery("SELECT id_user, username, nama, paraf_image, user_initials FROM users WHERE username IN ($placeholders) OR nama IN ($placeholders)", array_merge($unique_ops, $unique_ops));
+			foreach ($user_records as $ur) {
+				$operator_profiles[$ur['username']] = $ur;
+				$operator_profiles[$ur['nama']] = $ur;
+			}
+		}
+
+		foreach ($daily_operators as $day => $op_identifier) {
+			$prof = $operator_profiles[$op_identifier] ?? null;
+			$valid_paraf = $prof && is_valid_base64_png_data_uri($prof['paraf_image'] ?? null);
+			$fallback = $prof ? 'ID:' . intval($prof['id_user']) : 'ID:?';
+			$full_name = trim((string)($prof['nama'] ?? $op_identifier));
+			$nik = trim((string)($prof['username'] ?? $op_identifier));
+
+			$daily_paraf[$day] = array(
+				'user_create' => $op_identifier,
+				'paraf_image' => $valid_paraf ? $prof['paraf_image'] : null,
+				'user_initials' => $fallback,
+				'tooltip' => $full_name . ' | NIK: ' . $nik
+			);
+		}
+
+		// Hitung hash dokumen & ambil data tanda tangan digital periode
+		$doc_hash = QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks);
+		$signature = QrSignatureHelper::getPeriodSignature($this->machineKey, $mesin, $month, $year, $period);
+
+		$operator_qr = null;
+		if ($signature && !empty($signature['operator_token'])) {
+			$operator_qr = QrSignatureHelper::generateQrBase64(SITE_ADDR . 'verify/signature/' . $signature['operator_token']);
+		}
+
+		$spv_qr = null;
+		if ($signature && !empty($signature['spv_token'])) {
+			$spv_qr = QrSignatureHelper::generateQrBase64(SITE_ADDR . 'verify/signature/' . $signature['spv_token']);
+		}
+
+		$current_user_role = intval(get_active_user('user_role_id'));
+		$can_sign_operator = in_array($current_user_role, array(4, 5), true); // Staff, Operator
+		$can_sign_spv = in_array($current_user_role, array(2, 3), true); // Manager, SPV
+		$can_cancel_own_operator = !empty($signature['operator_token'])
+			&& empty($signature['spv_token'])
+			&& intval($signature['operator_id'] ?? 0) === intval(USER_ID);
+		$can_cancel_own_spv = !empty($signature['spv_token'])
+			&& intval($signature['spv_id'] ?? 0) === intval(USER_ID);
+
 		$data = array(
 			'selection_only' => false,
 			'machine_key' => $this->machineKey,
 			'display_name' => $this->displayName,
 			'machine_name' => $machine['nama_mesin'] ?? '-',
+			'mesin_id' => $mesin,
 			'year' => $year,
 			'month' => $month,
 			'period' => $period,
@@ -599,7 +663,16 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'part_details' => $part_details,
 			'checks' => $checks,
 			'deactivated_days' => $deactivated_days,
-			'deactivation_records' => $deactivation_rows
+			'deactivation_records' => $deactivation_rows,
+			'daily_paraf' => $daily_paraf,
+			'doc_hash' => $doc_hash,
+			'period_signature' => $signature,
+			'operator_qr' => $operator_qr,
+			'spv_qr' => $spv_qr,
+			'can_sign_operator' => $can_sign_operator,
+			'can_sign_spv' => $can_sign_spv,
+			'can_cancel_own_operator' => $can_cancel_own_operator,
+			'can_cancel_own_spv' => $can_cancel_own_spv
 		);
 		$data['all_approved'] = $all_approved;
 		$this->view->page_title = 'Check Sheet ' . $this->displayName;
@@ -681,14 +754,34 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
+		$db->where($idcol, $rec_id);
+		$existing_record = $db->getOne($sql);
+		if (!$existing_record) {
+			$this->set_page_error($db->getLastError() ?: 'Data form AM tidak ditemukan.');
+			return $this->redirect($table);
+		}
 
 		//URS 3.1: Manager/Supervisor/Staff-Operator cuma boleh edit_data submission sendiri; Administrator bebas.
-		$db->where($idcol, $rec_id);
-		$owner_row = $db->getOne($sql, 'user_create');
-		$is_owner = (!empty($owner_row) && $owner_row['user_create'] === USER_NAME);
+		$is_owner = (($existing_record['user_create'] ?? null) === USER_NAME);
 		if (!$is_owner && intval(get_active_user('user_role_id')) !== 1) {
 			http_response_code(403);
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
+		}
+
+		$op_date = new DateTime($existing_record['operational_date']);
+		$m_month = intval($op_date->format('n'));
+		$m_year = intval($op_date->format('Y'));
+		$m_period = intval($op_date->format('j')) <= 16 ? 1 : 2;
+		$sig = QrSignatureHelper::getPeriodSignature(
+			$this->machineKey,
+			intval($existing_record['mesin']),
+			$m_month,
+			$m_year,
+			$m_period
+		);
+		if ($sig && (!empty($sig['operator_token']) || !empty($sig['spv_token']))) {
+			$this->set_flash_msg('Form AM pada periode ini telah ditandatangani secara digital. Untuk melakukan revisi data, batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
+			return $this->redirect($table . '/view/' . $rec_id);
 		}
 
 		if ($formdata) {
@@ -699,7 +792,6 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			foreach (array_merge($this->part_fields(), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
 			// Edit Data tidak selalu menampilkan extra field (contohnya shift). Pertahankan nilai
 			// yang tersimpan agar validasi required tidak gagal dan kolom lama tidak tertimpa.
-			$existing_record = $db->where($idcol, $rec_id)->getOne($sql);
 			foreach ($this->extraFields as $ef) {
 				if (!isset($postdata[$ef]) && isset($existing_record[$ef])) { $postdata[$ef] = $existing_record[$ef]; }
 			}
@@ -866,5 +958,213 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->set_flash_msg($db->getLastError(), 'danger');
 		}
 		return $this->redirect($table);
+	}
+
+	/**
+	 * Sign period document digitally (Operator or SPV)
+	 */
+	function sign_period()
+	{
+		if (!is_post_request()) {
+			http_response_code(405);
+			render_json(array('success' => false, 'message' => 'Metode request tidak diizinkan.'));
+			return;
+		}
+
+		$request = $this->post ?? new stdClass;
+		$mesin = intval($request->mesin ?? 0);
+		$year = intval($request->year ?? 0);
+		$month = intval($request->month ?? 0);
+		$period = intval($request->period ?? 0);
+		$role_type = trim((string)($request->role_type ?? '')); // 'operator' or 'spv'
+
+		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !in_array($role_type, array('operator', 'spv'), true)) {
+			http_response_code(400);
+			render_json(array('success' => false, 'message' => 'Parameter tidak lengkap.'));
+			return;
+		}
+
+		$current_user_role = intval(get_active_user('user_role_id'));
+		$user_id = USER_ID;
+		if (!ACL::is_machine_allowed($this->machineKey, $current_user_role, get_active_user('area'))) {
+			http_response_code(403);
+			render_json(array('success' => false, 'message' => 'Mesin ini berada di luar area penugasan Anda.'));
+			return;
+		}
+
+		if ($role_type === 'operator' && !in_array($current_user_role, array(4, 5), true)) {
+			http_response_code(403);
+			render_json(array('success' => false, 'message' => 'Hanya role Operator atau Staff yang dapat menandatangani sebagai Operator Produksi.'));
+			return;
+		}
+
+		if ($role_type === 'spv' && !in_array($current_user_role, array(2, 3), true)) {
+			http_response_code(403);
+			render_json(array('success' => false, 'message' => 'Hanya role Supervisor atau Manager yang dapat menandatangani sebagai SPV/Fasilitator.'));
+			return;
+		}
+
+		// Calculate current document hash
+		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
+		$start_day = $period === 1 ? 1 : 17;
+		$end_day = $period === 1 ? 16 : intval($first->format('t'));
+		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
+		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
+
+		$db = $this->GetModel();
+		$sql = $this->sqlTable();
+		$idcol = $this->idColumn();
+		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('COALESCE(updated_at, created_at)', 'ASC')->get($sql);
+
+		$checks = array();
+		foreach ($rows as $row) {
+			$day = intval((new DateTime($row['operational_date']))->format('j'));
+			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
+				if (!empty($row[$field])) {
+					$shift_key = trim((string)($row['shift'] ?? ''));
+					$shift_key = $shift_key === '' ? '__default__' : $shift_key;
+					$checks[$field][$day][$shift_key] = $row[$field];
+				}
+			}
+		}
+
+		$doc_hash = QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks);
+		$result = QrSignatureHelper::savePeriodSignature($this->machineKey, $mesin, $month, $year, $period, $user_id, $role_type, $doc_hash);
+
+		if ($result['success']) {
+			$this->write_to_log('sign_period', 'true');
+			$verificationUrl = SITE_ADDR . 'verify/signature/' . $result['token'];
+			$qrBase64 = QrSignatureHelper::generateQrBase64($verificationUrl);
+			render_json(array(
+				'success' => true,
+				'message' => 'Dokumen berhasil ditandatangani secara digital!',
+				'token' => $result['token'],
+				'qr_code' => $qrBase64,
+				'verify_url' => $verificationUrl
+			));
+			return;
+		}
+
+		render_json(array('success' => false, 'message' => $result['error'] ?? 'Gagal menyimpan tanda tangan digital.'));
+	}
+
+	/** Batalkan tanda tangan periode untuk membuka revisi, dengan audit trail wajib. */
+	function cancel_period_signature()
+	{
+		if (!is_post_request()) {
+			http_response_code(405);
+			render_json(array('success' => false, 'message' => 'Metode request tidak diizinkan.'));
+			return;
+		}
+
+		$current_user_role = intval(get_active_user('user_role_id'));
+
+		$request = $this->post ?? new stdClass;
+		$mesin = intval($request->mesin ?? 0);
+		$year = intval($request->year ?? 0);
+		$month = intval($request->month ?? 0);
+		$period = intval($request->period ?? 0);
+		$role_type = trim((string)($request->role_type ?? ''));
+		$reason = trim((string)($request->reason ?? ''));
+
+		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !in_array($role_type, array('operator', 'spv'), true)) {
+			http_response_code(400);
+			render_json(array('success' => false, 'message' => 'Parameter pembatalan tidak valid.'));
+			return;
+		}
+		if ($reason === '' || mb_strlen($reason) > 500) {
+			http_response_code(422);
+			render_json(array('success' => false, 'message' => 'Alasan pembatalan wajib diisi dan maksimal 500 karakter.'));
+			return;
+		}
+		if (!ACL::is_machine_allowed($this->machineKey, $current_user_role, get_active_user('area'))) {
+			http_response_code(403);
+			render_json(array('success' => false, 'message' => 'Mesin ini berada di luar area penugasan Anda.'));
+			return;
+		}
+
+		$db = $this->GetModel();
+		$db->startTransaction();
+		try {
+			$signature = $db->rawQueryOne(
+				'SELECT * FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = ? AND tahun = ? AND periode = ? FOR UPDATE',
+				array($this->machineKey, $mesin, $month, $year, $period)
+			);
+			$token_column = $role_type . '_token';
+			if (!$signature || empty($signature[$token_column])) {
+				$this->rollbackTransactionSafely($db, 'cancel period signature not found');
+				http_response_code(404);
+				render_json(array('success' => false, 'message' => 'Tanda tangan yang akan dibatalkan tidak ditemukan.'));
+				return;
+			}
+			if ($role_type === 'operator' && intval($signature['operator_id'] ?? 0) !== intval(USER_ID)) {
+				$this->rollbackTransactionSafely($db, 'cancel operator signature owner mismatch');
+				http_response_code(403);
+				render_json(array('success' => false, 'message' => 'Hanya operator penandatangan dokumen ini yang berhak membatalkan tanda tangan.'));
+				return;
+			}
+			if ($role_type === 'operator' && !empty($signature['spv_token'])) {
+				$this->rollbackTransactionSafely($db, 'cancel operator signature dependency');
+				http_response_code(409);
+				render_json(array('success' => false, 'message' => 'Batalkan TTD SPV terlebih dahulu sebelum membatalkan TTD Operator'));
+				return;
+			}
+			if ($role_type === 'spv' && intval($signature['spv_id'] ?? 0) !== intval(USER_ID)) {
+				$this->rollbackTransactionSafely($db, 'cancel spv signature owner mismatch');
+				http_response_code(403);
+				render_json(array('success' => false, 'message' => 'Hanya SPV penandatangan dokumen ini yang berhak membatalkan tanda tangan.'));
+				return;
+			}
+
+			$update_data = array(
+				$role_type . '_id' => null,
+				$role_type . '_signed_at' => null,
+				$token_column => null,
+				'updated_at' => datetime_now()
+			);
+			$other_token = $role_type === 'operator' ? ($signature['spv_token'] ?? null) : ($signature['operator_token'] ?? null);
+			$update_data['status'] = $other_token
+				? ($role_type === 'operator' ? 'approved' : 'signed_operator')
+				: 'draft';
+
+			$db->where('id', $signature['id']);
+			if (!$db->update('am_period_signatures', $update_data) || !$db->getRowCount()) {
+				throw new RuntimeException($db->getLastError() ?: 'Data tanda tangan tidak berubah.');
+			}
+			$update_query = $db->getLastQuery();
+
+			$audit_request = array(
+				'mesin' => $mesin,
+				'year' => $year,
+				'month' => $month,
+				'period' => $period,
+				'role_type' => $role_type,
+				'reason' => $reason
+			);
+			$audit_data = array(
+				'Timestamp' => datetime_now(),
+				'id_log' => (string)$signature['id'],
+				'Action' => 'cancel_period_signature',
+				'TableName' => 'am_period_signatures',
+				'UserID' => (string)USER_ID,
+				'SQLQuery' => $update_query,
+				'ServerIP' => get_user_ip(),
+				'RequestURL' => Router::$page_url,
+				'RequestData' => json_encode($audit_request, JSON_UNESCAPED_UNICODE),
+				'RequestCompleted' => 'true',
+				'RequestMsg' => 'TTD ' . $role_type . ' dibatalkan: ' . mb_substr($reason, 0, 200)
+			);
+			if (!$db->insert('audit_log', $audit_data)) {
+				throw new RuntimeException($db->getLastError() ?: 'Audit pembatalan gagal disimpan.');
+			}
+
+			$db->commit();
+			render_json(array('success' => true, 'message' => 'Tanda tangan berhasil dibatalkan. Dokumen dapat direvisi.'));
+		} catch (Throwable $e) {
+			$this->rollbackTransactionSafely($db, 'cancel period signature');
+			error_log('Cancel period signature failed: ' . $e->getMessage());
+			http_response_code(500);
+			render_json(array('success' => false, 'message' => 'Gagal membatalkan tanda tangan digital.'));
+		}
 	}
 }

@@ -66,7 +66,12 @@ $redirect_to = $this->redirect_to;
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <select id="ctrl-area" required="" name="area" placeholder="Pilih Area ..." class="custom-select"><option value="" disabled <?php echo empty($data['area']) ? 'selected' : ''; ?>>Pilih Area ...</option><?php foreach (Menu::$area_options as $opt) { $sel = ($data['area'] === $opt) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $opt; ?>"><?php echo $opt; ?></option><?php } ?></select>
+                                                        <?php if (in_array(intval(get_active_user('user_role_id')), array(4, 5), true)) { ?>
+                                                            <input id="ctrl-area" type="text" class="form-control" value="<?php echo htmlspecialchars($data['area'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" disabled readonly />
+                                                            <small class="form-text text-muted">Penugasan area hanya dapat diubah oleh Administrator.</small>
+                                                        <?php } else { ?>
+                                                            <select id="ctrl-area" required="" name="area" placeholder="Pilih Area ..." class="custom-select"><option value="" disabled <?php echo empty($data['area']) ? 'selected' : ''; ?>>Pilih Area ...</option><?php foreach (Menu::$area_options as $opt) { $sel = ($data['area'] === $opt) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $opt; ?>"><?php echo $opt; ?></option><?php } ?></select>
+                                                        <?php } ?>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -151,4 +156,3 @@ $redirect_to = $this->redirect_to;
                             </div>
                         </div>
                     </section>
-                    

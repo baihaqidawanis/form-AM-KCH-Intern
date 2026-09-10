@@ -1073,3 +1073,19 @@ function is_ajax()
 {
 	return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 }
+
+/**
+ * Validate a PNG data URI, including strict Base64 decoding and PNG signature.
+ */
+function is_valid_base64_png_data_uri($value)
+{
+	if (!is_string($value) || !preg_match('/^data:image\/png;base64,([A-Za-z0-9+\/=]+)$/', $value, $matches)) {
+		return false;
+	}
+	$decoded = base64_decode($matches[1], true);
+	if ($decoded === false || strlen($decoded) < 8 || substr($decoded, 0, 8) !== "\x89PNG\r\n\x1a\n") {
+		return false;
+	}
+	$image_info = @getimagesizefromstring($decoded);
+	return is_array($image_info) && ($image_info['mime'] ?? '') === 'image/png';
+}

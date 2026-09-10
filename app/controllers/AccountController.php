@@ -25,7 +25,9 @@ class AccountController extends SecureController{
 			"mesin", 
 			"account_status", 
 			"user_role_id", 
-			"pict");
+			"pict",
+			"paraf_image",
+			"user_initials");
 		$user = $db->getOne($tablename , $fields);
 		if(!empty($user)){
 			$page_title = $this->view->page_title = "My Account";
@@ -35,6 +37,17 @@ class AccountController extends SecureController{
 			$this->set_page_error();
 			$this->render_view("account/view.php");
 		}
+	}
+
+	/** Render the digital-initial specimen tab in My Account. */
+	function paraf(){
+		$db = $this->GetModel();
+		$db->where('id_user', USER_ID);
+		$user = $db->getOne($this->tablename, array('id_user', 'username', 'nama', 'paraf_image', 'user_initials'));
+		if (!$user && $db->getLastError()) {
+			$this->set_page_error();
+		}
+		return $this->render_view('account/paraf.php', $user ?: array());
 	}
 	/**
      * Update user account record with formdata
@@ -46,25 +59,29 @@ class AccountController extends SecureController{
 		$db = $this->GetModel();
 		$rec_id = $this->rec_id = USER_ID;
 		$tablename = $this->tablename;
+		$area_assignment_locked = in_array(intval(get_active_user('user_role_id')), array(4, 5), true);
 		 //editable fields -- account_status & user_role_id SENGAJA tidak termasuk:
 		 //user gak boleh naikkan role/aktivasi akun sendiri, itu wewenang
 		 //Administrator lewat menu Users (UsersController::edit()).
 		$fields = $this->fields = array("id_user","nama","username","area","mesin","pict");
+		if ($area_assignment_locked) {
+			$this->fields = array("id_user", "nama", "username", "mesin", "pict");
+		}
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
 				'nama' => 'required',
 				'username' => 'required',
-				'area' => 'required',
 				'mesin' => 'required',
 			);
+			if (!$area_assignment_locked) { $this->rules_array['area'] = 'required'; }
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
 				'username' => 'sanitize_string',
-				'area' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
 				'pict' => 'sanitize_string',
 			);
+			if (!$area_assignment_locked) { $this->sanitize_array['area'] = 'sanitize_string'; }
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			if (isset($modeldata['pict']) && trim($modeldata['pict']) !== '') {
 				$pict = ltrim(str_replace('\\', '/', trim($modeldata['pict'])), '/');
@@ -165,6 +182,63 @@ class AccountController extends SecureController{
 			}
 		}
 		return $this->render_view('account/change_password.php');
+	}
+
+	/**
+	 * Save digital signature / paraf
+	 * @return JSON
+	 */
+	function save_paraf() {
+		$db = $this->GetModel();
+		$userId = USER_ID;
+		$request = $this->post ?? new stdClass;
+
+		if (is_post_request()) {
+			$parafImage = trim((string)($request->paraf_image ?? ''));
+			$hasParafPayload = property_exists($request, 'paraf_image');
+			$userInitials = strtoupper(trim((string)($request->user_initials ?? '')));
+			$userInitials = substr(preg_replace('/[^A-Z0-9]/', '', $userInitials), 0, 10);
+
+			if (!empty($parafImage)) {
+				if (strlen($parafImage) > 500 * 1024) {
+					render_json(array('success' => false, 'message' => 'Ukuran gambar paraf terlalu besar (maks 500KB).'));
+					return;
+				}
+				if (!is_valid_base64_png_data_uri($parafImage)) {
+					render_json(array('success' => false, 'message' => 'Format gambar paraf tidak valid (harus Base64 PNG).'));
+					return;
+				}
+			}
+
+			$updateData = array('user_initials' => !empty($userInitials) ? $userInitials : null);
+			if ($hasParafPayload) {
+				$updateData['paraf_image'] = !empty($parafImage) ? $parafImage : null;
+			}
+
+			$db->where('id_user', $userId);
+			$res = $db->update($this->tablename, $updateData);
+			if ($res) {
+				// Audit hanya menyimpan jenis aksi, tidak pernah payload Base64 paraf.
+				$this->rec_id = (string)$userId;
+				$this->modeldata = array(
+					'action_detail' => !empty($parafImage) ? 'update_canvas_signature' : 'clear_canvas_signature'
+				);
+				$this->write_to_log('update_paraf_specimen', 'true');
+				$this->modeldata = null;
+
+				$user = get_session('user_data');
+				if (array_key_exists('paraf_image', $updateData)) {
+					$user['paraf_image'] = $updateData['paraf_image'];
+				}
+				$user['user_initials'] = $updateData['user_initials'];
+				set_session('user_data', $user);
+				render_json(array('success' => true, 'message' => 'Paraf digital berhasil disimpan!'));
+				return;
+			}
+			render_json(array('success' => false, 'message' => 'Gagal menyimpan ke database.'));
+			return;
+		}
+		render_json(array('success' => false, 'message' => 'Metode request tidak diizinkan.'));
 	}
 
 }

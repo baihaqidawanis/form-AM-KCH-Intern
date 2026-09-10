@@ -56,7 +56,6 @@ class IndexController extends BaseController
 				}
 				unset($user['password']); //Remove user password. No need to store it in the session
 				set_session("user_data", $user); // Set active user data in a sessions
-				$this->write_to_log("userlogin", "true");
 				//if Remeber Me, Set Cookie
 				if ($rememberme == true) {
 					$sessionkey = time() . random_str(20); // Generate a session key for the user
@@ -211,7 +210,6 @@ class IndexController extends BaseController
 	function logout($arg = null)
 	{
 		Csrf::cross_check();
-		$this->write_to_log("userlogout", "true");
 		session_destroy();
 		clear_cookie("login_session_key");
 		$this->redirect("");

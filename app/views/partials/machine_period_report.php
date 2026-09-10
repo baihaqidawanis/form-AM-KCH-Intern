@@ -2,6 +2,7 @@
 $d = $this->view_data; $model = new SharedController;
 $machine_options = $d['machine_options'] ?? $model->sig_Line_option_list();
 $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember');
+$hide_interactive_actions = in_array(strtolower((string)get_value('format')), array('pdf', 'print', 'excel', 'word', 'csv'), true);
 
 // Tentukan Kategori Area berdasarkan machine_key
 $machine_key = $d['machine_key'] ?? '';
@@ -152,6 +153,7 @@ if (!function_exists('get_period_image_src')) {
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .cell-deactive { background: #fff3cd !important; }
       .signature { height: <?php echo $css_sig_h; ?>; }
+      @media print { .btn-cancel-signature { display:none !important; } }
     </style>
 
     <table>
@@ -169,30 +171,74 @@ if (!function_exists('get_period_image_src')) {
           <em style="font-size:7.5px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
         <td style="width:18%; padding:0; vertical-align:top; border:none;">
+          <?php $sig = $d['period_signature'] ?? array(); ?>
           <table style="width:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
             <tr>
-              <td colspan="2" style="border:none; border-bottom:1px solid #000; text-align:center; font-weight:bold; font-size:7.5px; padding:1px;">
-                Diperiksa Oleh
+              <td style="border:none; border-right:1px solid #000; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:1px; background:#f8f9fa;">
+                Diperiksa Oleh<br><span style="font-size:6.2px; font-weight:normal;">(Operator Produksi)</span>
+              </td>
+              <td style="border:none; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:1px; background:#f8f9fa;">
+                Disetujui Oleh<br><span style="font-size:6.2px; font-weight:normal;">(SPV / Fasilitator)</span>
               </td>
             </tr>
             <tr>
-              <td colspan="2" style="border:none; border-bottom:1px solid #000; height:20px; vertical-align:bottom; text-align:center; font-size:7px; padding-bottom:1px;">
-                (Operator Produksi)
+              <!-- Kolom QR Operator -->
+              <td style="border:none; border-right:1px solid #000; width:50%; text-align:center; vertical-align:middle; padding:2px; height:50px;">
+                <?php if (!empty($sig['operator_token'])) { ?>
+                  <a href="<?php print_link('verify/signature/' . ($sig['operator_token'] ?? '')); ?>" target="_blank" style="text-decoration:none; color:#000; display:block;">
+                    <?php if (!empty($d['operator_qr'])) { ?><img src="<?php echo $d['operator_qr']; ?>" style="max-width:44px; max-height:44px; display:block; margin:0 auto;" alt="QR Operator"><?php } ?>
+                    <div style="font-size:5.8px; line-height:1.1; margin-top:1px; font-weight:bold;">
+                      <?php echo htmlspecialchars($sig['operator_user']['nama'] ?? 'Operator'); ?><br>
+                      <span style="font-weight:normal; color:#444;"><?php echo !empty($sig['operator_signed_at']) ? date('d/m/y H:i', strtotime($sig['operator_signed_at'])) : ''; ?></span>
+                    </div>
+                  </a>
+                  <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_operator'])) { ?>
+                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="operator" style="font-size:6.5px; line-height:1.2;">
+                      <i class="fa fa-times"></i> Batalkan TTD
+                    </button>
+                  <?php } ?>
+                <?php } else { ?>
+                  <?php if (!$hide_interactive_actions && !empty($d['can_sign_operator'])) { ?>
+                    <button type="button" class="btn btn-xs btn-outline-primary d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="operator" style="font-size:8px;">
+                      <i class="fa fa-pencil"></i> TTD Digital
+                    </button>
+                    <div class="d-none d-print-block text-muted font-italic" style="font-size:6px;">(Belum TTD)</div>
+                  <?php } else { ?>
+                    <div class="text-muted font-italic" style="font-size:6.5px;">(Belum TTD)</div>
+                  <?php } ?>
+                <?php } ?>
+              </td>
+
+              <!-- Kolom QR SPV -->
+              <td style="border:none; width:50%; text-align:center; vertical-align:middle; padding:2px; height:50px;">
+                <?php if (!empty($sig['spv_token'])) { ?>
+                  <a href="<?php print_link('verify/signature/' . ($sig['spv_token'] ?? '')); ?>" target="_blank" style="text-decoration:none; color:#000; display:block;">
+                    <?php if (!empty($d['spv_qr'])) { ?><img src="<?php echo $d['spv_qr']; ?>" style="max-width:44px; max-height:44px; display:block; margin:0 auto;" alt="QR SPV"><?php } ?>
+                    <div style="font-size:5.8px; line-height:1.1; margin-top:1px; font-weight:bold;">
+                      <?php echo htmlspecialchars($sig['spv_user']['nama'] ?? 'Supervisor'); ?><br>
+                      <span style="font-weight:normal; color:#444;"><?php echo !empty($sig['spv_signed_at']) ? date('d/m/y H:i', strtotime($sig['spv_signed_at'])) : ''; ?></span>
+                    </div>
+                  </a>
+                  <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_spv'])) { ?>
+                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="spv" style="font-size:6.5px; line-height:1.2;">
+                      <i class="fa fa-times"></i> Batalkan TTD
+                    </button>
+                  <?php } ?>
+                <?php } else { ?>
+                  <?php if (!$hide_interactive_actions && !empty($d['can_sign_spv'])) { ?>
+                    <button type="button" class="btn btn-xs btn-outline-success d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="spv" style="font-size:8px;">
+                      <i class="fa fa-check"></i> TTD SPV
+                    </button>
+                    <div class="d-none d-print-block text-muted font-italic" style="font-size:6px;">(Belum TTD)</div>
+                  <?php } else { ?>
+                    <div class="text-muted font-italic" style="font-size:6.5px;">(Belum TTD)</div>
+                  <?php } ?>
+                <?php } ?>
               </td>
             </tr>
             <tr>
-              <td style="border:none; border-right:1px solid #000; border-bottom:1px solid #000; width:50%; font-size:7px; font-weight:bold; padding:2px 3px; text-align:left;">
-                SPV/Fasilitator
-              </td>
-              <td style="border:none; border-bottom:1px solid #000; width:50%; font-size:7px; padding:2px 3px; text-align:center;">
-              </td>
-            </tr>
-            <tr>
-              <td style="border:none; border-right:1px solid #000; width:50%; font-size:7px; font-weight:bold; padding:2px 3px; text-align:left;">
-                Bulan/Tahun
-              </td>
-              <td style="border:none; width:50%; font-size:7px; padding:2px 3px; text-align:center;">
-                <?php echo $month_names[$d['month']] . ' ' . $d['year']; ?>
+              <td colspan="2" style="border:none; border-top:1px solid #000; text-align:center; font-size:6.5px; padding:1px; background:#f8f9fa;">
+                <strong>Periode:</strong> <?php echo $month_names[$d['month']] . ' ' . $d['year'] . ' (P' . $d['period'] . ')'; ?>
               </td>
             </tr>
           </table>
@@ -345,9 +391,16 @@ if (!function_exists('get_period_image_src')) {
         <td class="signature" colspan="8" style="font-weight:bold; text-align:center;">Paraf Pelaksana</td>
         <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
           $is_deactive = isset($d['deactivated_days'][$day]);
+          $pinfo = $d['daily_paraf'][$day] ?? null;
         ?>
-          <td style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : ''; ?>">
-            <?php if ($is_deactive) { echo 'DEAKTIF'; } ?>
+          <td class="day" style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : 'text-align:center; vertical-align:middle; padding:0;'; ?>">
+            <?php if ($is_deactive) { ?>
+              DEAKTIF
+            <?php } elseif ($pinfo && is_valid_base64_png_data_uri($pinfo['paraf_image'] ?? null)) { ?>
+              <img src="<?php echo htmlspecialchars($pinfo['paraf_image'], ENT_QUOTES, 'UTF-8'); ?>" style="max-height:13px; max-width:22px; display:block; margin:0 auto; object-fit:contain;" alt="Paraf" title="<?php echo htmlspecialchars($pinfo['tooltip'] ?? $pinfo['user_create']); ?>">
+            <?php } elseif ($pinfo && !empty($pinfo['user_initials'])) { ?>
+              <span style="font-size:5.5px; font-weight:bold; font-family:sans-serif; color:#002244; display:block; line-height:1;" title="<?php echo htmlspecialchars($pinfo['tooltip'] ?? $pinfo['user_create']); ?>"><?php echo htmlspecialchars($pinfo['user_initials']); ?></span>
+            <?php } ?>
           </td>
         <?php } ?>
       </tr>
@@ -378,9 +431,117 @@ if (!function_exists('get_period_image_src')) {
       <?php if (!empty($d['all_approved'])) { ?><span style="border:1.5px solid #198754; color:#198754; font-weight:bold; font-size:8.5px; padding:0px 10px; display:inline-block; border-radius:3px; letter-spacing:1px;">APPROVED</span><?php } else { ?><span style="border:1.5px solid #d9534f; color:#d9534f; font-weight:bold; font-size:8.5px; padding:0px 10px; display:inline-block; border-radius:3px; letter-spacing:1px;">MENUNGGU APPROVAL</span><?php } ?>
     </div>
   </div>
-  <div class="mt-3">
+  <?php if (!$hide_interactive_actions) { ?>
+  <div class="mt-3 d-print-none">
     <a class="btn btn-secondary" href="<?php print_link($d['machine_key'] . '/period_report'); ?>"><i class="fa fa-arrow-left"></i> Ganti Periode</a>
     <a class="btn btn-danger" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'pdf'))); ?>"><i class="fa fa-file-pdf-o"></i> Export PDF</a>
     <a class="btn btn-success" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'excel'))); ?>"><i class="fa fa-file-excel-o"></i> Export Excel</a>
   </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var signButtons = document.querySelectorAll('.btn-sign-digital');
+    signButtons.forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var roleType = this.getAttribute('data-role');
+        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'SPV / Fasilitator';
+
+        if (!confirm('Apakah Anda yakin ingin menandatangani Check Sheet ini secara digital sebagai ' + roleTitle + '?')) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+
+        var formData = new FormData();
+        formData.append('mesin', '<?php echo $d["mesin_id"] ?? 0; ?>');
+        formData.append('year', '<?php echo $d["year"] ?? 0; ?>');
+        formData.append('month', '<?php echo $d["month"] ?? 0; ?>');
+        formData.append('period', '<?php echo $d["period"] ?? 0; ?>');
+        formData.append('role_type', roleType);
+        formData.append('csrf_token', <?php echo json_encode(Csrf::$token); ?>);
+
+        fetch('<?php print_link($d["machine_key"] . "/sign_period?csrf_token=" . urlencode(Csrf::$token)); ?>', {
+          method: 'POST',
+          body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            alert(data.message);
+            window.location.reload();
+          } else {
+            alert('Gagal menandatangani: ' + (data.message || 'Terjadi kesalahan.'));
+            btn.disabled = false;
+            btn.innerHTML = (roleType === 'operator' ? '<i class="fa fa-pencil"></i> TTD Digital' : '<i class="fa fa-check"></i> TTD SPV');
+          }
+        })
+        .catch(function(err) {
+          alert('Terjadi kesalahan koneksi saat menandatangani.');
+          btn.disabled = false;
+          btn.innerHTML = (roleType === 'operator' ? '<i class="fa fa-pencil"></i> TTD Digital' : '<i class="fa fa-check"></i> TTD SPV');
+        });
+      });
+    });
+
+    var cancelButtons = document.querySelectorAll('.btn-cancel-signature');
+    cancelButtons.forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var roleType = this.getAttribute('data-role');
+        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'SPV / Fasilitator';
+        var reason = prompt('Masukkan alasan pembatalan TTD ' + roleTitle + ':');
+        if (reason === null) {
+          return;
+        }
+        reason = reason.trim();
+        if (!reason) {
+          alert('Alasan pembatalan wajib diisi.');
+          return;
+        }
+        if (reason.length > 500) {
+          alert('Alasan pembatalan maksimal 500 karakter.');
+          return;
+        }
+        if (!confirm('Batalkan TTD ' + roleTitle + '? Aktivitas ini akan dicatat di audit trail.')) {
+          return;
+        }
+
+        btn.disabled = true;
+        var originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
+
+        var formData = new FormData();
+        formData.append('mesin', '<?php echo $d["mesin_id"] ?? 0; ?>');
+        formData.append('year', '<?php echo $d["year"] ?? 0; ?>');
+        formData.append('month', '<?php echo $d["month"] ?? 0; ?>');
+        formData.append('period', '<?php echo $d["period"] ?? 0; ?>');
+        formData.append('role_type', roleType);
+        formData.append('reason', reason);
+        formData.append('csrf_token', <?php echo json_encode(Csrf::$token); ?>);
+
+        fetch('<?php print_link($d["machine_key"] . "/cancel_period_signature?csrf_token=" . urlencode(Csrf::$token)); ?>', {
+          method: 'POST',
+          body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            alert(data.message);
+            window.location.reload();
+            return;
+          }
+          throw new Error(data.message || 'Terjadi kesalahan.');
+        })
+        .catch(function(err) {
+          alert('Gagal membatalkan TTD: ' + err.message);
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        });
+      });
+    });
+  });
+  </script>
+  <?php } ?>
 <?php } ?></div></section>

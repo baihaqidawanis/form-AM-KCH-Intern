@@ -55,6 +55,21 @@ class Html
 		return file_exists($full_path) ? ('?v=' . filemtime($full_path)) : '';
 	}
 
+	/** True jika sedikitnya satu item turunan dapat diakses user aktif. */
+	private static function has_allowed_submenu($arrMenu)
+	{
+		foreach ($arrMenu as $menuobj) {
+			$path = $menuobj['path'] ?? '';
+			if (!ACL::is_allowed($path)) {
+				continue;
+			}
+			if (empty($menuobj['submenu']) || self::has_allowed_submenu($menuobj['submenu'])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Build Menu List From Array
 	 * Support Multi Level Dropdown Menu Tree
@@ -86,6 +101,9 @@ class Html
 				foreach ($arrMenu as $menuobj) {
 					$path = $menuobj['path'];
 					if (ACL::is_allowed($path)) {
+						if (!empty($menuobj['submenu']) && !self::has_allowed_submenu($menuobj['submenu'])) {
+							continue;
+						}
 						$active_class = null;
 						$menu_url = parse_url($path, PHP_URL_PATH);
 						if ($page_name == $menu_url || urldecode($page_url) == $menu_url) {
@@ -170,6 +188,9 @@ class Html
 				foreach ($arrMenu as $key => $menuobj) {
 					$path = $menuobj['path'];
 					if (ACL::is_allowed($path)) {
+						if (!empty($menuobj['submenu']) && !self::has_allowed_submenu($menuobj['submenu'])) {
+							continue;
+						}
 						$active_class = null;
 						$menu_url = (string) parse_url($path, PHP_URL_PATH);
 						if ($page_name == $menu_url || $page_url == $menu_url || strpos(trim($page_url, "/"), trim($menu_url, "/") . "/") === 0) {

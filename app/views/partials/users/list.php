@@ -24,6 +24,7 @@ $show_pagination = $this->show_pagination;
             <div class="row ">
                 <div class="col ">
                     <h4 class="record-title">Users</h4>
+                    <a href="<?php print_link('users/export_specimen'); ?>" target="_blank" class="btn btn-success btn-sm mt-1 shadow-sm"><i class="fa fa-print mr-1"></i> Cetak / Export Roster Spesimen User</a>
                 </div>
                 <div class="col-sm-3 ">
                     <a  class="btn btn btn-primary my-1" href="<?php print_link("users/add") ?>">

@@ -166,7 +166,7 @@ $page_element_id = 'jihcheng-add-' . random_str();
               </div>
             <?php } ?>
 
-            <div class="text-center"><a class="btn btn-secondary mr-2" href="<?php print_link('jihcheng') ?>">Batal</a><button
+            <div class="text-center mt-4 mb-4 pt-2 pb-2"><a class="btn btn-secondary mr-3" href="<?php print_link('jihcheng') ?>">Batal</a><button
                 class="btn btn-primary" type="submit">Simpan AM <i class="fa fa-send"></i></button></div>
           </form>
         </div>

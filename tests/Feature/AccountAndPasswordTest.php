@@ -34,26 +34,21 @@ class AccountAndPasswordTest extends TestCase
                 $current['mesin'] = $m[1];
             }
         }
-        $this->assertArrayHasKey('username', $current);
-        // pict wajib diisi tapi field value-nya kosong di HTML (widget dropzone,
-        // bukan plain value="..."). "pict" cuma divalidasi non-empty di server,
-        // bukan dicek beneran ada filenya -- jadi aman diisi placeholder.
-        if (empty($current['pict'])) {
-            $current['pict'] = 'uploads/files/existing-avatar.png';
-        }
+		$this->assertArrayHasKey('username', $current);
+		$this->assertArrayHasKey('area', $current);
+		$this->assertMatchesRegularExpression('/id="ctrl-area"[^>]*disabled[^>]*readonly/', $editPage);
 
-        // Ubah "area" doang, field lain dibiarkan sama biar gak ganggu test lain
-        // yang login pakai akun operator ini.
-        $originalArea = $current['area'];
-        $payload = array_merge($current, array('area' => 'PHPUnit Test Area'));
-        $edit = $client->postWithCsrf('account/edit', $payload);
-        $this->assertSame(200, $edit->getStatusCode());
-        $this->assertStringContainsString('Record updated successfully', (string) $edit->getBody());
+		// Area adalah penugasan akses. Coba tampering POST dengan area lain;
+		// backend harus mengabaikannya walaupun field disisipkan manual.
+		$originalArea = $current['area'];
+		$tamperedArea = strcasecmp($originalArea, 'Filling') === 0 ? 'Compounding' : 'Filling';
+		$payload = array_merge($current, array('area' => $tamperedArea));
+		$edit = $client->postWithCsrf('account/edit', $payload);
+		$this->assertSame(200, $edit->getStatusCode());
+		$this->assertStringContainsString('Record updated successfully', (string) $edit->getBody());
 
-        // balikin "area" biar gak ninggalin efek samping ke akun operator
-        // bersama (pict tetap placeholder -- sebelumnya emang kosong di DB,
-        // required cuma dicek non-empty, gak ada dampak fungsional).
-        $client->postWithCsrf('account/edit', array_merge($current, array('area' => $originalArea)));
+		$afterEdit = (string)$client->get('account/edit')->getBody();
+		$this->assertMatchesRegularExpression('/id="ctrl-area"[^>]*value="' . preg_quote(htmlspecialchars($originalArea, ENT_QUOTES, 'UTF-8'), '/') . '"/', $afterEdit);
     }
 
     public function test_change_email_page_bisa_dibuka(): void

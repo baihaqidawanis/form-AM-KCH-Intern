@@ -86,6 +86,34 @@ class UsersController extends SecureController{
 		$this->view->report_orientation = "portrait";
 		$this->render_view("users/list.php", $data); //render the full page
 	}
+
+	/** Printable controlled roster of user identities and signature specimens. */
+	function export_specimen(){
+		$db = $this->GetModel();
+		$db->orderBy('users.id_user', 'ASC');
+		$records = $db->get($this->tablename, null, array(
+			'id_user', 'username', 'nama', 'user_role_id', 'area', 'mesin',
+			'paraf_image', 'account_status'
+		));
+		if ($db->getLastError()) {
+			$this->set_page_error();
+			$records = array();
+		}
+
+		$data = array(
+			'records' => $records,
+			'printed_at' => datetime_now(),
+			'role_labels' => array(
+				1 => 'Administrator',
+				2 => 'Manager',
+				3 => 'Supervisor',
+				4 => 'Staff',
+				5 => 'Operator'
+			)
+		);
+		$this->view->page_title = 'Roster Spesimen Pengguna';
+		return $this->render_view('users/export_specimen.php', $data, 'specimen_roster_layout.php');
+	}
 	/**
      * View record detail 
 	 * @param $rec_id (select record by table primary key) 
