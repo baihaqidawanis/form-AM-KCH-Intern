@@ -190,6 +190,9 @@ if (!function_exists('get_period_image_src')) {
                     <div style="font-size:5.8px; line-height:1.1; margin-top:1px; font-weight:bold;">
                       <?php echo htmlspecialchars($sig['operator_user']['nama'] ?? 'Operator'); ?><br>
                       <span style="font-weight:normal; color:#444;"><?php echo !empty($sig['operator_signed_at']) ? date('d/m/y H:i', strtotime($sig['operator_signed_at'])) : ''; ?></span>
+                      <div style="font-weight:normal; font-size:5.2px; font-family:monospace; color:#333; line-height:1.2; margin-top:1px;">
+                        ID:<?php echo htmlspecialchars($sig['operator_id'] ?? '-'); ?> &bull; Ref: <?php echo htmlspecialchars(substr($sig['operator_token'] ?? '', 0, 8)); ?>
+                      </div>
                     </div>
                   </a>
                   <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_operator'])) { ?>
@@ -217,6 +220,9 @@ if (!function_exists('get_period_image_src')) {
                     <div style="font-size:5.8px; line-height:1.1; margin-top:1px; font-weight:bold;">
                       <?php echo htmlspecialchars($sig['spv_user']['nama'] ?? 'Supervisor'); ?><br>
                       <span style="font-weight:normal; color:#444;"><?php echo !empty($sig['spv_signed_at']) ? date('d/m/y H:i', strtotime($sig['spv_signed_at'])) : ''; ?></span>
+                      <div style="font-weight:normal; font-size:5.2px; font-family:monospace; color:#333; line-height:1.2; margin-top:1px;">
+                        ID:<?php echo htmlspecialchars($sig['spv_id'] ?? '-'); ?> &bull; Ref: <?php echo htmlspecialchars(substr($sig['spv_token'] ?? '', 0, 8)); ?>
+                      </div>
                     </div>
                   </a>
                   <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_spv'])) { ?>
@@ -225,7 +231,9 @@ if (!function_exists('get_period_image_src')) {
                     </button>
                   <?php } ?>
                 <?php } else { ?>
-                  <?php if (!$hide_interactive_actions && !empty($d['can_sign_spv'])) { ?>
+                  <?php if (empty($sig['operator_token'])) { ?>
+                    <div class="text-muted font-italic" style="font-size:6.2px;">(Menunggu TTD Operator)</div>
+                  <?php } elseif (!$hide_interactive_actions && !empty($d['can_sign_spv'])) { ?>
                     <button type="button" class="btn btn-xs btn-outline-success d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="spv" style="font-size:8px;">
                       <i class="fa fa-check"></i> TTD SPV
                     </button>

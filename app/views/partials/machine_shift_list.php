@@ -18,7 +18,10 @@ foreach ($records as $row) {
 <section class="page">
   <div class="bg-light p-3 mb-3"><div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center">
-      <h4 class="mb-0"><?php echo htmlspecialchars($this->page_title); ?></h4>
+	  <div>
+		<h4 class="mb-0"><?php echo htmlspecialchars($this->page_title); ?></h4>
+		<?php if (!empty($d->machine_serial)) { ?><div class="text-muted small"><?php echo htmlspecialchars($d->machine_serial); ?></div><?php } ?>
+	  </div>
       <div>
         <?php if ($this->show_header) { ?><a class="btn btn-primary" href="<?php print_link($d->machine_key . '/add'); ?>"><i class="fa fa-plus"></i> Add New <?php echo htmlspecialchars($d->display_name); ?></a><?php } ?>
         <a class="btn btn-danger ml-2" href="<?php print_link($d->machine_key . '/period_report'); ?>"><i class="fa fa-file-pdf-o"></i> Export PDF</a>

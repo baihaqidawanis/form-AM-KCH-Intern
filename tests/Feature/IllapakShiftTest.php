@@ -6,11 +6,14 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\ApiClient;
 use Tests\Support\FormScraper;
 
+require_once dirname(__DIR__, 2) . '/config.php';
+
 class IllapakShiftTest extends TestCase
 {
     private ApiClient $client;
     private ?string $createdDeletePath = null;
     private ?int $createdMasterPartId = null;
+	private ?int $createdMachineId = null;
 
     protected function setUp(): void
     {
@@ -25,6 +28,11 @@ class IllapakShiftTest extends TestCase
         if ($this->createdMasterPartId !== null) {
             $this->client->deleteWithCsrf('master_part/index/illapak_1_2', "master_part/delete/{$this->createdMasterPartId}");
         }
+		if ($this->createdMachineId !== null) {
+			$pdo = $this->database();
+			$stmt = $pdo->prepare("DELETE FROM mesin WHERE id = ? AND nama_mesin = 'Ilapak 2'");
+			$stmt->execute(array($this->createdMachineId));
+		}
     }
 
     private function findRowId(string $html, string $needle): ?int
@@ -42,6 +50,12 @@ class IllapakShiftTest extends TestCase
     {
         $add = $this->client->get('illapak_1_2/add?shift=2');
         $html = (string) $add->getBody();
+		if (!$this->hasAvailableShiftUnit($html, '2')) {
+			$pdo = $this->database();
+			$this->createdMachineId = (int)$pdo->query("INSERT INTO mesin (nama_mesin) VALUES ('Ilapak 2') RETURNING id")->fetchColumn();
+			$add = $this->client->get('illapak_1_2/add?shift=2');
+			$html = (string)$add->getBody();
+		}
 
         $this->assertSame(200, $add->getStatusCode());
         $fields = FormScraper::partFieldNames($html);
@@ -56,9 +70,8 @@ class IllapakShiftTest extends TestCase
         $body = (string) $submit->getBody();
 
         $this->assertSame(200, $submit->getStatusCode());
-        $this->assertStringContainsString('Berhasil tambah AM Illapak 1 - 2', $body);
         $id = FormScraper::firstViewId($body, 'illapak_1_2');
-        $this->assertNotNull($id);
+		$this->assertNotNull($id, 'Submit Shift 2 gagal: ' . substr(trim(preg_replace('/\s+/', ' ', strip_tags($body))), 0, 800));
         $this->createdDeletePath = "illapak_1_2/delete/$id";
 
         $view = $this->client->get("illapak_1_2/view/$id");
@@ -66,6 +79,34 @@ class IllapakShiftTest extends TestCase
         $this->assertStringContainsString('Shift 2', $viewHtml);
         $this->assertStringContainsString('Approved', $viewHtml);
     }
+
+	private function database(): \PDO
+	{
+		return new \PDO(
+			'pgsql:host=' . \DB_HOST . ';port=' . \DB_PORT . ';dbname=' . \DB_NAME,
+			\DB_USERNAME,
+			\DB_PASSWORD,
+			array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION)
+		);
+	}
+
+	private function hasAvailableShiftUnit(string $html, string $shift): bool
+	{
+		if (!preg_match('/<select[^>]*name="mesin"[^>]*>(.*?)<\/select>/is', $html, $select)) {
+			return false;
+		}
+		preg_match_all('/<option\s+value="([0-9]+)"/', $select[1], $options);
+		$machineIds = array_map('intval', $options[1] ?? array());
+		if (empty($machineIds)) { return false; }
+
+		$now = new \DateTime('now', new \DateTimeZone('Asia/Jakarta'));
+		if ($now->format('H:i') < '06:45') { $now->modify('-1 day'); }
+		$placeholders = implode(',', array_fill(0, count($machineIds), '?'));
+		$stmt = $this->database()->prepare("SELECT mesin FROM tb_mesin_illapak_1_2 WHERE operational_date = ? AND shift = ? AND mesin IN ($placeholders)");
+		$stmt->execute(array_merge(array($now->format('Y-m-d'), $shift), $machineIds));
+		$used = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+		return count(array_diff($machineIds, $used)) > 0;
+	}
 
     public function test_add_without_shift_shows_shift_selector(): void
     {

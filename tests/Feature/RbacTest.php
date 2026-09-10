@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 use Tests\Support\ApiClient;
 use Tests\Support\FormScraper;
 
+require_once dirname(__DIR__, 2) . '/config.php';
+
 /**
  * Regresi otomatis buat gap RBAC yang ketemu & difix di Round 33 (URS 3.1):
  * Operator cuma boleh edit_data punya sendiri, Manager gak boleh add tapi
@@ -16,7 +18,7 @@ use Tests\Support\FormScraper;
  */
 class RbacTest extends TestCase
 {
-    private const MACHINE = 'chimei';
+    private const MACHINE = 'joeya';
 
     public function test_manager_tidak_bisa_add(): void
     {
@@ -25,18 +27,19 @@ class RbacTest extends TestCase
         $this->assertSame(403, $resp->getStatusCode(), 'Manager harusnya 403 diakses halaman add mesin');
     }
 
-    public function test_manager_bisa_delete_record_siapapun(): void
+    public function test_manager_tidak_bisa_delete_record(): void
     {
         $admin = (new ApiClient())->loginAs('administrator');
         $id = $this->createRecord($admin);
 
-        $manager = (new ApiClient())->loginAs('manager');
-        $resp = $manager->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
-        $this->assertContains($resp->getStatusCode(), array(200, 302), 'Manager harusnya bisa delete record siapapun (URS 3.1)');
-
-        // Verifikasi beneran hilang (kalau tearDown butuh, admin coba delete lagi -> gak masalah, delete() idempotent di WHERE IN)
-        $view = $admin->get(self::MACHINE . "/view/$id");
-        $this->assertStringNotContainsString('badge', (string) $view->getBody());
+		try {
+			$manager = (new ApiClient())->loginAs('manager');
+			$resp = $manager->deleteWithCsrf('home', self::MACHINE . "/delete/$id");
+			$this->assertSame(403, $resp->getStatusCode(), 'Penghapusan laporan destruktif hanya boleh dilakukan Administrator.');
+			$this->assertSame(200, $admin->get(self::MACHINE . "/view/$id")->getStatusCode());
+		} finally {
+			$admin->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
+		}
     }
 
     public function test_operator_tidak_bisa_edit_data_punya_orang_lain(): void
@@ -114,32 +117,32 @@ class RbacTest extends TestCase
     public function test_supervisor_tidak_bisa_edit_super_admin(): void
     {
         $supervisor = (new ApiClient())->loginAs('supervisor');
-        $usersList = (string) $supervisor->get('users?search=superadmin')->getBody();
-        $this->assertMatchesRegularExpression('#/users/view/(\d+)#', $usersList, 'Gagal cari akun superadmin di menu Users');
-        preg_match('#/users/view/(\d+)#', $usersList, $m);
-        $superAdminId = $m[1];
-
-        $resp = $supervisor->get("users/edit/$superAdminId");
+		$superAdminId = $this->superAdminId();
+		$resp = $supervisor->get("users/edit/$superAdminId");
         $this->assertSame(403, $resp->getStatusCode(), 'Supervisor harusnya 403 buka halaman edit Super Admin');
     }
 
     public function test_supervisor_tidak_bisa_hapus_super_admin(): void
     {
         $supervisor = (new ApiClient())->loginAs('supervisor');
-        $usersList = (string) $supervisor->get('users?search=superadmin')->getBody();
-        preg_match('#/users/view/(\d+)#', $usersList, $m);
-        $superAdminId = $m[1];
-
-        $supervisor->deleteWithCsrf("users/view/$superAdminId", "users/delete/$superAdminId");
+		$superAdminId = $this->superAdminId();
+		$resp = $supervisor->deleteWithCsrf('home', "users/delete/$superAdminId");
+		$this->assertSame(403, $resp->getStatusCode());
 
         $admin = (new ApiClient())->loginAs('administrator');
         $stillExists = (string) $admin->get('users?search=superadmin')->getBody();
         $this->assertStringContainsString('superadmin', strtolower($stillExists), 'Akun Super Admin gak boleh berhasil terhapus oleh Supervisor');
     }
 
+	private function superAdminId(): int
+	{
+		$pdo = new \PDO('pgsql:host=' . \DB_HOST . ';port=' . \DB_PORT . ';dbname=' . \DB_NAME, \DB_USERNAME, \DB_PASSWORD);
+		return (int)$pdo->query("SELECT id_user FROM users WHERE username = 'superadmin' LIMIT 1")->fetchColumn();
+	}
+
     private function createRecord(ApiClient $client): string
     {
-        $addPage = $client->get(self::MACHINE . '/add');
+		$addPage = $client->get(self::MACHINE . '/add');
         $payload = FormScraper::buildAllOkPayload((string) $addPage->getBody());
         $submit = $client->postWithCsrf(self::MACHINE . '/add', $payload);
         $id = FormScraper::firstViewId((string) $submit->getBody(), self::MACHINE);

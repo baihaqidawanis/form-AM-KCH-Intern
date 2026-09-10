@@ -88,12 +88,19 @@ class DigitalSignatureTest extends TestCase
 			$this->assertNotNull($verifiedOp);
 			$this->assertSame('Operator Produksi', $verifiedOp['verified_role']);
 			$this->assertSame($docHash, $verifiedOp['document_hash']);
+			$verifiedOpPrefix = QrSignatureHelper::getSignatureByToken(substr($resOp['token'], 0, 8));
+			$this->assertNotNull($verifiedOpPrefix);
+			$this->assertSame('Operator Produksi', $verifiedOpPrefix['verified_role']);
 
 			// 4. Verify lookup by SPV token
 			$verifiedSpv = QrSignatureHelper::getSignatureByToken($resSpv['token']);
 			$this->assertNotNull($verifiedSpv);
 			$this->assertSame('SPV / Fasilitator', $verifiedSpv['verified_role']);
 			$this->assertSame('approved', $verifiedSpv['status']);
+			$verifiedSpvPrefix = QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 8));
+			$this->assertNotNull($verifiedSpvPrefix);
+			$this->assertSame('SPV / Fasilitator', $verifiedSpvPrefix['verified_role']);
+			$this->assertNull(QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 7)));
 		} finally {
 			// Cleanup hanya menyasar namespace data milik test ini.
 			$del->execute([$mesinSlug, $mesinId, $bulan, $tahun, $periode]);
@@ -165,6 +172,48 @@ class DigitalSignatureTest extends TestCase
 			$this->assertSame('draft', $row['status']);
 		} finally {
 			$this->deleteHttpCancelFixture($pdo, $mesinId, 2);
+		}
+	}
+
+	public function test_ambiguous_manual_reference_is_rejected(): void
+	{
+		$pdo = $this->database();
+		$userId = (int)$pdo->query("SELECT id_user FROM users WHERE username = 'superadmin' LIMIT 1")->fetchColumn();
+		$slug = 'phpunit_prefix_collision_' . getmypid();
+		$prefix = 'abcdef12';
+		$delete = $pdo->prepare('DELETE FROM am_period_signatures WHERE mesin_slug = ?');
+		$delete->execute(array($slug));
+		$insert = $pdo->prepare('INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, operator_id, operator_signed_at, operator_token, status) VALUES (?, ?, 10, 2100, 1, ?, ?, CURRENT_TIMESTAMP, ?, ?)');
+
+		try {
+			$insert->execute(array($slug, 2147479001, hash('sha256', 'prefix-a'), $userId, $prefix . str_repeat('1', 56), 'signed_operator'));
+			$insert->execute(array($slug, 2147479002, hash('sha256', 'prefix-b'), $userId, $prefix . str_repeat('2', 56), 'signed_operator'));
+			$this->assertNull(QrSignatureHelper::getSignatureByToken($prefix));
+		} finally {
+			$delete->execute(array($slug));
+		}
+	}
+
+	public function test_spv_cannot_sign_before_operator(): void
+	{
+		$mesinId = 2147478500 + (getmypid() % 400);
+		$pdo = $this->database();
+		$delete = $pdo->prepare('DELETE FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = 10 AND tahun = 2100 AND periode = 2');
+		$delete->execute(array('sig', $mesinId));
+
+		try {
+			$client = (new ApiClient())->loginAs('manager');
+			$response = $client->postWithCsrfFrom('home', 'sig/sign_period', array(
+				'mesin' => $mesinId,
+				'year' => 2100,
+				'month' => 10,
+				'period' => 2,
+				'role_type' => 'spv'
+			));
+			$this->assertSame(422, $response->getStatusCode());
+			$this->assertStringContainsString('Operator Produksi harus menandatangani', (string)$response->getBody());
+		} finally {
+			$delete->execute(array('sig', $mesinId));
 		}
 	}
 

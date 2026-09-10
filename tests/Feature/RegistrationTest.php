@@ -50,7 +50,7 @@ class RegistrationTest extends TestCase
         ));
 
         $body = (string) $resp->getBody();
-        $this->assertStringContainsString('not active', strtolower($body), "role $roleId: registrasi harusnya sukses insert row tapi status Pending (belum bisa login)");
+		$this->assertStringContainsString('menunggu aktivasi oleh administrator', strtolower($body), "role $roleId: registrasi harusnya sukses insert row tapi status Pending (belum bisa login)");
 
         // Cari akun test ini & pastikan role_id-nya KEPAKSA jadi 4 (Staff/Operator),
         // gak peduli role_id apa yang dikirim di form -- baru hapus.
@@ -85,7 +85,7 @@ class RegistrationTest extends TestCase
 
         $body = (string) $resp->getBody();
         $this->assertStringContainsString('NIK', $body, 'Username dengan karakter non-alfanumerik harusnya ditolak dengan pesan format NIK, bukan sukses register');
-        $this->assertStringNotContainsString('not active', strtolower($body), 'Registrasi dengan username invalid harusnya GAGAL, bukan sukses insert row');
+		$this->assertStringNotContainsString('menunggu aktivasi oleh administrator', strtolower($body), 'Registrasi dengan username invalid harusnya GAGAL, bukan sukses insert row');
     }
 
     private function randomNikUsername(): string

@@ -113,9 +113,10 @@ class UsersCrudTest extends TestCase
         }
     }
 
-    public function test_supervisor_bisa_akses_users(): void
-    {
-        $supervisor = (new ApiClient())->loginAs('supervisor');
-        $this->assertSame(200, $supervisor->get('users')->getStatusCode(), 'Supervisor mestinya bisa kelola Users (URS 2.2)');
-    }
+	public function test_supervisor_hanya_bisa_export_roster_bukan_kelola_users(): void
+	{
+		$supervisor = (new ApiClient())->loginAs('supervisor');
+		$this->assertSame(403, $supervisor->get('users')->getStatusCode(), 'Supervisor tidak boleh membuka CRUD Users');
+		$this->assertSame(200, $supervisor->get('users/export_specimen')->getStatusCode(), 'Supervisor tetap boleh mencetak roster spesimen');
+	}
 }

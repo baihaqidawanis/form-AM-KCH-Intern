@@ -196,8 +196,6 @@ class AccountController extends SecureController{
 		if (is_post_request()) {
 			$parafImage = trim((string)($request->paraf_image ?? ''));
 			$hasParafPayload = property_exists($request, 'paraf_image');
-			$userInitials = strtoupper(trim((string)($request->user_initials ?? '')));
-			$userInitials = substr(preg_replace('/[^A-Z0-9]/', '', $userInitials), 0, 10);
 
 			if (!empty($parafImage)) {
 				if (strlen($parafImage) > 500 * 1024) {
@@ -210,9 +208,13 @@ class AccountController extends SecureController{
 				}
 			}
 
-			$updateData = array('user_initials' => !empty($userInitials) ? $userInitials : null);
+			$updateData = array();
 			if ($hasParafPayload) {
 				$updateData['paraf_image'] = !empty($parafImage) ? $parafImage : null;
+			}
+			if (!$hasParafPayload) {
+				render_json(array('success' => false, 'message' => 'Data gambar paraf tidak ditemukan.'));
+				return;
 			}
 
 			$db->where('id_user', $userId);
@@ -230,7 +232,6 @@ class AccountController extends SecureController{
 				if (array_key_exists('paraf_image', $updateData)) {
 					$user['paraf_image'] = $updateData['paraf_image'];
 				}
-				$user['user_initials'] = $updateData['user_initials'];
 				set_session('user_data', $user);
 				render_json(array('success' => true, 'message' => 'Paraf digital berhasil disimpan!'));
 				return;

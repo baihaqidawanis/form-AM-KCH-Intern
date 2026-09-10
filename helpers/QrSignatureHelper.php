@@ -268,13 +268,46 @@ class QrSignatureHelper
      */
     public static function getSignatureByToken($token)
     {
+        $token = strtolower(trim((string)$token));
+        $tokenLength = strlen($token);
+        if ($tokenLength < 8 || $tokenLength > 64 || !preg_match('/^[a-f0-9]+$/', $token)) {
+            return null;
+        }
+
         $db = self::getDb();
-        $db->where('(operator_token = ? OR spv_token = ?)', array($token, $token));
-        $row = $db->getOne('am_period_signatures');
+        $operatorLookup = $tokenLength === 64 ? $token : $token . '%';
+        $comparison = $tokenLength === 64 ? '=' : 'LIKE';
+        $rows = $db->rawQuery(
+            "SELECT * FROM am_period_signatures WHERE operator_token {$comparison} ? OR spv_token {$comparison} ? LIMIT 2",
+            array($operatorLookup, $operatorLookup)
+        );
+
+        // Prefix pendek hanya sah jika menunjuk tepat ke satu token dan satu role.
+        // Ini mencegah auditor memvalidasi dokumen yang salah ketika prefix bertabrakan.
+        $matches = array();
+        foreach ($rows as $candidate) {
+            foreach (array('operator', 'spv') as $role) {
+                $candidateToken = strtolower((string)($candidate[$role . '_token'] ?? ''));
+                $matched = $tokenLength === 64
+                    ? hash_equals($candidateToken, $token)
+                    : strncmp($candidateToken, $token, $tokenLength) === 0;
+                if ($candidateToken !== '' && $matched) {
+                    $matches[] = array('row' => $candidate, 'role' => $role);
+                }
+            }
+        }
+
+        if (count($matches) !== 1) {
+            return null;
+        }
+
+        $row = $matches[0]['row'];
+        $verifiedRole = $matches[0]['role'];
         if ($row) {
-            $row['verified_role'] = ($row['operator_token'] === $token) ? 'Operator Produksi' : 'SPV / Fasilitator';
-            $signerId = ($row['operator_token'] === $token) ? $row['operator_id'] : $row['spv_id'];
-            $signedAt = ($row['operator_token'] === $token) ? $row['operator_signed_at'] : $row['spv_signed_at'];
+            $isOperator = $verifiedRole === 'operator';
+            $row['verified_role'] = $isOperator ? 'Operator Produksi' : 'SPV / Fasilitator';
+            $signerId = $isOperator ? $row['operator_id'] : $row['spv_id'];
+            $signedAt = $isOperator ? $row['operator_signed_at'] : $row['spv_signed_at'];
 
             $signerUser = null;
             if ($signerId) {

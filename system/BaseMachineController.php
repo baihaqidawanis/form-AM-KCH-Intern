@@ -313,6 +313,12 @@ abstract class BaseMachineController extends SecureController
 		$data->machine_key = $this->machineKey;
 		$data->display_name = $this->displayName;
 		$data->id_column = $this->idColumn();
+		$data->machine_serial = null;
+		foreach ($records as $record) {
+			if (empty($record['mesin'])) { continue; }
+			$serial = $this->GetModel()->where('id', intval($record['mesin']))->getValue('mesin', 'nomor_seri');
+			if (!empty($serial)) { $data->machine_serial = $serial; break; }
+		}
 		// Kontrol UI ini hanya pelengkap; otorisasi penghapusan tetap diverifikasi
 		// ulang di delete(), sehingga URL tidak bisa dipakai oleh role lain.
 		$data->can_delete_reports = intval(get_active_user('user_role_id')) === 1;
@@ -1002,6 +1008,15 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			http_response_code(403);
 			render_json(array('success' => false, 'message' => 'Hanya role Supervisor atau Manager yang dapat menandatangani sebagai SPV/Fasilitator.'));
 			return;
+		}
+
+		if ($role_type === 'spv') {
+			$signature = QrSignatureHelper::getPeriodSignature($this->machineKey, $mesin, $month, $year, $period);
+			if (!$signature || empty($signature['operator_token'])) {
+				http_response_code(422);
+				render_json(array('success' => false, 'message' => 'Operator Produksi harus menandatangani Check Sheet terlebih dahulu sebelum disetujui oleh SPV/Fasilitator.'));
+				return;
+			}
 		}
 
 		// Calculate current document hash

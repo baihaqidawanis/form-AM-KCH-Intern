@@ -65,9 +65,13 @@ class MachineLifecycleAllTest extends TestCase
         $addUrl = $machine === 'illapak_3_12' ? "$machine/add?shift=1" : "$machine/add";
         $addPage = $this->client->get($addUrl);
         $this->assertSame(200, $addPage->getStatusCode(), "$machine: halaman add gagal dibuka");
-        $html = (string) $addPage->getBody();
+		$html = (string) $addPage->getBody();
+		if (empty(FormScraper::partFieldNames($html)) && strpos($html, 'shift-selector') !== false) {
+			$addUrl = "$machine/add?shift=2";
+			$html = (string)$this->client->get($addUrl)->getBody();
+		}
 
-        $extra = $machine === 'illapak_3_12' ? array('shift' => '1') : array();
+		$extra = preg_match('/[?&]shift=([123])/', $addUrl, $shiftMatch) ? array('shift' => $shiftMatch[1]) : array();
         $payload = FormScraper::buildAllOkPayload($html, $extra);
         $this->assertNotEmpty(FormScraper::partFieldNames($html), "$machine: gagal baca daftar part dari form add");
 
@@ -100,11 +104,15 @@ class MachineLifecycleAllTest extends TestCase
     {
         $addUrl = $machine === 'illapak_3_12' ? "$machine/add?shift=1" : "$machine/add";
         $addPage = $this->client->get($addUrl);
-        $html = (string) $addPage->getBody();
+		$html = (string) $addPage->getBody();
+		if (empty(FormScraper::partFieldNames($html)) && strpos($html, 'shift-selector') !== false) {
+			$addUrl = "$machine/add?shift=2";
+			$html = (string)$this->client->get($addUrl)->getBody();
+		}
         $fields = FormScraper::partFieldNames($html);
         $this->assertNotEmpty($fields, "$machine: gagal baca daftar part");
 
-        $extra = $machine === 'illapak_3_12' ? array('shift' => '1') : array();
+		$extra = preg_match('/[?&]shift=([123])/', $addUrl, $shiftMatch) ? array('shift' => $shiftMatch[1]) : array();
         $payload = FormScraper::buildOneNokPayload($html, $fields[0], "Test PHPUnit $machine — kondisi tidak baik", $extra);
         $submit = $this->client->postWithCsrf("$machine/add", $payload);
         $this->assertSame(200, $submit->getStatusCode(), "$machine: submit dengan 1 NOK gagal");

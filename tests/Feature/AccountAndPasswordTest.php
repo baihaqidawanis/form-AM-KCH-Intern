@@ -63,9 +63,11 @@ class AccountAndPasswordTest extends TestCase
         $client = new ApiClient();
         $resp = $client->postWithCsrfFrom('passwordmanager', 'passwordmanager/postresetlink', array(
             'email' => 'email-gak-akan-pernah-terdaftar-' . uniqid() . '@example.com',
-        ));
-        $this->assertSame(200, $resp->getStatusCode());
-        $this->assertStringContainsString('not registered', (string) $resp->getBody());
+		));
+		$this->assertSame(200, $resp->getStatusCode());
+		$body = (string)$resp->getBody();
+		$this->assertStringContainsString('Lupa Password', $body);
+		$this->assertStringNotContainsString('not registered', strtolower($body), 'Respons reset tidak boleh membocorkan apakah akun terdaftar.');
     }
 
     public function test_update_password_dengan_key_invalid_ditolak(): void

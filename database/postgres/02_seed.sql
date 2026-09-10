@@ -179,12 +179,13 @@ INSERT INTO "tag" ("id", "kategori_tag") OVERRIDING SYSTEM VALUE VALUES
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"tag"', 'id'), COALESCE((SELECT MAX("id") FROM "tag"), 1));
 
--- 4 role sesuai URS poin 2.1 (Administrator, Manager, Supervisor, Staff/Operator)
+-- Role aplikasi (role 4 Staff dan role 5 Operator tetap dipisahkan untuk SoD).
 INSERT INTO "roles" ("role_id", "role_name") OVERRIDING SYSTEM VALUE VALUES
   (1, 'Administrator'),
   (2, 'Manager'),
   (3, 'Supervisor'),
-  (4, 'Staff/Operator')
+  (4, 'Staff'),
+  (5, 'Operator')
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"roles"', 'role_id'), COALESCE((SELECT MAX("role_id") FROM "roles"), 1));
 
@@ -193,6 +194,27 @@ SELECT setval(pg_get_serial_sequence('"roles"', 'role_id'), COALESCE((SELECT MAX
 INSERT INTO "users" ("nama", "email", "username", "password", "account_status", "user_role_id", "is_super_admin")
 VALUES ('Super Admin', 'admin@localhost', 'superadmin', '$2y$10$XT.XFKi3xXDkv12zaWU5VuWnVbmMORonOFJbVe/mOVsXWq2VGfLuy', 'Active', 1, true)
 ON CONFLICT DO NOTHING;
+
+-- Fixture lokal untuk pengujian integrasi. Password awal: Test@1234.
+-- Wajib diganti atau akun dinonaktifkan sebelum database dipakai di produksi.
+INSERT INTO "users"
+  ("nama", "email", "username", "password", "account_status", "user_role_id", "area", "mesin", "is_super_admin", "failed_login_attempts")
+VALUES
+  ('Test Manager', 'manager@localhost', 'MANAGE01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 2, 'Filling', NULL, false, 0),
+  ('Test Supervisor', 'supervisor@localhost', 'SUPERV01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 3, 'Filling', NULL, false, 0),
+  ('Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 4, 'Filling', '1', false, 0)
+ON CONFLICT ("username") DO UPDATE SET
+  "nama" = EXCLUDED."nama",
+  "email" = EXCLUDED."email",
+  "password" = EXCLUDED."password",
+  "account_status" = 'Active',
+  "user_role_id" = EXCLUDED."user_role_id",
+  "area" = EXCLUDED."area",
+  "mesin" = EXCLUDED."mesin",
+  "is_super_admin" = false,
+  "failed_login_attempts" = 0,
+  "login_session_key" = NULL,
+  "password_reset_key" = NULL;
 
 -- Nomor seri fisik mesin -- lihat database/migrations/2026-08-20_add_mesin_nomor_seri.sql
 UPDATE "mesin" SET "nomor_seri" = '2BMIX13011' WHERE "nama_mesin" = 'Cosmec';
