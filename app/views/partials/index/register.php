@@ -106,18 +106,21 @@ $redirect_to = $this->redirect_to;
                                                             <div class="">
                                                                 <?php
                                                                 $mesin_options = $comp_model->sig_Line_option_list();
-                                                                // Prefix nama mesin per kategori, sesuai pengelompokan submenu di helpers/Menu.php.
-                                                                $area_machine_prefixes = array(
-                                                                  'Compounding' => array('cosmec', 'fbd jaw chuan', 'fbd glatt', 'supermixer', 'granulator', 'storage tank', 'mixing tank'),
-                                                                  'Filling' => array('joeya', 'sig', 'ilapak', 'illapak', 'unifill'),
-                                                                  'Kemas' => array('jihcheng', 'jinsung'),
-                                                                  'Wrapping dan Pack Cartoning' => array('chimei', 'temach', 'check weigher', 'conveyor sig', 'injekt kemas', 'inkjet kemas', 'best pack', 'cartoning', 'pack', 'wrapping'),
-                                                                );
-                                                                $mesin_area_of = function ($label) use ($area_machine_prefixes) {
-                                                                  foreach ($area_machine_prefixes as $area => $prefixes) {
-                                                                    foreach ($prefixes as $prefix) {
-                                                                      if (stripos($label, $prefix) !== false) { return $area; }
-                                                                    }
+                                                                // Area mesin dicek berdasar awalan nama mesin (bukan substring bebas)
+                                                                // agar unit seperti "Chimei 6A (Ilapak 1)" atau "Best Pack - Ilapak 11" tidak salah masuk ke Filling.
+                                                                $mesin_area_of = function ($label) {
+                                                                  $lbl = strtolower(trim($label));
+                                                                  if (preg_match('/^(chimei|temach|check weigher|conveyor sig|best pack|kemas best pack|cartoning|pack|wrapping)/i', $lbl)) {
+                                                                    return 'Wrapping dan Pack Cartoning';
+                                                                  }
+                                                                  if (preg_match('/^(cosmec|fbd jaw chuan|fbd glatt|supermixer|granulator|storage tank|st liq|mixing tank|mt )/i', $lbl)) {
+                                                                    return 'Compounding';
+                                                                  }
+                                                                  if (preg_match('/^(jihcheng|jinsung)/i', $lbl)) {
+                                                                    return 'Kemas';
+                                                                  }
+                                                                  if (preg_match('/^(joeya|sig|ilapak|illapak|unifill)/i', $lbl)) {
+                                                                    return 'Filling';
                                                                   }
                                                                   return '';
                                                                 };

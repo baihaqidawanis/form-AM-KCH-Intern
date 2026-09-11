@@ -87,11 +87,17 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select required
                 id="ctrl-mesin" name="mesin" class="custom-select">
                 <option value="" disabled selected>Pilih nama mesin ...</option>
-                <?php foreach ($machine_options as $option) {
-                  $lbl = strtolower($option['label']);
-                  if ((strpos($lbl, 'ilapak') !== false || strpos($lbl, 'illapak') !== false) && !in_array($lbl, array('ilapak 1', 'ilapak 2', 'illapak 1', 'illapak 2'))) { ?>
-                    <option value="<?php echo $option['value']; ?>"><?php echo $option['label']; ?></option><?php }
-                } ?>
+                <?php 
+                $filtered_machines = array();
+                foreach ($machine_options as $option) {
+                  if (preg_match('/^il{1,2}apak\s+([3-9]|1[0-2])$/i', trim($option['label']), $m_num)) {
+                    $filtered_machines[] = array_merge($option, array('num' => intval($m_num[1])));
+                  }
+                }
+                usort($filtered_machines, function($a, $b) { return $a['num'] <=> $b['num']; });
+                foreach ($filtered_machines as $option) { ?>
+                  <option value="<?php echo $option['value']; ?>"><?php echo htmlspecialchars($option['label']); ?></option>
+                <?php } ?>
               </select></div>
             
             <?php foreach ($sections as $section_title => $section_fields) {
