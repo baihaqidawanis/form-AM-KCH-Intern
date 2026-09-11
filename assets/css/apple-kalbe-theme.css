@@ -1198,3 +1198,66 @@ html, body {
     }
 }
 
+/* ==========================================================================
+   6. Form AM: Ubah Kotak Legenda Samping Menjadi Top Banner & Form 100% Lebar Penuh
+   ========================================================================== */
+.page .container-fluid > .row > .col-md-3.pt-3,
+.page-form .container-fluid > .row > .col-md-3.pt-3 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    padding-top: 0 !important;
+    margin-bottom: 12px !important;
+}
+
+.page .container-fluid > .row > .col-md-3.pt-3 > div,
+.page-form .container-fluid > .row > .col-md-3.pt-3 > div {
+    position: static !important; /* Hilangkan sticky samping yang bikin ngambang */
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    padding: 10px 16px !important;
+    margin-bottom: 0 !important;
+    background: #FFFFFF !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+.page .container-fluid > .row > .col-md-3.pt-3 h6,
+.page-form .container-fluid > .row > .col-md-3.pt-3 h6 {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+.page .container-fluid > .row > .col-md-3.pt-3 table,
+.page-form .container-fluid > .row > .col-md-3.pt-3 table {
+    width: auto !important;
+    margin: 0 !important;
+}
+
+.page .container-fluid > .row > .col-md-3.pt-3 tbody,
+.page-form .container-fluid > .row > .col-md-3.pt-3 tbody {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+}
+
+.page .container-fluid > .row > .col-md-3.pt-3 tr,
+.page-form .container-fluid > .row > .col-md-3.pt-3 tr {
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* Kolom Form Utama langsung dapat 100% LEBAR PENUH TANPA TERTINDAS! */
+.page .container-fluid > .row > .col-md-9,
+.page-form .container-fluid > .row > .col-md-9 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+
