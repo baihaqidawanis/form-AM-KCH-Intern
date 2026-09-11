@@ -62,12 +62,8 @@ $comp_model = new SharedController;
                             </div>
                         </div>
 
-                        <!-- Options Row: Remember Me & Forgot Password -->
+                        <!-- Options Row: Forgot Password -->
                         <div class="am-form-meta">
-                            <label class="am-checkbox-label">
-                                <input value="true" type="checkbox" name="rememberme" class="am-checkbox" />
-                                <span>Ingat Saya</span>
-                            </label>
                             <a href="<?php print_link('passwordmanager') ?>" class="am-forgot-link">Lupa Password?</a>
                         </div>
 
@@ -283,30 +279,13 @@ $comp_model = new SharedController;
         outline: none;
     }
 
-    /* Form Meta (Remember me / Forgot pass) */
+    /* Form Meta (Forgot pass) */
     .am-form-meta {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin: 14px 0 20px;
+        justify-content: flex-end;
+        margin: 10px 0 20px;
         font-size: 0.84rem;
-    }
-
-    .am-checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        color: #48484A;
-        margin: 0;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .am-checkbox {
-        width: 16px;
-        height: 16px;
-        accent-color: #009639;
-        cursor: pointer;
     }
 
     .am-forgot-link {
