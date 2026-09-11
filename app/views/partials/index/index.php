@@ -68,13 +68,7 @@
                         </div>
                     </div>
                     <div class="col-md-4 comp-grid">
-                        <div class="">
-                            <div class="fadeIn animated mb-4" style="color: white;">
-                                <div class="text-capitalize">
-                                    <h2 class="text-capitalize">AM Online Pulogadung</h2>
-                                </div>
-                            </div>
-                            </div><div class=""><!DOCTYPE html>
+                        <div class=""><!DOCTYPE html>
                             <html lang="en">
                                 <head>
                                     <meta charset="UTF-8">

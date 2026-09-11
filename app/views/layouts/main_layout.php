@@ -26,6 +26,7 @@
 				<?php 
 			Html ::  page_css('bootstrap-theme-pulse-darkblue.css');
 			Html ::  page_css('custom-style.css');
+			Html ::  page_css('apple-kalbe-theme.css');
 		?>
 		<?php
 			Html ::  page_css('flatpickr.min.css');

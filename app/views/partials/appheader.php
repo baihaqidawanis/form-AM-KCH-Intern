@@ -11,62 +11,51 @@ if (!empty($header_pict)) {
 ?>
 <div id="topbar" class="navbar navbar-expand-md fixed-top navbar-dark bg-primary">
     <div class="container-fluid">
+        <?php 
+        if(user_login_status() == true ){ 
+        ?>
+        <button type="button" id="sidebarCollapse" class="btn btn-kalbe-hamburger mr-3">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <?php 
+        } 
+        ?>
         <a class="navbar-brand" href="<?php print_link(HOME_PAGE) ?>">
             <img class="img-responsive" src="<?php print_link(SITE_LOGO . '?v=' . time()); ?>" style="max-height: 38px; margin-right: 8px; vertical-align: middle;" /> <?php echo SITE_NAME ?>
-            </a>
-            <?php 
-            if(user_login_status() == true ){ 
-            ?>
-            <button type="button" id="sidebarCollapse" class="btn btn-primary">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <button type="button" class="navbar-toggler" data-toggle="collapse" data-target=".navbar-responsive-collapse">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="navbar-collapse collapse navbar-responsive-collapse">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
-                            <span class="avatar-icon"><?php if ($header_avatar) { ?><img src="<?php echo htmlspecialchars($header_avatar, ENT_QUOTES, 'UTF-8'); ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover"><?php } else { ?><i class="fa fa-user"></i><?php } ?></span>
-                            <span>Hi <?php echo ucwords(get_active_user('nama', USER_NAME)); ?> !</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <a class="dropdown-item" href="<?php print_link('account') ?>"><i class="fa fa-user"></i> My Account</a>
-                            <a class="dropdown-item" href="<?php print_link('index/logout?csrf_token=' . Csrf::$token) ?>"><i class="fa fa-sign-out"></i> Logout</a>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-            <?php 
-            } 
-            ?>
-        </div>
-    </div>
-    <?php 
-    if(user_login_status() == true ){ 
-    ?>
-    <nav id="sidebar" class="navbar-dark bg-primary">
-        <ul class="nav navbar-nav w-100 flex-column align-self-start">
-            <li class="menu-profile text-center nav-item">
-                <a class="avatar" href="<?php print_link('account') ?>">
-                    <span class="avatar-icon"><?php if ($header_avatar) { ?><img src="<?php echo htmlspecialchars($header_avatar, ENT_QUOTES, 'UTF-8'); ?>" alt="Foto profil" style="width:64px;height:64px;border-radius:50%;object-fit:cover"><?php } else { ?><i class="fa fa-user"></i><?php } ?></span>
-                </a>
-                <h5 class="user-name">Hi
-                    <?php echo ucwords(get_active_user('nama', USER_NAME)); ?>
-                </h5>
-                <div class="dropdown menu-dropdown">
-                    <button class="btn btn-primary dropdown-toggle btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-user"></i>
-                    </button>
+        </a>
+        <?php 
+        if(user_login_status() == true ){ 
+        ?>
+        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="navbar-collapse collapse navbar-responsive-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
+                        <span class="avatar-icon"><?php if ($header_avatar) { ?><img src="<?php echo htmlspecialchars($header_avatar, ENT_QUOTES, 'UTF-8'); ?>" alt="" style="width:24px;height:24px;border-radius:50%;object-fit:cover"><?php } else { ?><i class="fa fa-user"></i><?php } ?></span>
+                        <span><?php echo ucwords(get_active_user('nama', USER_NAME)); ?></span>
+                    </a>
                     <ul class="dropdown-menu">
                         <a class="dropdown-item" href="<?php print_link('account') ?>"><i class="fa fa-user"></i> My Account</a>
                         <a class="dropdown-item" href="<?php print_link('index/logout?csrf_token=' . Csrf::$token) ?>"><i class="fa fa-sign-out"></i> Logout</a>
                     </ul>
-                </div>
-            </li>
-        </ul>
+                </li>
+            </ul>
+        </div>
+        <?php 
+        } 
+        ?>
+    </div>
+</div>
+<?php 
+if(user_login_status() == true ){ 
+?>
+<nav id="sidebar">
+    <div class="sidebar-menu-wrapper pt-3">
         <?php Html :: render_menu(Menu :: $navbarsideleft  , "nav navbar-nav w-100 flex-column align-self-start"  , "collapse"); ?>
-    </nav>
-    <?php 
-    } 
-    ?>
+    </div>
+</nav>
+<?php 
+} 
+?>

@@ -154,19 +154,28 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
                                             foreach($records as $data){
                                             $rec_id = (!empty($data['log_id']) ? urlencode($data['log_id']) : null);
                                             $counter++;
+                                            $act = strtolower($data['Action'] ?? '');
+                                            $act_badge = 'badge-action-other';
+                                            if ($act === 'add' || $act === 'insert') {
+                                                $act_badge = 'badge-action-add';
+                                            } elseif ($act === 'edit' || $act === 'edit_data' || $act === 'update') {
+                                                $act_badge = 'badge-action-edit';
+                                            } elseif ($act === 'delete') {
+                                                $act_badge = 'badge-action-delete';
+                                            }
                                             ?>
                                             <tr>
-                                                <th class="td-sno"><?php echo $counter; ?></th>
-                                                <td class="td-Timestamp"> <?php echo $data['Timestamp']; ?></td>
-                                                <td class="td-Action"> <?php echo $data['Action']; ?></td>
-                                                <td class="td-TableName"> <?php echo $data['TableName']; ?></td>
+                                                <th class="td-sno text-muted"><?php echo $counter; ?></th>
+                                                <td class="td-Timestamp text-muted font-monospace-apple"> <?php echo htmlspecialchars($data['Timestamp']); ?></td>
+                                                <td class="td-Action"><span class="badge badge-pill <?php echo $act_badge; ?>"><?php echo strtoupper($data['Action']); ?></span></td>
+                                                <td class="td-TableName font-weight-medium"> <?php echo htmlspecialchars($data['TableName']); ?></td>
                                                 <td class="td-UserID">
-                                                    <a size="sm" class="btn btn-sm btn-primary page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['UserID'])) ?>">
-                                                        <i class="fa fa-eye"></i> <?php echo !empty($data['user_username']) ? htmlspecialchars($data['user_username']) : $data['UserID']; ?>
+                                                    <a size="sm" class="audit-user-link page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['UserID'])) ?>">
+                                                        <span class="audit-user-icon"><i class="fa fa-user"></i></span> <?php echo !empty($data['user_username']) ? htmlspecialchars($data['user_username']) : htmlspecialchars($data['UserID']); ?>
                                                     </a>
                                                 </td>
                                                 <th class="td-btn">
-                                                    <a class="btn btn-sm btn-success has-tooltip" title="View Record" href="<?php print_link("audit_log/view/$rec_id"); ?>">
+                                                    <a class="btn btn-sm btn-outline-success btn-view-ghost has-tooltip" title="View Record" href="<?php print_link("audit_log/view/$rec_id"); ?>">
                                                         <i class="fa fa-eye"></i> View
                                                     </a>
                                                 </th>
