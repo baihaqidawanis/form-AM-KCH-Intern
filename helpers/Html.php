@@ -289,18 +289,22 @@ class Html
 				$arrsrc = array_slice($arrsrc, 0, min(count($arrsrc), $max));
 			}
 			foreach ($arrsrc as $src) {
-				$imgpath = "helpers/timthumb.php?src=$src";
-				$imgpath .= ($resizeheight != null ? "&h=$resizeheight" : null);
-				$imgpath .= ($resizewidth != null ? "&w=$resizewidth" : null);
-				$previewlink = $link;
+				$imgpath = set_img_src($src);
+				if ($imgpath === null) { continue; }
+				$previewlink = $link ? set_img_src($link) : $imgpath;
+				if ($previewlink === null) { $previewlink = $imgpath; }
 				$previewattr = null;
 				if ($link == null) {
-					$previewlink = "helpers/timthumb.php?src=$src&w=760&h=520";
 					$previewattr = 'data-gallery=""';
 				}
+				$styles = array();
+				if ($resizewidth !== null) { $styles[] = 'max-width:' . max(1, intval($resizewidth)) . 'px'; }
+				if ($resizeheight !== null) { $styles[] = 'max-height:' . max(1, intval($resizeheight)) . 'px'; }
+				$styleattr = $styles ? ' style="' . implode(';', $styles) . '"' : '';
+				$safeclass = $class !== null ? htmlspecialchars((string)$class, ENT_QUOTES, 'UTF-8') : '';
 			?>
 				<a <?php echo $previewattr; ?> href="<?php print_link($previewlink) ?>">
-					<img <?php echo ($class != null ? 'class="' . $class . '"' : null) ?> src="<?php print_link($imgpath); ?>" />
+					<img <?php echo ($safeclass !== '' ? 'class="' . $safeclass . '"' : '') . $styleattr; ?> src="<?php print_link($imgpath); ?>" alt="" />
 				</a>
 		<?php
 			}

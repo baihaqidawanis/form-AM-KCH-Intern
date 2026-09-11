@@ -17,8 +17,9 @@ class ApprovalFlowTest extends TestCase
 
     public function test_approve_manual_record_nok(): void
     {
-        $client = (new ApiClient())->loginAs('administrator');
-        $id = $this->createNokRecord($client);
+        $admin = (new ApiClient())->loginAs('administrator');
+        $client = (new ApiClient())->loginAs('supervisor');
+        $id = $this->createNokRecord($admin);
 
         try {
             $editPage = $client->get(self::MACHINE . "/edit/$id");
@@ -36,16 +37,17 @@ class ApprovalFlowTest extends TestCase
             // ditampilkan sama sekali di list2.php walau datanya udah ke-fetch
             // (gap vs URS Gambar 23, difix di semua 17 modul).
             $this->assertStringContainsString('Approval Oleh', $list);
-            $this->assertStringContainsString('>superadmin<', $list, 'Kolom Approval Oleh gak nunjukin siapa yang approve manual');
+            $this->assertStringContainsString('>SUPERV01<', $list, 'Kolom Approval Oleh gak nunjukin SPV yang approve manual');
         } finally {
-            $client->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
+            $admin->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
         }
     }
 
     public function test_reject_manual_record_nok(): void
     {
-        $client = (new ApiClient())->loginAs('administrator');
-        $id = $this->createNokRecord($client);
+        $admin = (new ApiClient())->loginAs('administrator');
+        $client = (new ApiClient())->loginAs('supervisor');
+        $id = $this->createNokRecord($admin);
 
         try {
             $resp = $client->postWithCsrf(self::MACHINE . "/edit/$id", array('approval' => 'Not Approved'));
@@ -54,7 +56,7 @@ class ApprovalFlowTest extends TestCase
             $list = (string) $client->get(self::MACHINE)->getBody();
             $this->assertStringContainsString('Not Approved', $list);
         } finally {
-            $client->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
+            $admin->deleteWithCsrf(self::MACHINE . "/view/$id", self::MACHINE . "/delete/$id");
         }
     }
 

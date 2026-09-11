@@ -127,8 +127,9 @@ class MachineLifecycleAllTest extends TestCase
         $this->assertStringContainsString('badge-danger', $view, "$machine: ada part NOK mestinya nunjukin badge NOK di view");
         $this->assertStringContainsString("Test PHPUnit $machine", $view, "$machine: teks kendala gak muncul di view");
 
-        // Approve manual (Administrator) -- pastikan alur approval jalan.
-        $edit = $this->client->postWithCsrf("$machine/edit/$id", array('approval' => 'Approved'));
+        // Approval manual hanya dilakukan Supervisor sesuai SOP dua tahap.
+        $supervisor = (new ApiClient())->loginAs('supervisor');
+        $edit = $supervisor->postWithCsrf("$machine/edit/$id", array('approval' => 'Approved'));
         $this->assertSame(200, $edit->getStatusCode(), "$machine: approve manual gagal");
         $afterApprove = (string) $this->client->get("$machine/view/$id")->getBody();
         $this->assertStringContainsString('>Approved<', $afterApprove, "$machine: approval manual gak ke-apply");

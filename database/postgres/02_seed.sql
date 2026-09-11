@@ -213,7 +213,6 @@ ON CONFLICT ("username") DO UPDATE SET
   "mesin" = EXCLUDED."mesin",
   "is_super_admin" = false,
   "failed_login_attempts" = 0,
-  "login_session_key" = NULL,
   "password_reset_key" = NULL;
 
 -- Nomor seri fisik mesin -- lihat database/migrations/2026-08-20_add_mesin_nomor_seri.sql

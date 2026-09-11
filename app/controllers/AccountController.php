@@ -172,9 +172,9 @@ class AccountController extends SecureController{
 			elseif (password_verify($new_password, $user['password'])) { $this->set_page_error('Password baru tidak boleh sama dengan password saat ini.'); }
 			else {
 				$db->where('id_user', USER_ID);
-				$data = array('password' => password_hash($new_password, PASSWORD_DEFAULT), 'password_reset_key' => null, 'password_expire_date' => null, 'login_session_key' => null);
+				$data = array('password' => password_hash($new_password, PASSWORD_DEFAULT), 'password_reset_key' => null, 'password_expire_date' => null);
 				if ($db->update($this->tablename, $data)) {
-					clear_cookie('login_session_key'); session_regenerate_id(true);
+					session_regenerate_id(true);
 					$this->write_to_log('change_password', 'true'); $this->set_flash_msg('Password berhasil diubah.', 'success');
 					return $this->redirect('account');
 				}

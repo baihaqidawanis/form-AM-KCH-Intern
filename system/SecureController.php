@@ -36,24 +36,6 @@ class SecureController extends BaseController{
 	 */
 	private function authenticate_user()
 	{
-		if (user_login_status() == false) {
-			//check if user has a login cookie
-			$session_key = get_cookie("login_session_key");
-			if (!empty($session_key)) {
-				$db = $this->GetModel();
-				$db->where("login_session_key", hash_value($session_key));
-				$user = $db->getOne("users");
-				if (!empty($user)) {
-					// Blok akun yang sudah dinonaktifkan dari auto-login via stale cookie
-					if (($user['account_status'] ?? '') !== 'Active') {
-						clear_cookie("login_session_key");
-					} else {
-						set_session("user_data", $user);
-						session_regenerate_id(true); // cegah session fixation
-					}
-				}
-			}
-		}
 		//URS 1.3: session timeout 30 menit idle. Ini backstop server-side --
 		//pengecekan utama (deteksi idle + peringatan) jalan di sisi client lewat
 		//assets/js/idle-timeout.js, ini cuma jaga-jaga kalau JS gak jalan/nonaktif.
@@ -62,7 +44,6 @@ class SecureController extends BaseController{
 			if (!empty($last_activity) && (time() - $last_activity) > SESSION_TIMEOUT_SECONDS) {
 				clear_session("user_data");
 				clear_session("last_activity");
-				clear_cookie("login_session_key");
 				set_session("session_timed_out", true);
 				return false;
 			}

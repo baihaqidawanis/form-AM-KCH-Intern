@@ -13,6 +13,8 @@
         <!-- App HARUS udah jalan (Apache + Postgres up) sebelum jalanin test ini —
              ini integration test HTTP-level, bukan unit test, karena app-nya PHP
              native tanpa DI (lihat DOCS_MD/AUTOMATED_TESTING.md buat alasannya). -->
-        <env name="APP_BASE_URL" value="http://localhost/form-am"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="DB_NAME" value="form_am_plg_test" force="true"/>
+        <env name="APP_BASE_URL" value="http://127.0.0.1:8099" force="true"/>
     </php>
 </phpunit>

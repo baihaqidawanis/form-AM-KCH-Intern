@@ -202,7 +202,7 @@ class DigitalSignatureTest extends TestCase
 		$delete->execute(array('sig', $mesinId));
 
 		try {
-			$client = (new ApiClient())->loginAs('manager');
+			$client = (new ApiClient())->loginAs('supervisor');
 			$response = $client->postWithCsrfFrom('home', 'sig/sign_period', array(
 				'mesin' => $mesinId,
 				'year' => 2100,

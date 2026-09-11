@@ -22,7 +22,7 @@ class IndexController extends BaseController
 			$this->render_view("index/index.php");
 		}
 	}
-	private function login_user($username, $password_text, $rememberme = false)
+	private function login_user($username, $password_text)
 	{
 		$db = $this->GetModel();
 		$username = filter_var($username, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
@@ -55,19 +55,8 @@ class IndexController extends BaseController
 					$db->update($tablename, array("failed_login_attempts" => 0));
 				}
 				unset($user['password']); //Remove user password. No need to store it in the session
+				session_regenerate_id(true); // Prevent session fixation after authentication.
 				set_session("user_data", $user); // Set active user data in a sessions
-				//if Remeber Me, Set Cookie
-				if ($rememberme == true) {
-					$sessionkey = time() . random_str(20); // Generate a session key for the user
-					//Update user session info in database with the session key
-					$db->where("id_user", $user['id_user']);
-					$res = $db->update($tablename, array("login_session_key" => hash_value($sessionkey)));
-					if (!empty($res)) {
-						set_cookie("login_session_key", $sessionkey); // save user login_session_key in a Cookie
-					}
-				} else {
-					clear_cookie("login_session_key");// Clear any previous set cookie
-				}
 				$redirect_url = get_session("login_redirect_url");// Redirect to user active page
 				if (!empty($redirect_url)) {
 					clear_session("login_redirect_url");
@@ -114,8 +103,7 @@ class IndexController extends BaseController
 			$modeldata = $this->modeldata = $formdata;
 			$username = trim($modeldata['username']);
 			$password = $modeldata['password'];
-			$rememberme = (!empty($modeldata['rememberme']) ? $modeldata['rememberme'] : false);
-			$this->login_user($username, $password, $rememberme);
+			$this->login_user($username, $password);
 		} else {
 			$this->set_page_error("Invalid request");
 			$this->render_view("index/login.php");
@@ -211,7 +199,6 @@ class IndexController extends BaseController
 	{
 		Csrf::cross_check();
 		session_destroy();
-		clear_cookie("login_session_key");
 		$this->redirect("");
 	}
 }

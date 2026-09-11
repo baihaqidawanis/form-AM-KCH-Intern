@@ -199,64 +199,61 @@ class QrSignatureHelper
      */
     public static function savePeriodSignature($mesinSlug, $mesinId, $bulan, $tahun, $periode, $userId, $role, $docHash)
     {
+        if (!in_array($role, array('operator', 'spv'), true) || !preg_match('/^[a-f0-9]{64}$/', (string)$docHash)) {
+            return array('success' => false, 'error' => 'Parameter tanda tangan tidak valid.');
+        }
         $db = self::getDb();
-        $existing = self::getPeriodSignature($mesinSlug, $mesinId, $bulan, $tahun, $periode);
         $token = self::generateToken($mesinSlug, $mesinId, $bulan, $tahun, $periode, $role, $userId);
         $now = date('Y-m-d H:i:s');
-
-        if ($existing) {
-            $updateData = array(
-                'document_hash' => $docHash,
-                'updated_at' => $now
+        try {
+            $db->startTransaction();
+            $db->rawQuery(
+                'INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (mesin_slug, mesin_id, bulan, tahun, periode) DO NOTHING',
+                array($mesinSlug, (int)$mesinId, (int)$bulan, (int)$tahun, (int)$periode, $docHash, 'draft', $now)
             );
+            $existing = $db->rawQueryOne(
+                'SELECT * FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = ? AND tahun = ? AND periode = ? FOR UPDATE',
+                array($mesinSlug, (int)$mesinId, (int)$bulan, (int)$tahun, (int)$periode)
+            );
+            if (!$existing) { throw new RuntimeException('Record tanda tangan tidak dapat dikunci.'); }
 
-            if ($role === 'operator') {
-                $updateData['operator_id'] = (int)$userId;
-                $updateData['operator_signed_at'] = $now;
-                $updateData['operator_token'] = $token;
-                if ($existing['status'] === 'draft') {
-                    $updateData['status'] = 'signed_operator';
+            $existingToken = $role === 'operator' ? ($existing['operator_token'] ?? null) : ($existing['spv_token'] ?? null);
+            $existingUser = $role === 'operator' ? ($existing['operator_id'] ?? null) : ($existing['spv_id'] ?? null);
+            if ($existingToken) {
+                if (intval($existingUser) === intval($userId) && hash_equals((string)$existing['document_hash'], (string)$docHash)) {
+                    $db->commit();
+                    return array('success' => true, 'token' => $existingToken);
                 }
-            } elseif ($role === 'spv') {
-                $updateData['spv_id'] = (int)$userId;
-                $updateData['spv_signed_at'] = $now;
-                $updateData['spv_token'] = $token;
-                $updateData['status'] = 'approved';
+                $db->rollback();
+                return array('success' => false, 'error' => 'Periode ini telah ditandatangani. Batalkan tanda tangan lama sebelum menggantinya.');
+            }
+            if (($existing['operator_token'] ?? null) || ($existing['spv_token'] ?? null)) {
+                if (!hash_equals((string)$existing['document_hash'], (string)$docHash)) {
+                    $db->rollback();
+                    return array('success' => false, 'error' => 'Isi dokumen berubah setelah penandatanganan. Batalkan tanda tangan lama sebelum melanjutkan.');
+                }
+            }
+            if ($role === 'spv' && empty($existing['operator_token'])) {
+                $db->rollback();
+                return array('success' => false, 'error' => 'Operator harus menandatangani dokumen terlebih dahulu.');
             }
 
-            $db->where('id', $existing['id']);
-            $res = $db->update('am_period_signatures', $updateData);
-            if ($res) {
-                return array('success' => true, 'token' => $token);
-            }
-            return array('success' => false, 'error' => $db->getLastError() ?: 'Gagal update tanda tangan');
-        } else {
-            $insertData = array(
-                'mesin_slug' => $mesinSlug,
-                'mesin_id' => (int)$mesinId,
-                'bulan' => (int)$bulan,
-                'tahun' => (int)$tahun,
-                'periode' => (int)$periode,
-                'document_hash' => $docHash,
-                'status' => ($role === 'spv' ? 'approved' : 'signed_operator'),
-                'created_at' => $now
-            );
-
+            $updateData = array('document_hash' => $docHash, 'updated_at' => $now);
             if ($role === 'operator') {
-                $insertData['operator_id'] = (int)$userId;
-                $insertData['operator_signed_at'] = $now;
-                $insertData['operator_token'] = $token;
-            } elseif ($role === 'spv') {
-                $insertData['spv_id'] = (int)$userId;
-                $insertData['spv_signed_at'] = $now;
-                $insertData['spv_token'] = $token;
+                $updateData += array('operator_id' => (int)$userId, 'operator_signed_at' => $now, 'operator_token' => $token, 'status' => 'signed_operator');
+            } else {
+                $updateData += array('spv_id' => (int)$userId, 'spv_signed_at' => $now, 'spv_token' => $token, 'status' => 'approved');
             }
-
-            $id = $db->insert('am_period_signatures', $insertData);
-            if ($id) {
-                return array('success' => true, 'token' => $token);
+            $db->where('id', $existing['id']);
+            if (!$db->update('am_period_signatures', $updateData) || !$db->getRowCount()) {
+                throw new RuntimeException($db->getLastError() ?: 'Gagal menyimpan tanda tangan.');
             }
-            return array('success' => false, 'error' => $db->getLastError() ?: 'Gagal simpan tanda tangan');
+            if (!$db->commit()) { throw new RuntimeException('Commit tanda tangan gagal.'); }
+            return array('success' => true, 'token' => $token);
+        } catch (Throwable $e) {
+            try { $db->rollback(); } catch (Throwable $ignored) {}
+            error_log('savePeriodSignature failed: ' . $e->getMessage());
+            return array('success' => false, 'error' => 'Gagal menyimpan tanda tangan digital.');
         }
     }
 

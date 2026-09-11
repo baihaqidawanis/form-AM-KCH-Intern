@@ -400,6 +400,51 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return true;
 	}
 
+	/** Validasi status part dan detail abnormalitas dilakukan di server untuk semua mesin. */
+	protected function hasValidPartAndNokInput(array $formdata, array $part_fields)
+	{
+		$valid = true;
+		$detail_fields = array(
+			'kendala_' => 'uraian kendala',
+			'kategori_tag_' => 'kategori tag',
+			'korelasi_tag_' => 'korelasi tag',
+			'klasifikasi_tag_' => 'klasifikasi tag',
+			'kategori_ketidaksesuaian_' => 'kategori ketidaksesuaian',
+		);
+		foreach ($part_fields as $field => $label) {
+			$status = trim((string)($formdata[$field] ?? ''));
+			if (!in_array($status, array('OK', 'NOK', 'N/A', 'Tidak Dilakukan'), true)) {
+				$this->view->page_error[] = 'Status part ' . $label . ' tidak valid.';
+				$valid = false;
+				continue;
+			}
+			if ($status !== 'NOK') { continue; }
+			foreach ($detail_fields as $prefix => $detail_label) {
+				if (trim((string)($formdata[$prefix . $field] ?? '')) === '') {
+					$this->view->page_error[] = ucfirst($detail_label) . ' wajib diisi untuk part NOK: ' . $label . '.';
+					$valid = false;
+				}
+			}
+		}
+		return $valid;
+	}
+
+	private function nokDetailData(array $formdata, $field, $rec_id, $mesin_id)
+	{
+		return array(
+			'id_am' => $rec_id,
+			'mesin' => $mesin_id,
+			'nama_bagian' => $field,
+			'kendala' => trim((string)$formdata['kendala_' . $field]),
+			'kategori_tag' => trim((string)$formdata['kategori_tag_' . $field]),
+			'korelasi_tag' => trim((string)$formdata['korelasi_tag_' . $field]),
+			'klasifikasi_tag' => trim((string)$formdata['klasifikasi_tag_' . $field]),
+			'kategori_ketidaksesuaian' => trim((string)$formdata['kategori_ketidaksesuaian_' . $field]),
+			'no_wr' => $this->noWrForField($formdata, $field),
+			'created_at' => datetime_now(),
+		);
+	}
+
 	protected function isUnitDeactivated($mesin_id, $operational_date)
 	{
 		try {
@@ -449,8 +494,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
 			// Mesin biasa hanya satu form per hari. Mesin shift tetap satu form per shift.
 			$valid_no_wr = $this->hasValidNoWrInput($formdata, $parts_for_add);
+			$valid_parts = $this->hasValidPartAndNokInput($formdata, $parts_for_add);
 			$is_duplicate = false;
-			if ($this->validated() && $valid_no_wr) {
+			if ($this->validated() && $valid_no_wr && $valid_parts) {
 				$db->where('mesin', $modeldata['mesin'])->where('operational_date', $modeldata['operational_date']);
 				if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $modeldata['shift']); }
 				if ($db->has($sql)) {
@@ -458,7 +504,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$this->view->page_error[] = in_array('shift', $this->extraFields, true) ? 'Shift ini sudah diisi untuk tanggal operasional tersebut.' : 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.';
 				}
 			}
-			if ($this->validated() && $valid_no_wr && !$is_duplicate) {
+			if ($this->validated() && $valid_no_wr && $valid_parts && !$is_duplicate) {
 				$snapshot_schema = $this->snapshotSchema();
 				try {
 					$db->startTransaction();
@@ -466,8 +512,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					if (!$rec_id) { throw new RuntimeException('Gagal menyimpan form AM.'); }
 					foreach ($parts_for_add as $field => $label) {
 						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
-						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
-							if (!$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $modeldata['mesin'], 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
+						if ($kondisi_part === 'NOK') {
+							if (!$db->insert($this->kendalaTable(), $this->nokDetailData($formdata, $field, $rec_id, $modeldata['mesin']))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
 						}
 					}
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
@@ -659,7 +705,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 		$current_user_role = intval(get_active_user('user_role_id'));
 		$can_sign_operator = in_array($current_user_role, array(4, 5), true); // Staff, Operator
-		$can_sign_spv = in_array($current_user_role, array(2, 3), true); // Manager, SPV
+		$can_sign_spv = $current_user_role === 3; // Supervisor only
 		$can_cancel_own_operator = !empty($signature['operator_token'])
 			&& empty($signature['spv_token'])
 			&& intval($signature['operator_id'] ?? 0) === intval(USER_ID);
@@ -723,6 +769,43 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 	}
 
+	/** Approval manual hanya oleh SPV; row dikunci hingga status dan atribusi tersimpan atomik. */
+	private function updateApprovalSafely($rec_id, $approval)
+	{
+		if (intval(get_active_user('user_role_id')) !== 3) {
+			return array('success' => false, 'status' => 403, 'message' => 'Hanya Supervisor yang dapat melakukan approval manual.');
+		}
+		$approval = trim((string)$approval);
+		if (!in_array($approval, array('Approved', 'Not Approved'), true)) {
+			return array('success' => false, 'status' => 422, 'message' => 'Status approval tidak valid.');
+		}
+		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
+		try {
+			$db->startTransaction();
+			$current = $db->rawQueryOne("SELECT approval, user_approve, tanggal_perubahan FROM {$sql} WHERE {$idcol} = ? FOR UPDATE", array(intval($rec_id)));
+			if (!$current) {
+				$this->rollbackTransactionSafely($db, 'approval record missing');
+				return array('success' => false, 'status' => 404, 'message' => 'Checklist tidak ditemukan atau sudah tidak tersedia.');
+			}
+			if (($current['approval'] ?? null) === 'Approved') {
+				$this->rollbackTransactionSafely($db, 'approval already final');
+				$approved_by = trim((string)($current['user_approve'] ?? '')) ?: 'Supervisor lain';
+				return array('success' => false, 'status' => 409, 'message' => "Checklist sudah disetujui oleh {$approved_by}; data tidak ditimpa.");
+			}
+			$now = datetime_now();
+			$db->where($idcol, intval($rec_id));
+			if (!$db->update($sql, array('approval' => $approval, 'user_approve' => USER_NAME, 'tanggal_perubahan' => $now, 'updated_at' => $now)) || !$db->getRowCount()) {
+				throw new RuntimeException($db->getLastError() ?: 'Tidak ada record approval yang diperbarui.');
+			}
+			if (!$db->commit()) { throw new RuntimeException('Commit approval gagal.'); }
+			return array('success' => true, 'status' => 200, 'message' => 'Approval berhasil diperbarui.');
+		} catch (Throwable $e) {
+			$this->rollbackTransactionSafely($db, 'approval ' . $this->machineKey);
+			error_log('Approval ' . $this->machineKey . ' failed: ' . $e->getMessage());
+			return array('success' => false, 'status' => 500, 'message' => 'Approval gagal disimpan. Silakan muat ulang dan coba kembali.');
+		}
+	}
+
 	function edit($rec_id = null, $formdata = null)
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
@@ -731,35 +814,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->fields = array('approval'); $postdata = $this->format_request_data($formdata);
 			$this->rules_array = array('approval' => 'required'); $this->sanitize_array = array('approval' => 'sanitize_string');
 			$modeldata = $this->validate_form($postdata);
-			$modeldata['updated_at'] = datetime_now(); $modeldata['tanggal_perubahan'] = datetime_now(); $modeldata['user_approve'] = USER_NAME;
 			if ($this->validated()) {
-				$current = $db->where("$sql.$idcol", $rec_id)->getOne($sql, array('approval', 'user_approve', 'tanggal_perubahan'));
-				if (!$current) {
-					$this->set_flash_msg('Checklist tidak ditemukan atau sudah tidak tersedia.', 'warning');
-					return $this->redirect($table);
-				}
-				if (($current['approval'] ?? null) === 'Approved') {
-					$approved_by = trim((string) ($current['user_approve'] ?? '')) ?: 'Supervisor lain';
-					$this->set_flash_msg("Checklist ini sudah disetujui lebih dulu oleh {$approved_by}. Tindakan Anda tidak menimpa data.", 'warning');
-					return $this->redirect($table);
-				}
-				$db->where("$sql.$idcol", $rec_id);
-				$db->where("($sql.approval IS NULL OR $sql.approval <> ?)", array('Approved'));
-				$bool = $db->update($sql, $modeldata);
-				$numRows = $db->getRowCount();
-				if ($bool && $numRows) { $this->write_to_log('edit', 'true'); $this->set_flash_msg('Approval berhasil diperbarui', 'success'); return $this->redirect($table); }
-				if ($db->getLastError()) {
-					$this->set_page_error();
-				} elseif (!$numRows) {
-					$latest = $db->where("$sql.$idcol", $rec_id)->getOne($sql, array('approval', 'user_approve', 'tanggal_perubahan'));
-					if (($latest['approval'] ?? null) === 'Approved') {
-						$approved_by = trim((string) ($latest['user_approve'] ?? '')) ?: 'Supervisor lain';
-						$this->set_flash_msg("Checklist ini sudah disetujui lebih dulu oleh {$approved_by}. Tindakan Anda tidak menimpa data.", 'warning');
-					} else {
-						$this->set_flash_msg('Checklist tidak dapat diperbarui karena statusnya berubah. Silakan muat ulang halaman.', 'warning');
-					}
-					return $this->redirect($table);
-				}
+				$result = $this->updateApprovalSafely($rec_id, $modeldata['approval'] ?? null);
+				if ($result['success']) { $this->write_to_log('edit', 'true'); $this->set_flash_msg($result['message'], 'success'); }
+				else { $this->set_flash_msg($result['message'], ($result['status'] ?? 500) === 403 ? 'danger' : 'warning'); }
+				return $this->redirect($table);
 			}
 		}
 		$db->where("$sql.$idcol", $rec_id); $data = $db->getOne($sql, array($idcol, 'approval'));
@@ -835,7 +894,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
 			}
 			$valid_no_wr = $this->hasValidNoWrInput($formdata, $this->parts);
-			if ($this->validated() && $valid_no_wr) {
+			$valid_parts = $this->hasValidPartAndNokInput($formdata, $this->parts);
+			if ($this->validated() && $valid_no_wr && $valid_parts) {
 				try {
 					$db->startTransaction();
 					$db->where($idcol, $rec_id);
@@ -852,8 +912,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					}
 					foreach ($this->parts as $field => $label) {
 						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
-						if ($kondisi_part === 'NOK' && !empty($_POST['kendala_' . $field])) {
-							if (!$db->insert($this->kendalaTable(), array('id_am' => $rec_id, 'mesin' => $mesin_id, 'nama_bagian' => $field, 'kendala' => $_POST['kendala_' . $field], 'kategori_tag' => $_POST['kategori_tag_' . $field], 'korelasi_tag' => $_POST['korelasi_tag_' . $field], 'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field], 'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field], 'no_wr' => $this->noWrForField($formdata, $field), 'created_at' => datetime_now()))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
+						if ($kondisi_part === 'NOK') {
+							if (!$db->insert($this->kendalaTable(), $this->nokDetailData($formdata, $field, $rec_id, $mesin_id))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
 						}
 					}
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
@@ -910,34 +970,13 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 	function editfield($rec_id = null, $formdata = null)
 	{
-		$sql = $this->sqlTable(); $idcol = $this->idColumn();
-		$db = $this->GetModel(); $this->rec_id = $rec_id;
-		$this->fields = array($idcol, 'updated_at', 'approval', 'user_approve', 'perubahan', 'user_perubah', 'tanggal_perubahan');
-		$page_error = null;
+		$this->rec_id = $rec_id;
 		if ($formdata) {
-			$postdata = array();
-			$fieldname = $formdata['name']; $fieldvalue = $formdata['value'];
-			$postdata[$fieldname] = $fieldvalue;
-			$postdata = $this->format_request_data($postdata);
-			$this->rules_array = array('approval' => 'required');
-			$this->sanitize_array = array('approval' => 'sanitize_string', 'perubahan' => 'sanitize_string', 'user_perubah' => 'sanitize_string', 'tanggal_perubahan' => 'sanitize_string');
-			$this->filter_rules = true;
-			$modeldata = $this->modeldata = $this->validate_form($postdata);
-			if ($this->validated()) {
-				$db->where($idcol, $rec_id);
-				$bool = $db->update($sql, $modeldata);
-				$numRows = $db->getRowCount();
-				if ($bool && $numRows) {
-					$this->write_to_log('edit', 'true');
-					return render_json(array('num_rows' => $numRows, 'rec_id' => $rec_id));
-				} else {
-					if ($db->getLastError()) { $page_error = $db->getLastError(); }
-					elseif (!$numRows) { $page_error = 'No record updated'; }
-					render_error($page_error);
-				}
-			} else {
-				render_error($this->view->page_error);
-			}
+			if (($formdata['name'] ?? '') !== 'approval') { http_response_code(403); return render_error('Kolom ini tidak diizinkan untuk inline editing.', 403); }
+			$result = $this->updateApprovalSafely($rec_id, $formdata['value'] ?? null);
+			if (!$result['success']) { http_response_code($result['status'] ?? 500); return render_error($result['message'], $result['status'] ?? 500); }
+			$this->write_to_log('edit', 'true');
+			return render_json(array('num_rows' => 1, 'rec_id' => $rec_id));
 		}
 		return null;
 	}
@@ -1016,9 +1055,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			return;
 		}
 
-		if ($role_type === 'spv' && !in_array($current_user_role, array(2, 3), true)) {
+		if ($role_type === 'spv' && $current_user_role !== 3) {
 			http_response_code(403);
-			render_json(array('success' => false, 'message' => 'Hanya role Supervisor atau Manager yang dapat menandatangani sebagai SPV/Fasilitator.'));
+			render_json(array('success' => false, 'message' => 'Hanya role Supervisor yang dapat menandatangani sebagai SPV/Fasilitator.'));
 			return;
 		}
 

@@ -218,7 +218,7 @@ function redirect_to_action($action_name)
 
 /**
  * Set Image Src 
- * Convinient Function To Resize Image Via Url of the Image Src if the src is from the same origin then image can be resize
+ * Return a safe same-application image path. Resizing is handled by CSS/browser.
  * @example <img src="<?php echo set_img_src('uploads/images/89njdh4533.jpg',50,50); ?>" />
  * @return  string
  */
@@ -226,11 +226,17 @@ function set_img_src($imgsrc, $width = null, $height = null, $returnindex = 0)
 {
 	if (!empty($imgsrc)) {
 		$arrsrc = explode(",", $imgsrc);
-		$src = $arrsrc[$returnindex];
-		$imgpath = "helpers/timthumb.php?src=$src";
-		$imgpath .= ($height != null ? "&h=$height" : null);
-		$imgpath .= ($width != null ? "&w=$width" : null);
-		return $imgpath;
+		$src = trim((string)($arrsrc[$returnindex] ?? ''));
+		if ($src === '' || strpos($src, "\0") !== false) { return null; }
+		$site = rtrim((string)SITE_ADDR, '/') . '/';
+		if (str_starts_with($src, $site)) { $src = substr($src, strlen($site)); }
+		$src = ltrim(str_replace('\\', '/', $src), '/');
+		if ($src === '' || preg_match('#^(?:[a-z][a-z0-9+.-]*:|//)#i', $src)) { return null; }
+		foreach (explode('/', $src) as $segment) {
+			if ($segment === '..' || $segment === '.') { return null; }
+		}
+		if (!preg_match('#^(?:assets/(?:images|img)|uploads/(?:files|photos|images))/[A-Za-z0-9 _./()\-]+$#', $src)) { return null; }
+		return $src;
 	}
 	return null;
 }

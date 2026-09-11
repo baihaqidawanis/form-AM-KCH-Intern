@@ -87,51 +87,7 @@ class ApprovalController extends SecureController{
      * @return array
      */
 	function editfield($rec_id = null, $formdata = null){
-		$db = $this->GetModel();
-		$this->rec_id = $rec_id;
-		$tablename = $this->tablename;
-		//editable fields
-		$fields = $this->fields = array("id");
-		$page_error = null;
-		if($formdata){
-			$postdata = array();
-			$fieldname = $formdata['name'];
-			$fieldvalue = $formdata['value'];
-			$postdata[$fieldname] = $fieldvalue;
-			$postdata = $this->format_request_data($postdata);
-			$this->rules_array = array(
-			);
-			$this->sanitize_array = array(
-			);
-			$this->filter_rules = true; //filter validation rules by excluding fields not in the formdata
-			$modeldata = $this->modeldata = $this->validate_form($postdata);
-			if($this->validated()){
-				$db->where("approval.id", $rec_id);
-				$bool = $db->update($tablename, $modeldata);
-				$numRows = $db->getRowCount();
-				if($bool && $numRows){
-					$this->write_to_log("edit", "true");
-					return render_json(
-						array(
-							'num_rows' =>$numRows,
-							'rec_id' =>$rec_id,
-						)
-					);
-				}
-				else{
-					if($db->getLastError()){
-						$page_error = $db->getLastError();
-					}
-					elseif(!$numRows){
-						$page_error = "No record updated";
-					}
-					render_error($page_error);
-				}
-			}
-			else{
-				render_error($this->view->page_error);
-			}
-		}
-		return null;
+		http_response_code(403);
+		return render_error('Inline editing tidak tersedia pada tabel approval agregat.', 403);
 	}
 }

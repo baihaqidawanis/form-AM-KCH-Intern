@@ -124,4 +124,12 @@ class ApiClient
     {
         return $this->lastBody;
     }
+
+    public function cookieValue(string $name): ?string
+    {
+        foreach ($this->jar->toArray() as $cookie) {
+            if (($cookie['Name'] ?? null) === $name) { return (string)$cookie['Value']; }
+        }
+        return null;
+    }
 }

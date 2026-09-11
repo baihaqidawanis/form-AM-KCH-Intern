@@ -37,10 +37,24 @@ class AuthTest extends TestCase
     public function test_login_salah_password_tidak_masuk(): void
     {
         $client = new ApiClient();
-        $client->postWithCsrfFrom('', 'index/login', array('username' => 'superadmin', 'password' => 'password-salah-banget'));
+        $client->postWithCsrfFrom('', 'index/login', array('username' => 'PHPUNIT_NOT_FOUND', 'password' => 'password-salah-banget'));
 
         $home = $client->get('Home');
         // Gagal login -> masih ke-redirect ke halaman login (ada form password), bukan Home beneran
         $this->assertStringContainsString('name="password"', (string) $home->getBody());
+    }
+
+    public function test_login_meregenerasi_session_id_dan_tidak_membuat_remember_cookie(): void
+    {
+        $client = new ApiClient();
+        $client->get('');
+        $before = $client->cookieValue(session_name());
+        $client->loginAs('operator');
+        $after = $client->cookieValue(session_name());
+
+        $this->assertNotEmpty($before);
+        $this->assertNotEmpty($after);
+        $this->assertNotSame($before, $after, 'Session ID wajib berubah setelah autentikasi sukses.');
+        $this->assertNull($client->cookieValue('login_session_key'));
     }
 }

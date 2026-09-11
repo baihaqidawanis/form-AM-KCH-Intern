@@ -10,14 +10,14 @@ require_once dirname(__DIR__, 2) . '/config.php';
 /**
  * Halaman Approval gabungan (tab semua mesin sekaligus, ApprovalController)
  * dan Audit Trail (Audit_logController) -- RBAC matrix URS 2.2: Approval
- * boleh Admin/Supervisor/Manager (bukan Operator); Audit Trail CUMA
+ * boleh Admin/Supervisor (bukan Manager/Operator); Audit Trail CUMA
  * Administrator (Supervisor sengaja TIDAK dikasih, beda dari halaman lain).
  */
 class ApprovalAndAuditAccessTest extends TestCase
 {
-    public function test_approval_bisa_diakses_admin_supervisor_manager(): void
+    public function test_approval_bisa_diakses_admin_dan_supervisor(): void
     {
-        foreach (array('administrator', 'supervisor', 'manager') as $role) {
+        foreach (array('administrator', 'supervisor') as $role) {
             $client = (new ApiClient())->loginAs($role);
             $resp = $client->get('approval');
             $this->assertSame(200, $resp->getStatusCode(), "$role harusnya bisa buka halaman Approval gabungan");
@@ -25,10 +25,12 @@ class ApprovalAndAuditAccessTest extends TestCase
         }
     }
 
-    public function test_operator_dilarang_akses_approval(): void
+    public function test_manager_dan_operator_dilarang_akses_approval(): void
     {
-        $operator = (new ApiClient())->loginAs('operator');
-        $this->assertSame(403, $operator->get('approval')->getStatusCode(), 'Operator harusnya 403 buka halaman Approval (URS 2.2 & 3.1)');
+        foreach (array('manager', 'operator') as $role) {
+            $client = (new ApiClient())->loginAs($role);
+            $this->assertSame(403, $client->get('approval')->getStatusCode(), "$role harus 403 membuka halaman Approval");
+        }
     }
 
     public function test_approval_gabungan_nampilin_semua_tab_mesin_terbaru(): void
@@ -57,7 +59,6 @@ class ApprovalAndAuditAccessTest extends TestCase
     {
         $admin = (new ApiClient())->loginAs('administrator');
         $pdo = new \PDO("pgsql:host=" . \DB_HOST . ";port=" . \DB_PORT . ";dbname=" . \DB_NAME, \DB_USERNAME, \DB_PASSWORD);
-        $pdo->exec("DELETE FROM tb_mesin_best_pack WHERE approval IS NULL OR approval = ''");
 
         $addPage = $admin->get('chimei/add');
         $html = (string) $addPage->getBody();
@@ -76,12 +77,9 @@ class ApprovalAndAuditAccessTest extends TestCase
                 $approvalPage,
                 'Tab Chimei mestinya ada badge notif angka pending yang jelas (bukan cuma teks polos)'
             );
-            // Mesin yang gak punya record pending sama sekali gak boleh ikut kebawa badge.
-            $this->assertDoesNotMatchRegularExpression(
-                '/Best Pack\s*<span class="badge/',
-                $approvalPage,
-                'Best Pack gak ada record pending -- gak boleh ikut nongol badge (regresi bug "semua tab jadi 1")'
-            );
+            $expected = (int)$pdo->query("SELECT COUNT(*) FROM tb_mesin_chimei WHERE approval IS NULL OR approval = ''")->fetchColumn();
+            preg_match('/Chimei\s*<span class="badge badge-danger rounded-pill ml-1">(\d+)<\/span>/', $approvalPage, $badge);
+            $this->assertSame($expected, (int)($badge[1] ?? -1), 'Badge Chimei harus sama dengan jumlah pending sebenarnya.');
         } finally {
             $admin->deleteWithCsrf("chimei/view/$id", "chimei/delete/$id");
         }

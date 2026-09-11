@@ -107,13 +107,11 @@ class PasswordmanagerController extends BaseController{
 								"password_expire_date" => null,
 								// Password baru belum boleh dipakai sebelum admin menyetujui.
 								"account_status" => "pending_activation",
-								"failed_login_attempts" => 0,
-								"login_session_key" => null
+								"failed_login_attempts" => 0
 							);
 							$db->where ("password_reset_key", $hashed_key);
 							$db->update($tablename, $new_password_data);
 							if($db->getRowCount()){
-								clear_cookie('login_session_key');
 								$this->write_to_log('password_reset_pending_activation', 'true');
 								$this->render_view("passwordmanager/password_reset_completed.php", null, "info_layout.php");
 							}
