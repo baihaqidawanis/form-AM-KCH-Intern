@@ -90,7 +90,7 @@ if (!function_exists('get_period_image_src')) {
   }
   $col_nama_part = $col_nama_part_val . '%';
   $col_standar = $col_standar_val . '%';
-  $fixed_cols_width = 5.0 + 1.8 + $col_nama_part_val + 6.5 + 5.5 + $col_standar_val + 2.0 + 9.0;
+  $fixed_cols_width = 5.0 + 1.8 + $col_nama_part_val + 6.5 + 5.5 + $col_standar_val + 2.8 + 8.2;
   $rem_days_width = max(10.0, 100.0 - $fixed_cols_width);
   $col_day = round($rem_days_width / $num_days, 3) . '%';
 
@@ -274,8 +274,8 @@ if (!function_exists('get_period_image_src')) {
           <th style="width: 6.5%;">Alat</th>
           <th style="width: 5.5%;">Metode</th>
           <th style="width: <?php echo $col_standar; ?>;">Standar</th>
-          <th style="width: 2.0%;">Durasi</th>
-          <th style="width: 9.0%;">Pelaksanaan</th>
+          <th style="width: 2.8%; white-space: nowrap; text-align: center;">Durasi</th>
+          <th style="width: 8.2%;">Pelaksanaan</th>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { ?>
             <th class="day" style="width: <?php echo $col_day; ?>;"><?php echo $day; ?></th>
           <?php } ?>
@@ -338,7 +338,7 @@ if (!function_exists('get_period_image_src')) {
           <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td>
           <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td>
           <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center;"><?php echo htmlspecialchars($part['durasi']); ?></td>
+          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
           <td style="font-weight:bold;"><?php echo htmlspecialchars($pelaksanaan_label); ?></td>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
             $is_deactive = isset($d['deactivated_days'][$day]);
