@@ -225,6 +225,15 @@ $visible_groups = array_filter($machine_groups, function($machines){
         if (!Object.prototype.hasOwnProperty.call(areaData, area)) { return; }
         datasets.push({ label: area, data: areaData[area], backgroundColor: colors[area], borderColor: colors[area], borderWidth: 0, hoverBackgroundColor: colors[area] });
     });
+    var maxDataVal = 0;
+    datasets.forEach(function(ds){
+        if (Array.isArray(ds.data)) {
+            ds.data.forEach(function(val){
+                var num = Number(val) || 0;
+                if (num > maxDataVal) { maxDataVal = num; }
+            });
+        }
+    });
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels: labels, datasets: datasets },
@@ -244,7 +253,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
                         beginAtZero: true,
                         stepSize: 1,
                         min: 0,
-                        suggestedMax: 5,
+                        suggestedMax: maxDataVal > 0 ? maxDataVal : 1,
                         fontColor: '#6E6E73',
                         userCallback: function(value){
                             if(Math.floor(value) === value){
