@@ -325,7 +325,7 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                     </div>
 
                     <h4 ><div class="alert">
-                        <strong>Wrapping dan Pack Cartoning</strong>
+                        <strong>Wrapping & Pack Cartoning</strong>
                     </div>
                     <style>
                         .alert {

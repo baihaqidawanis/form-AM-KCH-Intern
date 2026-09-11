@@ -27,7 +27,7 @@ $page_element_id = 'conveyor_sig-add-' . random_str();
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
       <h4 class="record-title">Add Autonomous Maintenance Conveyor SIG</h4>
-      <div>Wrapping dan Pack Cartoning Area</div>
+      <div>Wrapping & Pack Cartoning Area</div>
     </div>
   </div>
   <div class="container-fluid">

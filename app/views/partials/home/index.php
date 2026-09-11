@@ -46,7 +46,7 @@ $current_page = $this->set_current_page_link();
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" data-toggle="tab" href="#TabPage-1-Page4" role="tab" aria-selected="true">
-                                        Wrapping dan Pack Cartoning
+                                        Wrapping & Pack Cartoning
                                     </a>
                                 </li>
                             </ul>

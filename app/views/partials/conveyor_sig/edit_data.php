@@ -25,7 +25,7 @@ $rec_id = !empty($data['id_conveyor_sig']) ? $data['id_conveyor_sig'] : null;
   <div class="bg-light p-3 mb-3">
     <div class="container-fluid">
       <h4 class="record-title">Edit Data AM Conveyor SIG</h4>
-      <div>Wrapping dan Pack Cartoning Area</div>
+      <div>Wrapping & Pack Cartoning Area</div>
     </div>
   </div>
   <div class="container-fluid">

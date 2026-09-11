@@ -208,7 +208,11 @@ class ACL
 	/** Normalisasi nama area dari data user. */
 	private static function normalize_area($area)
 	{
-		return strtolower(trim((string)preg_replace('/\s+/', ' ', (string)$area)));
+		$clean = strtolower(trim((string)preg_replace('/\s+/', ' ', (string)$area)));
+		if ($clean === 'wrapping & pack cartoning') {
+			return 'wrapping dan pack cartoning';
+		}
+		return $clean;
 	}
 
 	/**

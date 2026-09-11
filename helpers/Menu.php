@@ -110,7 +110,7 @@ class Menu
 
 		array(
 			'path' => '/',
-			'label' => 'Wrapping dan Pack Cartoning',
+			'label' => 'Wrapping & Pack Cartoning',
 			'icon' => '<i class="fa fa-gears "></i>',
 			'submenu' => array(
 				array(
@@ -593,7 +593,7 @@ class Menu
 	// konsisten, misal "Filling" vs "filling"), sekarang dropdown biar
 	// standar. Samain sama pengelompokan mesin yang udah ada (sidebar &
 	// halaman Approval): Compounding / Filling / Kemas / Wrapping dan Pack Cartoning.
-	public static $area_options = array('Compounding', 'Filling', 'Kemas', 'Wrapping dan Pack Cartoning');
+	public static $area_options = array('Compounding', 'Filling', 'Kemas', 'Wrapping & Pack Cartoning');
 
 	public static $account_status = array(
 		array(
