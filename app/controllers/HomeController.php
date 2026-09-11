@@ -52,7 +52,7 @@ class HomeController extends SecureController{
 	 * Satu round-trip database untuk seluruh sumber AM yang dapat diakses user.
 	 * UNION ALL lebih murah daripada UNION karena form_id hanya unik di tabel asal.
 	 */
-	private function dashboardFormRows($machines, $startDate, $overdueBefore){
+	private function dashboardFormRows($machines, $startDate){
 		if(empty($machines)){
 			return array();
 		}
@@ -81,11 +81,10 @@ class HomeController extends SecureController{
 				LEFT JOIN mesin m ON m.id = f.mesin
 				LEFT JOIN {$issueTable} k ON k.id_am = f.{$idColumn}
 				WHERE COALESCE(f.operational_date, DATE(f.created_at)) >= ?
-					OR (f.approval IS NULL AND f.created_at < ?)
+					OR (f.approval IS NULL AND k.id_am IS NOT NULL)
 				GROUP BY f.{$idColumn}, f.mesin, m.nama_mesin, f.operational_date,
 					f.created_at, f.updated_at, f.shift, f.approval";
 			$params[] = $startDate;
-			$params[] = $overdueBefore;
 		}
 
 		return $this->GetModel()->rawQuery(implode("\nUNION ALL\n", $branches), $params);
@@ -97,9 +96,8 @@ class HomeController extends SecureController{
 		$operationalDate = $this->operationalDate($now->format('Y-m-d H:i:s'));
 		$today = new DateTimeImmutable($operationalDate, $timezone);
 		$start = $today->modify('-' . ($days - 1) . ' days');
-		$overdueBefore = $now->modify('-24 hours');
 		$machines = $this->allowedDashboardMachines();
-		$rows = $this->dashboardFormRows($machines, $start->format('Y-m-d'), $overdueBefore->format('Y-m-d H:i:s'));
+		$rows = $this->dashboardFormRows($machines, $start->format('Y-m-d'));
 
 		$areaLabels = array('Compounding', 'Filling', 'Kemas', 'Wrapping & Pack Cartoning');
 		$trend = array();
@@ -138,27 +136,25 @@ class HomeController extends SecureController{
 			}
 
 			$createdAt = !empty($row['created_at']) ? new DateTimeImmutable($row['created_at'], $timezone) : $now;
-			$isPending = empty($row['approval']);
-			$isOverdue = $isPending && $createdAt < $overdueBefore;
-			if(!$approved && ($nokCount > 0 || $isOverdue)){
+			// Hanya temuan riil (memiliki part NOK) dan belum diapprove yang masuk antrean review dashboard
+			if(!$approved && $nokCount > 0){
 				$pendingHours = max(0, intval(floor(($now->getTimestamp() - $createdAt->getTimestamp()) / 3600)));
-				$canApprove = ACL::is_allowed($row['machine_key'] . '/edit');
 				$row['nok_count'] = $nokCount;
 				$row['pending_hours'] = $pendingHours;
-				$row['is_overdue'] = $isOverdue;
-				$row['action_label'] = $canApprove ? 'Review' : 'Lihat';
-				$row['action_path'] = $row['machine_key'] . '/' . ($canApprove ? 'edit' : 'view') . '/' . rawurlencode($row['form_id']);
+				$row['is_overdue'] = ($pendingHours >= 24);
+				$row['action_label'] = 'Review';
+				// Masuk ke halaman view mesin agar reviewer dapat memeriksa detail temuan sebelum melakukan approval
+				$row['action_path'] = $row['machine_key'] . '/view/' . rawurlencode($row['form_id']);
 				$urgent[] = $row;
 			}
 		}
 
 		usort($urgent, function($a, $b){
-			$scoreA = (!empty($a['is_overdue']) ? 2 : 0) + (intval($a['nok_count']) > 0 ? 1 : 0);
-			$scoreB = (!empty($b['is_overdue']) ? 2 : 0) + (intval($b['nok_count']) > 0 ? 1 : 0);
-			if($scoreA !== $scoreB){
-				return $scoreB <=> $scoreA;
+			$diff = intval($b['nok_count']) - intval($a['nok_count']);
+			if($diff !== 0){
+				return $diff;
 			}
-			return strcmp((string)$a['created_at'], (string)$b['created_at']);
+			return strcmp((string)$b['created_at'], (string)$a['created_at']);
 		});
 
 		$machineGroups = array();

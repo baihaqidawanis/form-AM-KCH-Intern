@@ -26,7 +26,15 @@ class IllapakShiftTest extends TestCase
             $this->client->deleteWithCsrf('illapak_1_2', $this->createdDeletePath);
         }
         if ($this->createdMasterPartId !== null) {
-            $this->client->deleteWithCsrf('master_part/index/illapak_1_2', "master_part/delete/{$this->createdMasterPartId}");
+            $pdo = $this->database();
+            $stmt = $pdo->prepare("SELECT field_name FROM master_part WHERE id = ?");
+            $stmt->execute(array($this->createdMasterPartId));
+            $fieldName = $stmt->fetchColumn();
+            if ($fieldName && preg_match('/^[a-z0-9_]+$/', $fieldName)) {
+                $pdo->exec("ALTER TABLE tb_mesin_illapak_1_2 DROP COLUMN IF EXISTS {$fieldName}");
+            }
+            $delStmt = $pdo->prepare("DELETE FROM master_part WHERE id = ?");
+            $delStmt->execute(array($this->createdMasterPartId));
         }
 		if ($this->createdMachineId !== null) {
 			$pdo = $this->database();

@@ -40,12 +40,13 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-dashboard-card { height: 100%; overflow: hidden; }
 .am-kpi-card .card-body { min-height: 132px; padding: 20px; }
 .am-kpi-label { color: var(--ak-muted, #6E6E73); font-size: .78rem; font-weight: 650; letter-spacing: .045em; margin-bottom: 11px; text-transform: uppercase; }
-.am-kpi-value { font-size: 2rem; font-weight: 650; letter-spacing: -.045em; line-height: 1; }
+.am-kpi-row { align-items: center; display: flex; justify-content: space-between; gap: 8px; }
+.am-kpi-value { font-size: 2rem; font-weight: 650; letter-spacing: -.045em; line-height: 1.1; }
 .am-kpi-meta { color: var(--ak-muted, #6E6E73); font-size: .82rem; margin-top: 10px; }
 .am-kpi-accent { border-top: 3px solid var(--ak-green, #009639); }
 .am-kpi-alert { border-top: 3px solid #FF3B30; }
 .am-kpi-approved { border-top: 3px solid var(--ak-green-accent, #86BD40); }
-.am-alert-count { background: #FEECEB; border: 1px solid #F9CCC8; border-radius: 999px; color: #D92D20; display: inline-flex; font-size: .72rem; font-weight: 700; margin-left: 8px; padding: 4px 8px; vertical-align: middle; }
+.am-alert-count { background: #FEECEB; border: 1px solid #F9CCC8; border-radius: 999px; color: #D92D20; display: inline-flex; align-items: center; font-size: .72rem; font-weight: 700; line-height: 1.2; padding: 4px 9px; white-space: nowrap; }
 .am-card-heading { align-items: flex-start; display: flex; justify-content: space-between; padding: 18px 20px 0; }
 .am-card-title { font-size: 1rem; font-weight: 650; letter-spacing: -.018em; margin: 0; }
 .am-card-note { color: var(--ak-muted, #6E6E73); font-size: .78rem; margin: 4px 0 0; }
@@ -72,7 +73,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-machine-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); padding: 18px; }
 .am-machine-link { align-items: center; background: #FAFAFB; border: 1px solid var(--ak-border, rgba(0,0,0,.07)); border-radius: 10px; color: var(--ak-text, #1D1D1F); display: flex; justify-content: space-between; min-height: 52px; padding: 10px 12px; transition: border-color .16s ease, background-color .16s ease, transform .16s ease; }
 .am-machine-link:hover { background: var(--ak-mint, #F0F8EC); border-color: var(--ak-mint-border, #D1EBB8); color: var(--ak-green, #009639); text-decoration: none; transform: translateY(-1px); }
-.am-machine-name { font-size: .83rem; font-weight: 600; padding-right: 8px; }
+.am-machine-name { font-size: .83rem; font-weight: 650; padding-right: 8px; }
 .am-machine-count { background: #FFF; border: 1px solid var(--ak-border, rgba(0,0,0,.07)); border-radius: 999px; color: var(--ak-green, #009639); flex: 0 0 auto; font-size: .72rem; font-weight: 700; min-width: 27px; padding: 3px 7px; text-align: center; }
 @media (max-width: 991.98px) { .am-chart-wrap { height: 290px; } .am-dashboard-card { height: auto; } }
 @media (max-width: 575.98px) { .am-dashboard-title { font-size: 1.4rem; } .am-dashboard-header { align-items: flex-start !important; flex-direction: column; } .am-period-toggle { width: 100%; } .am-period-toggle .btn { flex: 1; } .am-chart-wrap { height: 260px; padding-left: 10px; padding-right: 10px; } .am-machine-grid { grid-template-columns: 1fr; } }
@@ -109,7 +110,10 @@ $visible_groups = array_filter($machine_groups, function($machines){
             <div class="col-md-4 mb-3 mb-md-0">
                 <article class="card am-dashboard-card am-kpi-card am-kpi-alert"><div class="card-body">
                     <div class="am-kpi-label">Antrean Temuan NOK &amp; Urgent</div>
-                    <div class="am-kpi-value"><?php echo intval($summary['urgent_total']); ?><?php if(intval($summary['urgent_total']) > 0){ ?><span class="am-alert-count">Perlu tindakan</span><?php } ?></div>
+                    <div class="am-kpi-row">
+                        <div class="am-kpi-value"><?php echo intval($summary['urgent_total']); ?></div>
+                        <?php if(intval($summary['urgent_total']) > 0){ ?><span class="am-alert-count">Perlu tindakan</span><?php } ?>
+                    </div>
                     <div class="am-kpi-meta">Form dengan abnormalitas atau perlu ditinjau</div>
                 </div></article>
             </div>
