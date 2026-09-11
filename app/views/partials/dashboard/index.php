@@ -68,7 +68,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-unit-toggle { align-items: center; background: transparent !important; border: 0 !important; box-shadow: none !important; color: var(--ak-text, #1D1D1F) !important; display: flex; justify-content: space-between; padding: 18px 20px !important; text-align: left; transform: none !important; width: 100%; }
 .am-unit-toggle .fa { color: var(--ak-muted, #6E6E73); transition: transform .18s ease; }
 .am-unit-toggle[aria-expanded="true"] .fa { transform: rotate(180deg); }
-.am-unit-tabs { border-bottom: 1px solid var(--ak-border, rgba(0,0,0,.07)); gap: 5px; padding: 0 18px 12px; }
+.am-unit-tabs { border-bottom: 1px solid var(--ak-border, rgba(0,0,0,.07)); gap: 6px; margin: 12px 18px 14px; padding: 0 0 12px; }
 .am-unit-tabs .nav-link { font-size: .78rem; padding: 7px 12px; }
 .am-machine-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); padding: 18px; }
 .am-machine-link { align-items: center; background: #FAFAFB; border: 1px solid var(--ak-border, rgba(0,0,0,.07)); border-radius: 10px; color: var(--ak-text, #1D1D1F); display: flex; justify-content: space-between; min-height: 52px; padding: 10px 12px; transition: border-color .16s ease, background-color .16s ease, transform .16s ease; }
@@ -244,6 +244,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
                         beginAtZero: true,
                         stepSize: 1,
                         min: 0,
+                        suggestedMax: 5,
                         fontColor: '#6E6E73',
                         userCallback: function(value){
                             if(Math.floor(value) === value){
