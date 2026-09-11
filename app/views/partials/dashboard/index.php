@@ -38,8 +38,20 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-period-toggle .btn { border: 0 !important; border-radius: 7px !important; box-shadow: none !important; color: var(--ak-muted, #6E6E73) !important; font-size: .82rem; font-weight: 600; padding: 6px 13px !important; transform: none !important; }
 .am-period-toggle .btn.active { background: #FFF !important; color: var(--ak-green, #009639) !important; box-shadow: 0 1px 4px rgba(0,0,0,.09) !important; }
 .am-dashboard-card { height: 100%; overflow: hidden; }
-.am-kpi-card .card-body { min-height: 132px; padding: 20px; }
+.am-kpi-card { overflow: visible !important; }
+.am-kpi-card .card-body { min-height: 132px; padding: 20px; position: relative; }
 .am-kpi-label { color: var(--ak-muted, #6E6E73); font-size: .78rem; font-weight: 650; letter-spacing: .045em; margin-bottom: 11px; text-transform: uppercase; }
+.am-info-popover-wrapper { position: relative; display: inline-flex; align-items: center; vertical-align: baseline; }
+.am-info-trigger { background: transparent; border: none; color: var(--ak-muted, #6E6E73); cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0 4px; transition: color 0.15s ease; }
+.am-info-trigger:hover, .am-info-trigger:focus { color: var(--ak-green, #009639); outline: none; }
+.am-info-popover-box { position: absolute; top: calc(100% + 8px); left: 0; z-index: 1050; width: 280px; max-width: calc(100vw - 48px); background: #FFFFFF; border: 1px solid rgba(0,0,0,0.12); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 12px 14px; display: none; text-transform: none; letter-spacing: normal; }
+.am-info-popover-box--right { left: auto; right: 0; }
+.am-info-popover-box::before { content: ''; position: absolute; top: -6px; left: 10px; width: 10px; height: 10px; background: #FFFFFF; border-left: 1px solid rgba(0,0,0,0.12); border-top: 1px solid rgba(0,0,0,0.12); transform: rotate(45deg); }
+.am-info-popover-box--right::before { left: auto; right: 12px; }
+.am-info-popover-title { font-size: 0.82rem; font-weight: 700; color: #1D1D1F; }
+.am-info-close { background: transparent; border: none; font-size: 1.25rem; line-height: 1; color: #8E8E93; cursor: pointer; padding: 0 4px; }
+.am-info-close:hover { color: #1D1D1F; }
+.am-info-popover-text { font-size: 0.78rem; color: #48484A; line-height: 1.45; margin: 0; }
 .am-kpi-row { align-items: center; display: flex; justify-content: space-between; gap: 8px; }
 .am-kpi-value { font-size: 2rem; font-weight: 650; letter-spacing: -.045em; line-height: 1.1; }
 .am-kpi-meta { color: var(--ak-muted, #6E6E73); font-size: .82rem; margin-top: 10px; }
@@ -102,7 +114,19 @@ $visible_groups = array_filter($machine_groups, function($machines){
         <div class="row mb-4">
             <div class="col-md-4 mb-3 mb-md-0">
                 <article class="card am-dashboard-card am-kpi-card am-kpi-accent"><div class="card-body">
-                    <div class="am-kpi-label">Inspeksi Hari Ini <i class="fa fa-info-circle text-muted ml-1" title="Dihitung per sesi shift pengisian (Shift 1, 2, 3), bukan per unit mesin. Pada Check Sheet Periode, seluruh shift otomatis digabung menjadi 1 formulir utuh." style="cursor:help;"></i></div>
+                    <div class="am-kpi-label">
+                        Inspeksi Hari Ini
+                        <span class="am-info-popover-wrapper ml-1">
+                            <button type="button" class="am-info-trigger" aria-label="Penjelasan Inspeksi Hari Ini"><i class="fa fa-info-circle"></i></button>
+                            <div class="am-info-popover-box shadow">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                    <span class="am-info-popover-title"><i class="fa fa-info-circle text-success mr-1"></i> Penjelasan</span>
+                                    <button type="button" class="am-info-close" aria-label="Tutup">&times;</button>
+                                </div>
+                                <p class="am-info-popover-text">Dihitung per sesi shift pengisian (Shift 1, 2, 3), bukan per unit mesin. Pada Check Sheet Periode, seluruh shift otomatis digabung menjadi 1 formulir utuh.</p>
+                            </div>
+                        </span>
+                    </div>
                     <div class="am-kpi-value"><?php echo intval($summary['today_total']); ?></div>
                     <div class="am-kpi-meta">Sesi shift AM terisi pada tanggal operasional ini</div>
                 </div></article>
@@ -119,7 +143,19 @@ $visible_groups = array_filter($machine_groups, function($machines){
             </div>
             <div class="col-md-4">
                 <article class="card am-dashboard-card am-kpi-card am-kpi-approved"><div class="card-body">
-                    <div class="am-kpi-label">Fully Approved Hari Ini <i class="fa fa-info-circle text-muted ml-1" title="Rasio persetujuan dihitung dari total sesi shift yang masuk pada hari operasional ini." style="cursor:help;"></i></div>
+                    <div class="am-kpi-label">
+                        Fully Approved Hari Ini
+                        <span class="am-info-popover-wrapper ml-1">
+                            <button type="button" class="am-info-trigger" aria-label="Penjelasan Fully Approved"><i class="fa fa-info-circle"></i></button>
+                            <div class="am-info-popover-box am-info-popover-box--right shadow">
+                                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                    <span class="am-info-popover-title"><i class="fa fa-info-circle text-success mr-1"></i> Penjelasan</span>
+                                    <button type="button" class="am-info-close" aria-label="Tutup">&times;</button>
+                                </div>
+                                <p class="am-info-popover-text">Rasio persetujuan dihitung dari total sesi shift yang masuk pada hari operasional ini.</p>
+                            </div>
+                        </span>
+                    </div>
                     <div class="am-kpi-value"><?php echo intval($summary['approved_total']); ?> <small class="text-muted" style="font-size:1rem;font-weight:600">/ <?php echo intval($summary['today_total']); ?></small></div>
                     <div class="am-kpi-meta"><?php echo intval($summary['approved_percent']); ?>% sesi shift hari ini berstatus Approved</div>
                 </div></article>
@@ -270,5 +306,50 @@ $visible_groups = array_filter($machine_groups, function($machines){
             }
         }
     });
+
+    if (window.jQuery) {
+        jQuery(function($){
+            var hoverTimer;
+            $(document).on('mouseenter', '.am-info-popover-wrapper', function(){
+                clearTimeout(hoverTimer);
+                var $box = $(this).find('.am-info-popover-box');
+                $('.am-info-popover-box').not($box).hide();
+                $box.stop(true, true).fadeIn(120);
+            });
+            $(document).on('mouseleave', '.am-info-popover-wrapper', function(){
+                var $box = $(this).find('.am-info-popover-box');
+                hoverTimer = setTimeout(function(){
+                    $box.stop(true, true).fadeOut(120);
+                }, 200);
+            });
+            $(document).on('click', '.am-info-trigger', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                clearTimeout(hoverTimer);
+                var $box = $(this).siblings('.am-info-popover-box');
+                if ($box.is(':visible')) {
+                    $box.stop(true, true).fadeOut(120);
+                } else {
+                    $('.am-info-popover-box').not($box).hide();
+                    $box.stop(true, true).fadeIn(120);
+                }
+            });
+            $(document).on('click', '.am-info-close', function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).closest('.am-info-popover-box').stop(true, true).fadeOut(120);
+            });
+            $(document).on('click', function(e){
+                if (!$(e.target).closest('.am-info-popover-wrapper').length) {
+                    $('.am-info-popover-box').stop(true, true).fadeOut(120);
+                }
+            });
+            $(document).on('keydown', function(e){
+                if (e.key === 'Escape') {
+                    $('.am-info-popover-box').stop(true, true).fadeOut(120);
+                }
+            });
+        });
+    }
 })();
 </script>
