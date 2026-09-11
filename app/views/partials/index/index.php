@@ -516,7 +516,7 @@ $comp_model = new SharedController;
 
         var currentIndex = 0;
         var slideTimer = null;
-        var intervalMs = 6500; // Ganti slide setiap 6.5 detik agar tenang dan nyaman dibaca
+        var intervalMs = 5250; // Durasi per foto: 5.25 detik (5250 milidetik)
 
         function goToSlide(index) {
             if (index < 0) index = slides.length - 1;
