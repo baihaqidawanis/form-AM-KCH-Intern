@@ -234,6 +234,10 @@ $visible_groups = array_filter($machine_groups, function($machines){
             });
         }
     });
+    var dynamicCeiling = 1;
+    if (maxDataVal > 0) {
+        dynamicCeiling = maxDataVal <= 3 ? (maxDataVal + 1) : Math.ceil(maxDataVal * 1.18);
+    }
     new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: { labels: labels, datasets: datasets },
@@ -253,7 +257,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
                         beginAtZero: true,
                         stepSize: 1,
                         min: 0,
-                        suggestedMax: maxDataVal > 0 ? maxDataVal : 1,
+                        suggestedMax: dynamicCeiling,
                         fontColor: '#6E6E73',
                         userCallback: function(value){
                             if(Math.floor(value) === value){

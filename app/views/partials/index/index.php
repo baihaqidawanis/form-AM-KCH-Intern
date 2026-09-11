@@ -93,18 +93,11 @@ $comp_model = new SharedController;
                     <div class="am-visual-overlay"></div>
                 </div>
 
-                <!-- Top Plant Tag -->
-                <div class="am-visual-top">
-                    <span class="am-visual-tag">
-                        <i class="fa fa-shield mr-1"></i> Total Productive Maintenance
-                    </span>
-                </div>
-
                 <!-- Bottom Motivational Card (Replaces Obsolete Running Marquee) -->
                 <div class="am-motivation-card">
                     <div class="am-motivation-header">
                         <span class="am-motivation-badge">
-                            <i class="fa fa-lightbulb-o"></i> Nilai Kunci AM
+                            <i class="fa fa-lightbulb-o"></i> Pengingat Harian AM
                         </span>
                         <div class="am-slide-dots">
                             <span class="am-dot active" data-slide="0"></span>
@@ -113,10 +106,10 @@ $comp_model = new SharedController;
                         </div>
                     </div>
                     <p class="am-motivation-quote">
-                        &ldquo;Merawat mesin merupakan kunci keberhasilan produktivitas di tempat kerja. Pastikan Autonomous Maintenance selalu terisi di setiap pergantian shift.&rdquo;
+                        &ldquo;Jangan lupa mengisi Autonomous Maintenance di area masing-masing. Merawat mesin merupakan kunci keberhasilan produktivitas di tempat kerja &#128170;&rdquo;
                     </p>
                     <div class="am-motivation-author">
-                        <i class="fa fa-check-circle text-success mr-1"></i> Continuous Improvement &bull; Kalbe Pulogadung
+                        <i class="fa fa-check-circle text-success mr-1"></i> Standard Operational Excellence &bull; Kalbe Pulogadung
                     </div>
                 </div>
             </div>
@@ -381,7 +374,6 @@ $comp_model = new SharedController;
     text-decoration: underline;
 }
 
-/* Right Visual Pane */
 .am-login-visual-side {
     flex: 1 1 50%;
     position: relative;
@@ -390,7 +382,7 @@ $comp_model = new SharedController;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: 32px;
 }
 
@@ -412,7 +404,7 @@ $comp_model = new SharedController;
     background-position: center;
     opacity: 0;
     transform: scale(1.04);
-    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 6s linear;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), transform 8s linear;
 }
 
 .am-slide-item.active {
@@ -428,26 +420,6 @@ $comp_model = new SharedController;
     height: 100%;
     background: linear-gradient(180deg, rgba(6, 20, 11, 0.35) 0%, rgba(6, 20, 11, 0.72) 100%);
     z-index: 1;
-}
-
-.am-visual-top {
-    position: relative;
-    z-index: 2;
-}
-
-.am-visual-tag {
-    display: inline-flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.18);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #FFFFFF;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 999px;
-    letter-spacing: 0.02em;
 }
 
 /* Motivational Card (Glassmorphism & SF Pro) */
@@ -544,7 +516,7 @@ $comp_model = new SharedController;
 
         var currentIndex = 0;
         var slideTimer = null;
-        var intervalMs = 4200;
+        var intervalMs = 6500; // Ganti slide setiap 6.5 detik agar tenang dan nyaman dibaca
 
         function goToSlide(index) {
             if (index < 0) index = slides.length - 1;
