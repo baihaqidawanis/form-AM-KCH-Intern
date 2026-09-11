@@ -144,7 +144,7 @@ class ACL
 	 * Halaman ini selalu boleh diakses siapapun yang sudah login, apapun role-nya.
 	 * @var array
 	 */
-	public static $exclude_page_check = array("", "index", "home", "account", "info", "masterdetail", "panduan_pengisian_am", "verify");
+	public static $exclude_page_check = array("", "index", "home", "dashboard", "account", "info", "masterdetail", "panduan_pengisian_am", "verify");
 
 	/**
 	 * Init page properties

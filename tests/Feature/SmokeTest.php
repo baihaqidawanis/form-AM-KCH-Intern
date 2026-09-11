@@ -19,7 +19,7 @@ class SmokeTest extends TestCase
         'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer', 'granulator', 'storage_tank', 'storage_tank_tetrapak', 'mixing_tank',
     );
 
-    private const INFRA_PAGES = array('Home', 'approval', 'users', 'roles', 'tag', 'audit_log', 'panduan_pengisian_am');
+    private const INFRA_PAGES = array('Home', 'dashboard', 'approval', 'users', 'roles', 'tag', 'audit_log', 'panduan_pengisian_am');
 
     private const ERROR_MARKERS = array(
         'Fatal error', 'Uncaught', 'SQLSTATE', 'Deprecated:', 'Was  Not Found', 'TypeError', 'ParseError',

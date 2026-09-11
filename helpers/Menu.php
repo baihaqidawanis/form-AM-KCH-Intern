@@ -12,8 +12,14 @@ class Menu
 	public static $navbarsideleft = array(
 		array(
 			'path' => 'home',
-			'label' => 'Dashboard',
+			'label' => 'Home',
 			'icon' => '<i class="fa fa-home "></i>'
+		),
+
+		array(
+			'path' => 'dashboard',
+			'label' => 'Dashboard AM',
+			'icon' => '<i class="fa fa-dashboard "></i>'
 		),
 
 		array(
