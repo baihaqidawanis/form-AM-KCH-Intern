@@ -102,7 +102,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
         <div class="row mb-4">
             <div class="col-md-4 mb-3 mb-md-0">
                 <article class="card am-dashboard-card am-kpi-card am-kpi-accent"><div class="card-body">
-                    <div class="am-kpi-label">Inspeksi Hari Ini <i class="fa fa-info-circle text-muted ml-1" data-toggle="tooltip" data-trigger="hover" title="Dihitung per sesi shift pengisian (Shift 1, 2, 3), bukan per unit mesin. Pada Check Sheet Periode, seluruh shift otomatis digabung menjadi 1 formulir utuh."></i></div>
+                    <div class="am-kpi-label">Inspeksi Hari Ini <i class="fa fa-info-circle text-muted ml-1" title="Dihitung per sesi shift pengisian (Shift 1, 2, 3), bukan per unit mesin. Pada Check Sheet Periode, seluruh shift otomatis digabung menjadi 1 formulir utuh." style="cursor:help;"></i></div>
                     <div class="am-kpi-value"><?php echo intval($summary['today_total']); ?></div>
                     <div class="am-kpi-meta">Sesi shift AM terisi pada tanggal operasional ini</div>
                 </div></article>
@@ -119,7 +119,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
             </div>
             <div class="col-md-4">
                 <article class="card am-dashboard-card am-kpi-card am-kpi-approved"><div class="card-body">
-                    <div class="am-kpi-label">Fully Approved Hari Ini <i class="fa fa-info-circle text-muted ml-1" data-toggle="tooltip" data-trigger="hover" title="Rasio persetujuan dihitung dari total sesi shift yang masuk pada hari operasional ini."></i></div>
+                    <div class="am-kpi-label">Fully Approved Hari Ini <i class="fa fa-info-circle text-muted ml-1" title="Rasio persetujuan dihitung dari total sesi shift yang masuk pada hari operasional ini." style="cursor:help;"></i></div>
                     <div class="am-kpi-value"><?php echo intval($summary['approved_total']); ?> <small class="text-muted" style="font-size:1rem;font-weight:600">/ <?php echo intval($summary['today_total']); ?></small></div>
                     <div class="am-kpi-meta"><?php echo intval($summary['approved_percent']); ?>% sesi shift hari ini berstatus Approved</div>
                 </div></article>
@@ -270,16 +270,5 @@ $visible_groups = array_filter($machine_groups, function($machines){
             }
         }
     });
-    if (window.jQuery && typeof jQuery.fn.tooltip === 'function') {
-        jQuery(function($){
-            $('[data-toggle="tooltip"]').tooltip({
-                trigger: 'hover',
-                placement: 'bottom'
-            });
-            $(document).on('click', '[data-toggle="tooltip"]', function(){
-                $(this).tooltip('hide');
-            });
-        });
-    }
 })();
 </script>

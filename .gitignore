@@ -24,4 +24,12 @@ error.log
 scratch/
 helpers/cache/
 
-vendor/
+# Dev dependencies inside vendor/ (biar repo tetap ringan, gak ikut PHPUnit dkk)
+vendor/bin/
+vendor/phpunit/
+vendor/sebastian/
+vendor/theseer/
+vendor/nikic/
+vendor/phar-io/
+vendor/myclabs/
+vendor/guzzlehttp/
