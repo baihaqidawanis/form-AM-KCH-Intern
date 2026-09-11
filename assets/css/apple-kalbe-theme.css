@@ -929,6 +929,43 @@ table td .btn-info:focus {
 }
 
 /* ==========================================================================
+   Secondary Controls & Neutral Overrides (Eliminate Bootswatch Purple Leak)
+   ========================================================================== */
+.btn-outline-secondary {
+    color: #48484A !important;
+    border-color: #D2D2D7 !important;
+    background-color: #FFFFFF !important;
+    font-weight: 500;
+    transition: all 0.16s ease;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus,
+.btn-outline-secondary:active {
+    color: #009639 !important;
+    background-color: #F0F8EC !important;
+    border-color: #86BD40 !important;
+    box-shadow: 0 2px 6px rgba(0, 150, 57, 0.15) !important;
+}
+
+code {
+    color: #007A2E !important;
+    background-color: #F0F8EC !important;
+    border: 1px solid #D1EBB8 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.86em !important;
+}
+
+.table .thead-light th,
+thead.thead-light th {
+    background-color: #F5F5F7 !important;
+    color: #1D1D1F !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    font-weight: 600 !important;
+}
+
+/* ==========================================================================
    Print / PDF Protection (A4 Landscape Form)
    ========================================================================== */
 @media print {
