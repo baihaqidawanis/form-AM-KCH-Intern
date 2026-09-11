@@ -985,3 +985,159 @@ thead.thead-light th {
         color: #000 !important; background: transparent !important; border-color: #000 !important;
     }
 }
+
+/* ==========================================================================
+   Responsive Multi-Device Overhaul (Mobile iPhone/Android, iPad/Tablet, Small Laptop)
+   ========================================================================== */
+
+/* 1. Global Viewport & Container Overflow Protection */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+#page-wrapper {
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+}
+
+#main-content {
+    min-width: 0;
+    max-width: 100%;
+    transition: width 0.3s ease;
+}
+
+/* 2. Responsive Sidebar (Off-Canvas Drawer on Tablets, iPads & Mobile < 992px) */
+@media (max-width: 991.98px) {
+    #sidebar {
+        position: fixed !important;
+        top: 56px !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: calc(100vh - 56px) !important;
+        z-index: 1040 !important;
+        margin-left: -260px !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18) !important;
+        transition: margin-left 0.25s ease-in-out !important;
+    }
+    #sidebar.active {
+        margin-left: 0 !important;
+    }
+    #main #main-content,
+    #main #main-content.active {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .navbar-brand {
+        font-size: 0.95rem !important;
+    }
+    .navbar-brand img {
+        max-height: 28px !important;
+    }
+}
+
+/* 3. Small Laptops (1366px with 125% Windows Scaling) & Large Tablets (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #sidebar {
+        min-width: 220px !important;
+        max-width: 220px !important;
+    }
+    #sidebar.active {
+        margin-left: -220px !important;
+    }
+    #main #main-content {
+        width: calc(100% - 220px) !important;
+    }
+    #main #main-content.active {
+        width: 100% !important;
+    }
+}
+
+/* 4. Form AM Part Cards & Kendala Fields Responsive Stacking */
+@media (max-width: 991.98px) {
+    /* Bagian sticky legend disembunyikan / dibuat atas agar tidak makan 25% lebar layar */
+    .col-md-3.pt-3.d-none.d-md-block {
+        display: none !important;
+    }
+    .col-md-9 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Kolom dalam part-card ditumpuk vertikal dengan rapi */
+    .part-card .card-body > .row > div[class*="col-md-"] {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        margin-bottom: 14px;
+    }
+    
+    .part-card .card-body > .row > div[class*="col-md-3"]:first-child {
+        text-align: center;
+    }
+    
+    .part-card .card-body > .row > div[class*="col-md-3"]:first-child img {
+        max-height: 180px;
+        margin: 0 auto;
+    }
+    
+    /* Tag dropdowns kendala jadi 2x2 grid di tablet */
+    .kendala-box .row > div[class*="col-md-"] {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        margin-bottom: 10px;
+    }
+}
+
+/* 5. Mobile Phones (iPhone XR, Android Phones < 576px) */
+@media (max-width: 575.98px) {
+    #page-content {
+        padding: 8px !important;
+    }
+    .container-fluid {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    /* Tag dropdowns kendala jadi 1 kolom penuh di HP */
+    .kendala-box .row > div[class*="col-md-"] {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Radio options dibuat tombol touch-friendly */
+    .part-card .custom-radio {
+        padding: 6px 10px;
+        background: #F9F9FA;
+        border-radius: 6px;
+        margin-bottom: 6px;
+    }
+    
+    /* Dashboard AM Mobile Optimization */
+    .am-dashboard-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+    .am-kpi-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .am-chart-wrap {
+        min-height: 220px !important;
+    }
+    .am-machine-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 8px !important;
+    }
+    
+    /* Tabel umum di mobile tidak overflow */
+    .table-responsive-wrapper,
+    .page-content .table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
