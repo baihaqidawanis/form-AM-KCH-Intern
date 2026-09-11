@@ -50,17 +50,9 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
         <div class="container-fluid">
             <div class="row ">
                 <div class="col-md-12 comp-grid">
-                    <h4 ><div class="alert">
-                        <strong>Compounding</strong>
+                    <div class="approval-area-banner">
+                        <i class="fa fa-cubes mr-2"></i> Compounding
                     </div>
-                    <style>
-                        .alert {
-                        padding: 20px;
-                        background-color: DodgerBlue;
-                        color: white;
-                        text-align: center;
-                        }
-                    </style></h4>
                     <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
@@ -109,7 +101,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-1-Page1" role="tabpanel">
-                                    <h4 >Cosmec</h4>
                                     <div class=" ">
                                         <?php
                                         $this->render_page("cosmec/list2?limit_count=20" , array( 'show_header' => false ));
@@ -117,7 +108,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page2" role="tabpanel">
-                                    <h4 >FBD Jaw Chuan</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("fbd_jaw_chuan/list2?limit_count=20" , array( 'show_header' => false ));
@@ -125,7 +115,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page3" role="tabpanel">
-                                    <h4 >FBD Glatt</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("fbd_glatt/list2?limit_count=20" , array( 'show_header' => false ));
@@ -133,7 +122,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page4" role="tabpanel">
-                                    <h4 >Supermixer</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("supermixer/list2?limit_count=20" , array( 'show_header' => false ));
@@ -141,7 +129,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page8" role="tabpanel">
-                                    <h4 >Granulator</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("granulator/list2?limit_count=20" , array( 'show_header' => false ));
@@ -149,7 +136,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page5" role="tabpanel">
-                                    <h4 >Storage Tank Silverson</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("storage_tank/list2?limit_count=20" , array( 'show_header' => false ));
@@ -157,7 +143,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page7" role="tabpanel">
-                                    <h4 >Storage Tank Tetrapak</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("storage_tank_tetrapak/list2?limit_count=20" , array( 'show_header' => false ));
@@ -165,7 +150,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane fade" id="TabPage-1-Page6" role="tabpanel">
-                                    <h4 >Mixing Tank</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("mixing_tank/list2?limit_count=20" , array( 'show_header' => false ));
@@ -176,17 +160,9 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         </div>
                     </div>
 
-                    <h4 ><div class="alert">
-                        <strong>Filling</strong>
+                    <div class="approval-area-banner">
+                        <i class="fa fa-flask mr-2"></i> Filling
                     </div>
-                    <style>
-                        .alert {
-                        padding: 20px;
-                        background-color: DodgerBlue;
-                        color: white;
-                        text-align: center;
-                        }
-                    </style></h4>
                     <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
@@ -220,7 +196,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-2-Page1" role="tabpanel">
-                                    <h4 >SIG</h4>
                                     <div class=" ">
                                         <?php
                                         $this->render_page("sig/list2?limit_count=20" , array( 'show_header' => false ));
@@ -228,7 +203,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page2" role="tabpanel">
-                                    <h4 >JOYEA</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("joeya/list2?limit_count=20" , array( 'show_header' => false ));
@@ -236,7 +210,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page3" role="tabpanel">
-                                    <h4 >Ilapak 1 - 2</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("illapak_1_2/list2?limit_count=20" , array( 'show_header' => false ));
@@ -244,7 +217,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page4" role="tabpanel">
-                                    <h4 >Ilapak 3 - 12</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("illapak_3_12/list2?limit_count=20" , array( 'show_header' => false ));
@@ -252,7 +224,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-2-Page5" role="tabpanel">
-                                    <h4 >Unifill B</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("unifill_b/list2?limit_count=20" , array( 'show_header' => false ));
@@ -263,17 +234,9 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         </div>
                     </div>
 
-                    <h4 ><div class="alert">
-                        <strong>Kemas</strong>
+                    <div class="approval-area-banner">
+                        <i class="fa fa-archive mr-2"></i> Kemas
                     </div>
-                    <style>
-                        .alert {
-                        padding: 20px;
-                        background-color: DodgerBlue;
-                        color: white;
-                        text-align: center;
-                        }
-                    </style></h4>
                     <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
@@ -297,7 +260,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-3-Page1" role="tabpanel">
-                                    <h4 >Jihcheng</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("jihcheng/list2?limit_count=20" , array( 'show_header' => false ));
@@ -305,7 +267,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-3-Page2" role="tabpanel">
-                                    <h4 >Jinsung 1 - 4</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("jinsung_1_4/list2?limit_count=20" , array( 'show_header' => false ));
@@ -313,7 +274,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-3-Page3" role="tabpanel">
-                                    <h4 >Jinsung 5</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("jinsung_5/list2?limit_count=20" , array( 'show_header' => false ));
@@ -324,17 +284,9 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         </div>
                     </div>
 
-                    <h4 ><div class="alert">
-                        <strong>Wrapping & Pack Cartoning</strong>
+                    <div class="approval-area-banner">
+                        <i class="fa fa-dropbox mr-2"></i> Wrapping & Pack Cartoning
                     </div>
-                    <style>
-                        .alert {
-                        padding: 20px;
-                        background-color: DodgerBlue;
-                        color: white;
-                        text-align: center;
-                        }
-                    </style></h4>
                     <div class="card mb-4">
                         <div class="card-header p-0 pt-2 px-2">
                             <ul class="nav  nav-tabs   ">
@@ -368,7 +320,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                         <div class="card-body">
                             <div class="tab-content">
                                 <div class="tab-pane show active fade" id="TabPage-4-Page1" role="tabpanel">
-                                    <h4 >Chimei</h4>
                                     <div class=" ">
                                         <?php
                                         $this->render_page("chimei/list2?limit_count=20" , array( 'show_header' => false ));
@@ -376,7 +327,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-4-Page2" role="tabpanel">
-                                    <h4 >Temach</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("temach/list2?limit_count=20" , array( 'show_header' => false ));
@@ -384,7 +334,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-4-Page3" role="tabpanel">
-                                    <h4 >Best Pack</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("best_pack/list2?limit_count=20" , array( 'show_header' => false ));
@@ -392,7 +341,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-4-Page4" role="tabpanel">
-                                    <h4 >Check Weigher</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("check_weigher/list2?limit_count=20" , array( 'show_header' => false ));
@@ -400,7 +348,6 @@ $approval_badge = function ($machine_key) use ($pending_counts) {
                                     </div>
                                 </div>
                                 <div class="tab-pane  fade" id="TabPage-4-Page5" role="tabpanel">
-                                    <h4 >Conveyor SIG</h4>
                                     <div class="bg-light reset-grids">
                                         <?php
                                         $this->render_page("conveyor_sig/list2?limit_count=20" , array( 'show_header' => false ));
