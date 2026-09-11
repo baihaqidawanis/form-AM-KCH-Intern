@@ -72,23 +72,27 @@ if (!function_exists('get_period_image_src')) {
       $max_label_len = max($max_label_len, mb_strlen($p['label'] ?? ''));
   }
 
+  $num_days = max(1, ($d['end_day'] - $d['start_day'] + 1));
+
   // Lebar kolom dinamis mengikuti panjang teks Nama Part
   if ($max_label_len <= 28) {
       // Nama part pendek (seperti Chimei, Cosmec) - hemat kolom part, lebarkan Standar & Hari
-      $col_nama_part = '14.0%';
-      $col_standar = '29.2%';
-      $col_day = '1.68%';
+      $col_nama_part_val = 14.0;
+      $col_standar_val = 29.2;
   } elseif ($max_label_len <= 45) {
       // Skala sedang
-      $col_nama_part = '17.0%';
-      $col_standar = '28.0%';
-      $col_day = '1.57%';
+      $col_nama_part_val = 17.0;
+      $col_standar_val = 28.0;
   } else {
       // Nama part panjang (seperti Illapak)
-      $col_nama_part = '20.0%';
-      $col_standar = '26.0%';
-      $col_day = '1.50%';
+      $col_nama_part_val = 20.0;
+      $col_standar_val = 26.0;
   }
+  $col_nama_part = $col_nama_part_val . '%';
+  $col_standar = $col_standar_val . '%';
+  $fixed_cols_width = 5.0 + 1.8 + $col_nama_part_val + 6.5 + 5.5 + $col_standar_val + 2.0 + 9.0;
+  $rem_days_width = max(10.0, 100.0 - $fixed_cols_width);
+  $col_day = round($rem_days_width / $num_days, 3) . '%';
 
   if ($part_count > 12) {
       // 13-16 parts (e.g. Illapak) - ultra compact to ensure strict 1-page fit
@@ -140,6 +144,7 @@ if (!function_exists('get_period_image_src')) {
       }
       .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; }
       table, .check-sheet table { width: 100%; margin: 0 auto; border-collapse: collapse; margin-bottom: 0px; box-sizing: border-box; }
+      .check-sheet-grid { table-layout: fixed; width: 100%; }
       th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: <?php echo $css_pad; ?>; vertical-align: middle; }
       .head { font-size: <?php echo $css_head_fs; ?>; font-weight: bold; text-align: center; line-height: 1.15; }
       .subhead { font-size: <?php echo $css_subhead_fs; ?>; font-weight: bold; text-align: center; }
@@ -260,7 +265,7 @@ if (!function_exists('get_period_image_src')) {
         <td style="width:35%"><b>Bulan / Tahun:</b> <?php echo $month_names[$d['month']] . ' ' . $d['year']; ?></td>
       </tr>
     </table>
-    <table>
+    <table class="check-sheet-grid">
       <thead>
         <tr>
           <th style="width: 5.0%;">Gambar</th>
@@ -272,7 +277,7 @@ if (!function_exists('get_period_image_src')) {
           <th style="width: 2.0%;">Durasi</th>
           <th style="width: 9.0%;">Pelaksanaan</th>
           <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { ?>
-            <th class="day"><?php echo $day; ?></th>
+            <th class="day" style="width: <?php echo $col_day; ?>;"><?php echo $day; ?></th>
           <?php } ?>
         </tr>
       </thead>
