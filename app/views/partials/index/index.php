@@ -14,11 +14,10 @@ $comp_model = new SharedController;
                     <div class="am-brand-header">
                         <div class="am-brand-pill">
                             <span class="am-brand-dot"></span>
-                            <span>Kalbe Consumer Health &bull; Plant Pulogadung</span>
+                            <span>Kalbe Consumer Health &bull; Site Pulogadung</span>
                         </div>
-                        <h1 class="am-login-heading">AM Online</h1>
-                        <p class="am-login-desc">Autonomous Maintenance Management System. Silakan masuk dengan NIK
-                            Anda.</p>
+                        <h1 class="am-login-heading">Autonomous Maintenance</h1>
+                        <p class="am-login-desc">Autonomous Maintenance. Silakan masuk dengan NIK Anda.</p>
                     </div>
 
                     <!-- Alerts & Page Errors -->
