@@ -264,13 +264,25 @@ abstract class BaseMachineController extends SecureController
 	protected function partShiftSchedulesForRows($rows, $operational_date)
 	{
 		$schedules = array();
+		$master_schedules = array();
+		try {
+			$db = $this->GetModel();
+			$mp_rows = $db->where('machine_key', $this->machineKey)->get('master_part', null, array('field_name', 'shift_schedule'));
+			foreach ($mp_rows as $mp) {
+				$master_schedules[$mp['field_name']] = $mp['shift_schedule'];
+			}
+		} catch (\Throwable $e) {
+			error_log('partShiftSchedulesForRows master_part fallback skipped: ' . $e->getMessage());
+		}
+
 		foreach ($rows as $row) {
 			$row_date = $row['operational_date'] ?? $operational_date;
 			$record_id = $row[$this->idColumn()] ?? null;
 			foreach ($this->partDetailsForRecord($row_date, $row['created_at'] ?? null, $row[$this->idColumn()] ?? null) as $part) {
 				$field = $part['field_name'] ?? null;
 				if (!$field || !$record_id) { continue; }
-				$values = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
+				$raw_sched = !empty($part['shift_schedule']) ? $part['shift_schedule'] : ($master_schedules[$field] ?? '1');
+				$values = array_filter(array_map('trim', explode(',', (string)$raw_sched)));
 				$values = array_values(array_intersect($values, array('1', '2', '3')));
 				$schedules[$record_id][$field] = $values ?: array('1');
 			}

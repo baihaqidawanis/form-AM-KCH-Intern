@@ -239,7 +239,20 @@ $visible_groups = array_filter($machine_groups, function($machines){
             },
             scales: {
                 xAxes: [{ stacked: false, gridLines: { display: false }, ticks: { fontColor: '#6E6E73', fontSize: 10, maxRotation: <?php echo $days === 30 ? 45 : 0; ?>, minRotation: 0 } }],
-                yAxes: [{ ticks: { beginAtZero: true, precision: 0, fontColor: '#6E6E73' }, gridLines: { color: 'rgba(0,0,0,0.05)', drawBorder: false } }]
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        stepSize: 1,
+                        min: 0,
+                        fontColor: '#6E6E73',
+                        userCallback: function(value){
+                            if(Math.floor(value) === value){
+                                return value;
+                            }
+                        }
+                    },
+                    gridLines: { color: 'rgba(0,0,0,0.05)', drawBorder: false }
+                }]
             }
         }
     });

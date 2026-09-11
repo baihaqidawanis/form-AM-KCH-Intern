@@ -19,7 +19,7 @@ class Menu
 		array(
 			'path' => 'dashboard',
 			'label' => 'Dashboard AM',
-			'icon' => '<i class="fa fa-dashboard "></i>'
+			'icon' => '<i class="fa fa-bar-chart "></i>'
 		),
 
 		array(
