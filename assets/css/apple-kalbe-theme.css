@@ -1089,8 +1089,63 @@ html, body {
     }
 }
 
-/* 5. Mobile Phones (iPhone XR, Android Phones < 576px) */
-@media (max-width: 575.98px) {
+/* 5. Mobile Phones (iPhone XR/12, Android Phones < 768px) */
+@media (max-width: 767.98px) {
+    /* Navbar Topbar: Pastikan 1 baris tidak bertumpuk */
+    #topbar .container-fluid {
+        flex-wrap: nowrap !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    #sidebarCollapse,
+    .btn-kalbe-hamburger {
+        flex-shrink: 0 !important;
+        padding: 5px 8px !important;
+        margin-right: 8px !important;
+    }
+    .navbar-brand {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: flex !important;
+        align-items: center !important;
+        margin-right: 6px !important;
+    }
+    .navbar-brand img {
+        max-height: 24px !important;
+        margin-right: 6px !important;
+    }
+    .navbar-toggler {
+        flex-shrink: 0 !important;
+        padding: 4px 7px !important;
+    }
+
+    /* Header Halaman (Judul & Tombol Aksi) Tidak Terpotong ke Kanan */
+    .bg-light .d-flex.justify-content-between.align-items-center,
+    .page .d-flex.justify-content-between.align-items-center {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .bg-light .d-flex.justify-content-between.align-items-center > div.d-flex,
+    .page .d-flex.justify-content-between.align-items-center > div.d-flex {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .bg-light .d-flex.justify-content-between.align-items-center > div.d-flex .btn,
+    .page .d-flex.justify-content-between.align-items-center > div.d-flex .btn,
+    .bg-light .d-flex.justify-content-between.align-items-center > div.d-flex .dropup {
+        flex: 1 1 auto !important;
+        font-size: 0.78rem !important;
+        padding: 6px 10px !important;
+        margin-left: 0 !important;
+        text-align: center !important;
+    }
+
     #page-content {
         padding: 8px !important;
     }
@@ -1131,13 +1186,15 @@ html, body {
         gap: 8px !important;
     }
     
-    /* Tabel umum di mobile tidak overflow */
-    .table-responsive-wrapper,
-    .page-content .table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    /* Tabel List di mobile bisa digeser (horizontal scroll) rapi tanpa merusak lebar halaman */
+    table.table,
+    .page-content .table,
+    .page .table {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 }
 
