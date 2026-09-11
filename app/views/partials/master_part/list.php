@@ -73,7 +73,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
                   <td class="align-middle"><code><?php echo htmlspecialchars($r['field_name']); ?></code></td>
                   <td class="align-middle"><?php echo htmlspecialchars($r['label']); ?></td>
                   <td class="align-middle"><span class="badge badge-light border text-secondary"><?php echo htmlspecialchars($r['section']); ?></span></td>
-                  <td class="urutan-cell align-middle text-center font-weight-bold"><?php echo $r['urutan']; ?></td>
+                  <td class="urutan-cell"><?php echo $r['urutan']; ?></td>
                   <td class="align-middle text-center">
                     <a class="btn btn-sm btn-outline-primary py-1 px-2" href="<?php print_link('master_part/edit/' . $r['id']) ?>" title="Edit Part"><i class="fa fa-edit"></i></a>
   <?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning py-1 px-2" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i></a><?php } else { ?>
@@ -121,6 +121,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
   .master-part-row.dragging { opacity: .4; background: #F0F8EC; }
   .master-part-row.drop-target-above { box-shadow: inset 0 3px 0 0 #009639; }
   .master-part-row.drop-target-below { box-shadow: inset 0 -3px 0 0 #009639; }
+  .urutan-cell { text-align: center; font-weight: bold; vertical-align: middle !important; }
 </style>
 <script>
 (function () {
