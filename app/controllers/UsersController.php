@@ -111,7 +111,7 @@ class UsersController extends SecureController{
 				5 => 'Operator'
 			)
 		);
-		$this->view->page_title = 'Roster Spesimen Pengguna';
+		$this->view->page_title = 'Export User';
 		return $this->render_view('users/export_specimen.php', $data, 'specimen_roster_layout.php');
 	}
 	/**
