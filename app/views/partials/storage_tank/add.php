@@ -7,7 +7,7 @@ $parts = $this->view_data['parts'];
 
 // 15 unit fisik Storage Tank Silverson (ST Liq No 1..15), tiap unit punya
 // nomor seri sendiri -- lihat database/migrations/2026-08-20_add_storage_tank_units.sql
-$unit_options = $model->GetModel()->where('nama_mesin', 'ST Liq No%', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
+$unit_options = $model->GetModel()->where('nama_mesin', 'ST Liq No%', 'LIKE')->orderBy('nama_mesin', 'ASC')->get('mesin');
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data

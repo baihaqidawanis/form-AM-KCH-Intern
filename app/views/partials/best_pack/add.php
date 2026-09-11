@@ -4,7 +4,7 @@ $tag_options = $model->sig_kategori_tag_option_list();
 $korelasi_options = $model->sig_korelasi_tag_option_list();
 $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
-$unit_options = $model->GetModel()->rawQuery("SELECT id, nama_mesin FROM mesin WHERE nama_mesin LIKE 'Kemas Best Pack - %' OR nama_mesin LIKE 'Best Pack (non Inkjet) - %' ORDER BY id ASC");
+$unit_options = $model->GetModel()->rawQuery("SELECT id, nama_mesin FROM mesin WHERE nama_mesin LIKE 'Kemas Best Pack - %' OR nama_mesin LIKE 'Best Pack (non Inkjet) - %' ORDER BY nama_mesin ASC");
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data

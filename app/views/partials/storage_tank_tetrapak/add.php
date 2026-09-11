@@ -7,7 +7,7 @@ $parts = $this->view_data['parts'];
 
 // 15 unit fisik Storage Tank Tetrapak (ST Liq 2 No 3..17), tiap unit punya
 // nomor seri sendiri -- lihat database/migrations/2026-08-20_add_storage_tank_tetrapak.sql
-$unit_options = $model->GetModel()->where('nama_mesin', 'ST Liq 2 No%', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
+$unit_options = $model->GetModel()->where('nama_mesin', 'ST Liq 2 No%', 'LIKE')->orderBy('nama_mesin', 'ASC')->get('mesin');
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data

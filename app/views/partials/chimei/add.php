@@ -7,7 +7,7 @@ $parts = $this->view_data['parts'];
 
 // 8 unit fisik Chimei (Chimei 12A, 4B, 10A, dll), tiap unit punya nama sendiri
 // tanpa nomor seri -- lihat database/migrations/2026-08-20_add_chimei_units.sql
-$unit_options = $model->GetModel()->where('nama_mesin', 'Chimei %', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
+$unit_options = $model->GetModel()->where('nama_mesin', 'Chimei %', 'LIKE')->orderBy('nama_mesin', 'ASC')->get('mesin');
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data

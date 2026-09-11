@@ -7,7 +7,7 @@ $parts = $this->view_data['parts'];
 
 // 4 unit fisik Mixing Tank (MT Silverson, MT Tetrapak 1-3), tiap unit punya
 // nomor seri sendiri -- lihat database/migrations/2026-08-20_add_mixing_tank_units.sql
-$unit_options = $model->GetModel()->where('nama_mesin', 'MT %', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
+$unit_options = $model->GetModel()->where('nama_mesin', 'MT %', 'LIKE')->orderBy('nama_mesin', 'ASC')->get('mesin');
 
 // Detail part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) sekarang
 // master data di tabel master_part (CRUD-able admin lewat menu Master Data

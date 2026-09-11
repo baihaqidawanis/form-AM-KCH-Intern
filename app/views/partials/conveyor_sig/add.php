@@ -6,7 +6,7 @@ $klasifikasi_options = $model->sig_klasifikasi_tag_option_list();
 $parts = $this->view_data['parts'];
 
 // Unit fisik Conveyor SIG (Conveyor SIG 5..6)
-$unit_options = $model->GetModel()->where('nama_mesin', 'Conveyor SIG%', 'LIKE')->orderBy('id', 'ASC')->get('mesin');
+$unit_options = $model->GetModel()->where('nama_mesin', 'Conveyor SIG%', 'LIKE')->orderBy('nama_mesin', 'ASC')->get('mesin');
 
 // Detail part dari master_part
 $master_db = new SharedController;
