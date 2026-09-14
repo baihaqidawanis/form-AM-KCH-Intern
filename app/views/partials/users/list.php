@@ -123,7 +123,6 @@ $show_pagination = $this->show_pagination;
                                                 <th  class="td-mesin"> Mesin</th>
                                                 <th  class="td-account_status"> Account Status</th>
                                                 <th  class="td-user_role_id"> User Role Id</th>
-                                                <th  class="td-pict"> Pict</th>
                                                 <th class="td-btn"></th>
                                             </tr>
                                         </thead>
@@ -238,21 +237,6 @@ $show_pagination = $this->show_pagination;
                                                             data-showbuttons="left" 
                                                             class="is-editable" >
                                                             <?php echo $data['user_role_id']; ?> 
-                                                        </span>
-                                                    </td>
-                                                    <td class="td-pict">
-                                                        <span  data-value="<?php echo $data['pict']; ?>" 
-                                                            data-pk="<?php echo $data['id_user'] ?>" 
-                                                            data-url="<?php print_link("users/editfield/" . urlencode($data['id_user'])); ?>" 
-                                                            data-name="pict" 
-                                                            data-title="Browse..." 
-                                                            data-placement="left" 
-                                                            data-toggle="click" 
-                                                            data-type="text" 
-                                                            data-mode="popover" 
-                                                            data-showbuttons="left" 
-                                                            class="is-editable" >
-                                                            <?php echo $data['pict']; ?> 
                                                         </span>
                                                     </td>
                                                     <th class="td-btn">
