@@ -599,7 +599,7 @@ class Menu
 	// konsisten, misal "Filling" vs "filling"), sekarang dropdown biar
 	// standar. Samain sama pengelompokan mesin yang udah ada (sidebar &
 	// halaman Approval): Compounding / Filling / Kemas / Wrapping dan Pack Cartoning.
-	public static $area_options = array('Compounding', 'Filling', 'Kemas', 'Wrapping & Pack Cartoning');
+	public static $area_options = array('Compounding', 'Filling', 'Kemas', 'Wrapping & Pack Cartoning', 'Semua Area');
 
 	public static $account_status = array(
 		array(

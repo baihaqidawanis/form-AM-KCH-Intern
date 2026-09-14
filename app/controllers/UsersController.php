@@ -272,7 +272,6 @@ class UsersController extends SecureController{
 				'mesin' => 'required',
 				'account_status' => 'required',
 				'user_role_id' => 'required',
-				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',

@@ -66,7 +66,18 @@ $redirect_to = $this->redirect_to;
                                                 </div>
                                                 <div class="col-sm-8">
                                                     <div class="">
-                                                        <select id="ctrl-area" required="" name="area" placeholder="Pilih Area ..." class="custom-select"><option value="" disabled <?php echo empty($data['area']) ? 'selected' : ''; ?>>Pilih Area ...</option><?php foreach (Menu::$area_options as $opt) { $sel = ($data['area'] === $opt) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $opt; ?>"><?php echo $opt; ?></option><?php } ?></select>
+                                                        <?php
+                                                        $current_area = (string)($data['area'] ?? '');
+                                                        ?>
+                                                        <select id="ctrl-area" required="" name="area" placeholder="Pilih Area ..." class="custom-select">
+                                                            <option value="" disabled <?php echo empty($current_area) ? 'selected' : ''; ?>>Pilih Area ...</option>
+                                                            <?php foreach (Menu::$area_options as $opt) { 
+                                                                $is_sel = ($current_area === $opt) || (strpos($opt, 'Wrapping') === 0 && strpos($current_area, 'Wrapping') === 0);
+                                                                $sel = $is_sel ? 'selected' : ''; 
+                                                            ?>
+                                                            <option <?php echo $sel; ?> value="<?php echo $opt; ?>"><?php echo $opt; ?></option>
+                                                            <?php } ?>
+                                                        </select>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -80,15 +91,35 @@ $redirect_to = $this->redirect_to;
                                                         <div class="">
                                                             <?php
                                                             $mesin_options_edit = $comp_model->sig_Line_option_list();
-                                                            $selected_all_mesin = ($data['mesin'] === 'Semua Mesin') ? 'selected' : '';
+                                                            $mesin_area_of = function ($label) {
+                                                                $lbl = strtolower(trim($label));
+                                                                if (preg_match('/^(chimei|temach|check weigher|conveyor sig|best pack|kemas best pack|cartoning|pack|wrapping)/i', $lbl)) {
+                                                                    return 'Wrapping & Pack Cartoning';
+                                                                }
+                                                                if (preg_match('/^(cosmec|fbd jaw chuan|fbd glatt|supermixer|granulator|storage tank|st liq|mixing tank|mt )/i', $lbl)) {
+                                                                    return 'Compounding';
+                                                                }
+                                                                if (preg_match('/^(jihcheng|jinsung)/i', $lbl)) {
+                                                                    return 'Kemas';
+                                                                }
+                                                                if (preg_match('/^(joeya|sig|ilapak|illapak|unifill)/i', $lbl)) {
+                                                                    return 'Filling';
+                                                                }
+                                                                return '';
+                                                            };
+                                                            $current_mesin = (string)($data['mesin'] ?? '');
+                                                            $selected_all_mesin = (strcasecmp($current_mesin, 'Semua Mesin') === 0) ? 'selected' : '';
                                                             ?>
                                                             <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select">
-                                                                <option value="" disabled <?php echo empty($data['mesin']) ? 'selected' : ''; ?>>Pilih Mesin ...</option>
+                                                                <option value="" disabled <?php echo empty($current_mesin) ? 'selected' : ''; ?>>Pilih Mesin ...</option>
                                                                 <?php foreach ($mesin_options_edit as $option) {
-                                                                  $sel = ($data['mesin'] === $option['label']) ? 'selected' : ''; ?>
-                                                                <option <?php echo $sel; ?> value="<?php echo $option['label']; ?>"><?php echo $option['label']; ?></option>
+                                                                    $opt_label = $option['label'];
+                                                                    $opt_area = $mesin_area_of($opt_label);
+                                                                    $sel = (strcasecmp($current_mesin, $opt_label) === 0) ? 'selected' : ''; 
+                                                                ?>
+                                                                <option data-area="<?php echo $opt_area; ?>" <?php echo $sel; ?> value="<?php echo htmlspecialchars($opt_label); ?>"><?php echo htmlspecialchars($opt_label); ?></option>
                                                                 <?php } ?>
-                                                                <option <?php echo $selected_all_mesin; ?> value="Semua Mesin">Semua Mesin</option>
+                                                                <option data-area="" <?php echo $selected_all_mesin; ?> value="Semua Mesin">Semua Mesin</option>
                                                             </select>
                                                             </div>
                                                         </div>
@@ -157,12 +188,12 @@ $redirect_to = $this->redirect_to;
                                                 <div class="form-group ">
                                                     <div class="row">
                                                         <div class="col-sm-4">
-                                                            <label class="control-label" for="pict">Pict <span class="text-danger">*</span></label>
+                                                            <label class="control-label" for="pict">Pict</label>
                                                         </div>
                                                         <div class="col-sm-8">
                                                             <div class="">
-                                                                <div class="dropzone required" input="#ctrl-pict" fieldname="pict"    data-multiple="false" dropmsg="Choose files or drag and drop files to upload"    btntext="Browse" filesize="3" maximum="1">
-                                                                    <input name="pict" id="ctrl-pict" required="" class="dropzone-input form-control" value="<?php  echo $data['pict']; ?>" type="text"  />
+                                                                <div class="dropzone" input="#ctrl-pict" fieldname="pict"    data-multiple="false" dropmsg="Choose files or drag and drop files to upload"    btntext="Browse" filesize="3" maximum="1">
+                                                                    <input name="pict" id="ctrl-pict" class="dropzone-input form-control" value="<?php  echo $data['pict']; ?>" type="text"  />
                                                                         <!--<div class="invalid-feedback animated bounceIn text-center">Please a choose file</div>-->
                                                                         <div class="dz-file-limit animated bounceIn text-center text-danger"></div>
                                                                     </div>

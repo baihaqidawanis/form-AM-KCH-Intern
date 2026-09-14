@@ -759,16 +759,17 @@ $(document).on('click', '.btn-toggle-password', function(){
  * No-op di halaman lain karena #ctrl-area/#ctrl-mesin cuma ada di register.
  */
 $(document).on('change', '#ctrl-area', function(){
-	var selectedArea = $(this).val();
+	var selectedArea = $(this).val() || '';
 	var $mesinSelect = $('#ctrl-mesin');
 	var $options = $mesinSelect.find('option[data-area]');
 	$options.each(function(){
-		var optionArea = $(this).attr('data-area');
-		var matches = (selectedArea === 'Semua Area' || optionArea === '' || optionArea === selectedArea);
+		var optionArea = $(this).attr('data-area') || '';
+		var isWrappingMatch = (selectedArea.indexOf('Wrapping') === 0 && optionArea.indexOf('Wrapping') === 0);
+		var matches = (selectedArea === 'Semua Area' || optionArea === '' || optionArea === selectedArea || isWrappingMatch);
 		$(this).toggle(matches);
 	});
 	var $selectedOption = $mesinSelect.find('option:selected');
-	if ($selectedOption.is(':hidden')) {
+	if ($selectedOption.length && $selectedOption.is(':hidden')) {
 		$mesinSelect.val('');
 	}
 });

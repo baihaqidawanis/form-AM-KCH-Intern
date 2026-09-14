@@ -234,6 +234,9 @@ class ACL
 		}
 
 		$area = self::normalize_area($user_area === null ? get_active_user('area') : $user_area);
+		if ($area === 'semua area') {
+			return true;
+		}
 		return isset(self::$area_machines[$area]) && in_array($machine, self::$area_machines[$area], true);
 	}
 
