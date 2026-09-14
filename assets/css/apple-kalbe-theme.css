@@ -1505,3 +1505,30 @@ html, body {
     white-space: nowrap !important;
     display: inline-block;
 }
+
+/* ==========================================================================
+   8. Filter Form & Page Header Consistent Button Alignment
+   ========================================================================== */
+.filter-form .btn {
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-weight: 600 !important;
+}
+.filter-form .form-row:last-child {
+    margin-top: 6px;
+}
+.page .bg-light.p-3 .d-flex.justify-content-between {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+.page .bg-light.p-3 .d-flex.justify-content-between > div:last-child {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.page .bg-light.p-3 .d-flex.justify-content-between .btn {
+    white-space: nowrap !important;
+}

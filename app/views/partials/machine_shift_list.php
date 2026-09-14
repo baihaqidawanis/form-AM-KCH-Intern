@@ -27,12 +27,30 @@ foreach ($records as $row) {
         <a class="btn btn-danger ml-2" href="<?php print_link($d->machine_key . '/period_report'); ?>"><i class="fa fa-file-pdf-o"></i> Export PDF</a>
       </div>
     </div>
+    <?php
+    $model = new SharedController;
+    $all_options = $model->sig_Line_option_list();
+    $clean_name = trim(preg_replace('/\b(line|mesin)\b/i', '', (string)$d->display_name));
+    $machine_options = array_filter($all_options, function($o) use ($clean_name, $d) {
+      return stripos($o['label'], $clean_name) !== false || stripos($clean_name, $o['label']) !== false || (stripos($d->machine_key, 'fbd') !== false && stripos($o['label'], 'fbd') !== false);
+    });
+    ?>
     <form class="search filter-form mt-2" action="<?php print_link($d->machine_key . '/list2'); ?>" method="get">
       <div class="form-row align-items-end">
-        <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1">Tanggal Dari</label><input value="<?php echo get_value('date_from'); ?>" class="form-control form-control-sm" type="date" name="date_from"></div>
-        <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1">Tanggal Sampai</label><input value="<?php echo get_value('date_to'); ?>" class="form-control form-control-sm" type="date" name="date_to"></div>
-        <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1">Pencarian</label><input value="<?php echo get_value('search'); ?>" class="form-control form-control-sm" type="text" name="search" placeholder="Cari user, approval, dll..."></div>
-        <div class="col-md-3 form-group mb-2 text-right"><button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-filter"></i> Terapkan Filter</button> <a href="<?php print_link($d->machine_key . '/list2'); ?>" class="btn btn-sm btn-outline-secondary"><i class="fa fa-times"></i> Reset</a></div>
+        <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1" for="filter-date_from">Tanggal Dari</label><input value="<?php echo get_value('date_from'); ?>" class="form-control form-control-sm" type="date" id="filter-date_from" name="date_from"></div>
+        <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1" for="filter-date_to">Tanggal Sampai</label><input value="<?php echo get_value('date_to'); ?>" class="form-control form-control-sm" type="date" id="filter-date_to" name="date_to"></div>
+        <?php if (!empty($machine_options)) { ?>
+          <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1" for="filter-mesin">Nama Mesin</label><select class="custom-select custom-select-sm" id="filter-mesin" name="mesin"><option value="">Semua Mesin</option><?php foreach ($machine_options as $o) { ?><option <?php echo (get_value('mesin') == $o['value']) ? 'selected' : ''; ?> value="<?php echo $o['value']; ?>"><?php echo htmlspecialchars($o['label']); ?></option><?php } ?></select></div>
+          <div class="col-md-3 form-group mb-2"><label class="small text-muted mb-1" for="filter-search">Pencarian</label><input value="<?php echo get_value('search'); ?>" class="form-control form-control-sm" type="text" id="filter-search" name="search" placeholder="Cari user, approval, dll..."></div>
+        <?php } else { ?>
+          <div class="col-md-6 form-group mb-2"><label class="small text-muted mb-1" for="filter-search">Pencarian</label><input value="<?php echo get_value('search'); ?>" class="form-control form-control-sm" type="text" id="filter-search" name="search" placeholder="Cari user, approval, dll..."></div>
+        <?php } ?>
+      </div>
+      <div class="form-row">
+        <div class="col-12 text-right">
+          <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-filter"></i> Terapkan Filter</button> 
+          <a href="<?php print_link($d->machine_key . '/list2'); ?>" class="btn btn-sm btn-outline-secondary ml-1"><i class="fa fa-times"></i> Reset</a>
+        </div>
       </div>
     </form>
   </div></div>
