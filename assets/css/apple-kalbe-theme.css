@@ -510,6 +510,109 @@ label, .form-text, .text-muted, .form-group > label {
 }
 
 /* ==========================================================================
+   Form AM Part Cards: Detail Table & Touch-Friendly Radio Buttons (All Screens)
+   ========================================================================== */
+.part-card .table {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin-bottom: 0 !important;
+}
+.part-card .table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+}
+.part-card .table tr {
+    display: flex !important;
+    width: 100% !important;
+}
+.part-card .table th {
+    flex: 0 0 140px !important;
+    width: 140px !important;
+    max-width: 140px !important;
+    background: #F8F9FA !important;
+    color: #495057 !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    padding: 8px 12px !important;
+    border-right: 1px solid #dee2e6 !important;
+}
+.part-card .table td {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    font-size: 0.85rem !important;
+    padding: 8px 12px !important;
+}
+
+.part-card .custom-control.custom-radio {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 14px 10px 44px !important;
+    background: #F9F9FB;
+    border: 1.5px solid #E5E5EA;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    min-height: 44px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+.part-card .custom-control.custom-radio:hover {
+    background: #F2F2F7;
+    border-color: #D1D1D6;
+}
+.part-card .custom-control.custom-radio .custom-control-input {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    z-index: 2 !important;
+    opacity: 0 !important;
+    cursor: pointer !important;
+}
+.part-card .custom-control.custom-radio .custom-control-label {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    color: #1C1C1E;
+    user-select: none;
+}
+.part-card .custom-control.custom-radio .custom-control-label::before,
+.part-card .custom-control.custom-radio .custom-control-label::after {
+    position: absolute !important;
+    left: 14px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+}
+.part-card .custom-control.custom-radio .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #2E7D32 !important;
+    border-color: #2E7D32 !important;
+}
+.part-card .custom-control.custom-radio:has(input:checked) {
+    background: #E8F5E9 !important;
+    border-color: #4CAF50 !important;
+}
+
+/* ==========================================================================
    Alerts & Shift Selector
    ========================================================================== */
 .alert.alert-info {
@@ -1077,8 +1180,110 @@ html, body {
     }
     
     .part-card .card-body > .row > div[class*="col-md-3"]:first-child img {
-        max-height: 180px;
+        max-height: 200px;
         margin: 0 auto;
+    }
+
+    /* Tabel part selalu mengisi 100% lebar kartu tanpa ruang kosong melompong */
+    .part-card .table {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        margin-bottom: 0 !important;
+    }
+    .part-card .table tbody {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+    .part-card .table tr {
+        display: flex !important;
+        width: 100% !important;
+    }
+    .part-card .table th {
+        flex: 0 0 140px !important;
+        width: 140px !important;
+        max-width: 140px !important;
+        background: #F8F9FA !important;
+        color: #495057 !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+        border-right: 1px solid #dee2e6 !important;
+    }
+    .part-card .table td {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+
+    /* Radio button touch-friendly: padding pas, icon di dalam card, tidak nabrak teks */
+    .part-card .custom-control.custom-radio {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 14px 10px 44px !important;
+        background: #F9F9FB;
+        border: 1.5px solid #E5E5EA;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        min-height: 44px;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+    .part-card .custom-control.custom-radio:hover {
+        background: #F2F2F7;
+        border-color: #D1D1D6;
+    }
+    .part-card .custom-control.custom-radio .custom-control-input {
+        position: absolute !important;
+        left: 14px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+        z-index: 2 !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
+    }
+    .part-card .custom-control.custom-radio .custom-control-label {
+        position: static !important;
+        display: block !important;
+        width: 100% !important;
+        cursor: pointer !important;
+        font-weight: 500 !important;
+        font-size: 0.92rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0 !important;
+        padding-top: 0 !important;
+        color: #1C1C1E;
+        user-select: none;
+    }
+    .part-card .custom-control.custom-radio .custom-control-label::before,
+    .part-card .custom-control.custom-radio .custom-control-label::after {
+        position: absolute !important;
+        left: 14px !important;
+        right: auto !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+        border-radius: 50% !important;
+    }
+    .part-card .custom-control.custom-radio .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #2E7D32 !important;
+        border-color: #2E7D32 !important;
+    }
+    .part-card .custom-control.custom-radio:has(input:checked) {
+        background: #E8F5E9 !important;
+        border-color: #4CAF50 !important;
     }
     
     /* Tag dropdowns kendala jadi 2x2 grid di tablet */
@@ -1158,14 +1363,6 @@ html, body {
     .kendala-box .row > div[class*="col-md-"] {
         flex: 0 0 100% !important;
         max-width: 100% !important;
-    }
-    
-    /* Radio options dibuat tombol touch-friendly */
-    .part-card .custom-radio {
-        padding: 6px 10px;
-        background: #F9F9FA;
-        border-radius: 6px;
-        margin-bottom: 6px;
     }
     
     /* Dashboard AM Mobile Optimization */
@@ -1260,4 +1457,51 @@ html, body {
     max-width: 100% !important;
 }
 
+/* ==========================================================================
+   7. Shift Badges (Mini-Cards) & Master Part Table Responsive Styling
+   ========================================================================== */
+.badge-shift-card {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: #E8F5E9;
+    color: #1B5E20;
+    border: 1px solid #A5D6A7;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.15s ease-in-out;
+    cursor: default;
+}
+.badge-shift-card:hover {
+    transform: translateY(-1px);
+    background: #C8E6C9;
+    border-color: #66BB6A;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
 
+/* Master Part Table Responsive Proportions */
+#master-part-table {
+    min-width: 840px !important;
+}
+#master-part-table th,
+#master-part-table td {
+    vertical-align: middle !important;
+}
+#master-part-table td.field-name-cell code,
+#master-part-table td code {
+    background: #F1F5F9;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    white-space: nowrap !important;
+    display: inline-block;
+}

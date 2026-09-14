@@ -49,13 +49,13 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
             <thead class="thead-light">
               <tr>
                 <th style="width:36px;" class="text-center"></th>
-                <th>Foto</th>
-                <th>Mesin</th>
-                <th>Field Name</th>
-                <th>Label</th>
-                <th>Section</th>
-                <th style="width:70px;" class="text-center">Urutan</th>
-                <th style="width:110px;" class="text-center">Aksi</th>
+                <th style="width:65px;" class="text-center">Foto</th>
+                <th style="width:90px;" class="text-nowrap">Mesin</th>
+                <th style="min-width:180px;" class="text-nowrap">Field Name</th>
+                <th style="min-width:160px;">Label</th>
+                <th style="min-width:160px;">Section</th>
+                <th style="width:65px;" class="text-center">Urutan</th>
+                <th style="width:100px;" class="text-center">Aksi</th>
               </tr>
             </thead>
             <tbody id="master-part-rows">
@@ -64,17 +64,17 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
               <?php } foreach ($records as $r) { ?>
                 <tr draggable="true" class="master-part-row" data-id="<?php echo $r['id']; ?>">
                   <td class="text-center text-muted" style="cursor:grab;" title="Tarik untuk mengubah urutan"><i class="fa fa-bars"></i></td>
-                  <td style="width:70px;" class="align-middle text-center">
+                  <td style="width:65px;" class="align-middle text-center">
                     <?php if (!empty($r['image_path'])) { ?>
-                      <img src="<?php print_link($r['image_path']); ?>" style="max-width:52px;max-height:52px;object-fit:cover;border-radius:6px;border:1px solid #E5E5EA;" onerror="this.style.display='none';">
+                      <img src="<?php print_link($r['image_path']); ?>" style="max-width:50px;max-height:50px;object-fit:cover;border-radius:6px;border:1px solid #E5E5EA;" onerror="this.style.display='none';">
                     <?php } ?>
                   </td>
-                  <td class="align-middle font-weight-bold"><?php echo isset($machine_keys[$r['machine_key']]) ? $machine_keys[$r['machine_key']] : $r['machine_key']; ?></td>
-                  <td class="align-middle"><code><?php echo htmlspecialchars($r['field_name']); ?></code></td>
-                  <td class="align-middle"><?php echo htmlspecialchars($r['label']); ?></td>
-                  <td class="align-middle"><span class="badge badge-light border text-secondary"><?php echo htmlspecialchars($r['section']); ?></span></td>
+                  <td class="align-middle font-weight-bold text-nowrap"><?php echo isset($machine_keys[$r['machine_key']]) ? $machine_keys[$r['machine_key']] : $r['machine_key']; ?></td>
+                  <td class="align-middle field-name-cell"><code><?php echo htmlspecialchars($r['field_name']); ?></code></td>
+                  <td class="align-middle font-weight-500"><?php echo htmlspecialchars($r['label']); ?></td>
+                  <td class="align-middle"><span class="badge badge-light border text-secondary text-nowrap"><?php echo htmlspecialchars($r['section']); ?></span></td>
                   <td class="urutan-cell"><?php echo $r['urutan']; ?></td>
-                  <td class="align-middle text-center">
+                  <td class="align-middle text-center text-nowrap">
                     <a class="btn btn-sm btn-outline-primary py-1 px-2" href="<?php print_link('master_part/edit/' . $r['id']) ?>" title="Edit Part"><i class="fa fa-edit"></i></a>
   <?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning py-1 px-2" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i></a><?php } else { ?>
     <span class="badge badge-secondary" title="Di-takeout <?php echo htmlspecialchars($r['taken_out_at']); ?><?php echo !empty($r['takeout_reason']) ? ': ' . htmlspecialchars($r['takeout_reason']) : ''; ?>">Taken out</span>
@@ -122,6 +122,25 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
   .master-part-row.drop-target-above { box-shadow: inset 0 3px 0 0 #009639; }
   .master-part-row.drop-target-below { box-shadow: inset 0 -3px 0 0 #009639; }
   .urutan-cell { text-align: center; font-weight: bold; vertical-align: middle !important; }
+
+  #master-part-table {
+    min-width: 860px !important;
+  }
+  #master-part-table th, #master-part-table td {
+    vertical-align: middle !important;
+  }
+  #master-part-table td.field-name-cell code {
+    background: #F1F5F9;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    white-space: nowrap !important;
+    display: inline-block;
+  }
 </style>
 <script>
 (function () {
