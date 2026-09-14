@@ -174,7 +174,7 @@ class UsersController extends SecureController{
 			$tablename = $this->tablename;
 			$request = $this->request;
 			//fillable fields
-			$fields = $this->fields = array("nama","email","username","area","mesin","password","account_status","user_role_id","pict");
+			$fields = $this->fields = array("nama","email","username","area","mesin","password","account_status","user_role_id");
 			$postdata = $this->format_request_data($formdata);
 			$cpassword = $postdata['confirm_password'];
 			$password = $postdata['password'];
@@ -188,7 +188,6 @@ class UsersController extends SecureController{
 				'area' => 'required',
 				'mesin' => 'required',
 				'password' => 'required',
-				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
@@ -196,7 +195,6 @@ class UsersController extends SecureController{
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
-				'pict' => 'sanitize_string',
 			);
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
@@ -262,7 +260,7 @@ class UsersController extends SecureController{
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
 		}
 		 //editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id","pict");
+		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id");
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
@@ -280,7 +278,6 @@ class UsersController extends SecureController{
 				'mesin' => 'sanitize_string',
 				'account_status' => 'sanitize_string',
 				'user_role_id' => 'sanitize_string',
-				'pict' => 'sanitize_string',
 			);
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
 			//Check if Duplicate Record Already Exit In The Database
@@ -341,7 +338,7 @@ class UsersController extends SecureController{
 			return null;
 		}
 		//editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","pict");
+		$fields = $this->fields = array("id_user","nama","username","area","mesin");
 		$page_error = null;
 		if($formdata){
 			$postdata = array();
@@ -356,7 +353,6 @@ class UsersController extends SecureController{
 				'mesin' => 'required',
 				'account_status' => 'required',
 				'user_role_id' => 'required',
-				'pict' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
@@ -365,7 +361,6 @@ class UsersController extends SecureController{
 				'mesin' => 'sanitize_string',
 				'account_status' => 'sanitize_string',
 				'user_role_id' => 'sanitize_string',
-				'pict' => 'sanitize_string',
 			);
 			$this->filter_rules = true; //filter validation rules by excluding fields not in the formdata
 			$modeldata = $this->modeldata = $this->validate_form($postdata);

@@ -63,9 +63,9 @@ class AccountController extends SecureController{
 		 //editable fields -- account_status & user_role_id SENGAJA tidak termasuk:
 		 //user gak boleh naikkan role/aktivasi akun sendiri, itu wewenang
 		 //Administrator lewat menu Users (UsersController::edit()).
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","pict");
+		$fields = $this->fields = array("id_user","nama","username","area","mesin");
 		if ($area_assignment_locked) {
-			$this->fields = array("id_user", "nama", "username", "mesin", "pict");
+			$this->fields = array("id_user", "nama", "username", "mesin");
 		}
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
@@ -79,22 +79,9 @@ class AccountController extends SecureController{
 				'nama' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
-				'pict' => 'sanitize_string',
 			);
 			if (!$area_assignment_locked) { $this->sanitize_array['area'] = 'sanitize_string'; }
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
-			if (isset($modeldata['pict']) && trim($modeldata['pict']) !== '') {
-				$pict = ltrim(str_replace('\\', '/', trim($modeldata['pict'])), '/');
-				if (!preg_match('#^uploads/(files|photos)/[^/]+\.(jpe?g|png|webp)$#i', $pict)) {
-					$this->view->page_error[] = 'File foto profil tidak valid.';
-				} else {
-					$uploads_root = realpath(ROOT . 'uploads');
-					$file = realpath(ROOT . $pict);
-					if (!$uploads_root || !$file || strpos($file, $uploads_root . DIRECTORY_SEPARATOR) !== 0) {
-						$this->view->page_error[] = 'File foto profil tidak ditemukan.';
-					} else { $modeldata['pict'] = $pict; }
-				}
-			} else { unset($modeldata['pict']); }
 
 			//Check if Duplicate Record Already Exit In The Database
 			if(isset($modeldata['username'])){

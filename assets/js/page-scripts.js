@@ -758,25 +758,44 @@ $(document).on('click', '.btn-toggle-password', function(){
  * nampilin mesin yang satu kategori, "Semua Mesin" selalu kelihatan).
  * No-op di halaman lain karena #ctrl-area/#ctrl-mesin cuma ada di register.
  */
-$(document).on('change', '#ctrl-area', function(){
-	var selectedArea = $(this).val() || '';
+$(document).on('change', '#ctrl-area', function(e, isInitialLoad){
+	var selectedArea = $.trim($(this).val() || '');
 	var $mesinSelect = $('#ctrl-mesin');
+	if (!$mesinSelect.length) return;
+
 	var $options = $mesinSelect.find('option[data-area]');
 	$options.each(function(){
 		var optionArea = $(this).attr('data-area') || '';
-		var isWrappingMatch = (selectedArea.indexOf('Wrapping') === 0 && optionArea.indexOf('Wrapping') === 0);
-		var matches = (selectedArea === 'Semua Area' || optionArea === '' || optionArea === selectedArea || isWrappingMatch);
-		$(this).toggle(matches);
+		var isWrappingMatch = (selectedArea.toLowerCase().indexOf('wrapping') === 0 && optionArea.toLowerCase().indexOf('wrapping') === 0);
+		var matches = (!selectedArea || selectedArea === 'Semua Area' || optionArea === '' || optionArea === selectedArea || isWrappingMatch);
+		this.hidden = !matches;
+		if (!matches) {
+			$(this).attr('disabled', 'disabled').hide();
+		} else {
+			$(this).removeAttr('disabled').show();
+		}
 	});
+
+	// Jangan reset nilai pada initial page load / jika user belum milih mesin
+	if (isInitialLoad) {
+		return;
+	}
+
 	var $selectedOption = $mesinSelect.find('option:selected');
-	if ($selectedOption.length && $selectedOption.is(':hidden')) {
-		$mesinSelect.val('');
+	var selectedVal = $selectedOption.val() || '';
+	if (selectedVal && selectedVal !== 'Semua Mesin' && selectedArea && selectedArea !== 'Semua Area') {
+		var selectedOptArea = $selectedOption.attr('data-area') || '';
+		var isWrappingMatch = (selectedArea.toLowerCase().indexOf('wrapping') === 0 && selectedOptArea.toLowerCase().indexOf('wrapping') === 0);
+		var isCompatible = (selectedOptArea === '' || selectedOptArea === selectedArea || isWrappingMatch);
+		if (!isCompatible) {
+			$mesinSelect.val('');
+		}
 	}
 });
-// Kalau halaman re-render abis gagal validasi (area udah keisi dari submit
-// sebelumnya), jalanin filter-nya juga pas load, bukan nunggu user ganti area.
+// Kalau halaman dimuat / re-render (area udah keisi dari DB atau submit
+// sebelumnya), jalanin filter opsi-nya pas load tapi JANGAN reset nilainya ([true]).
 if ($('#ctrl-area').val()) {
-	$('#ctrl-area').trigger('change');
+	$('#ctrl-area').trigger('change', [true]);
 }
 /**
  * replace failed images with better looking image

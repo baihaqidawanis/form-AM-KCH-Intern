@@ -163,24 +163,6 @@ $show_export_btn = $this->show_export_btn;
                                             </span>
                                         </td>
                                     </tr>
-                                    <tr  class="td-pict">
-                                        <th class="title"> Pict: </th>
-                                        <td class="value">
-                                            <span  data-value="<?php echo $data['pict']; ?>" 
-                                                data-pk="<?php echo $data['id_user'] ?>" 
-                                                data-url="<?php print_link("users/editfield/" . urlencode($data['id_user'])); ?>" 
-                                                data-name="pict" 
-                                                data-title="Browse..." 
-                                                data-placement="left" 
-                                                data-toggle="click" 
-                                                data-type="text" 
-                                                data-mode="popover" 
-                                                data-showbuttons="left" 
-                                                class="is-editable" >
-                                                <?php echo $data['pict']; ?> 
-                                            </span>
-                                        </td>
-                                    </tr>
                                 </tbody>
                                 <!-- Table Body End -->
                             </table>

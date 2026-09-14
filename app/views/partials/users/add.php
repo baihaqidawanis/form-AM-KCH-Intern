@@ -193,23 +193,7 @@ $redirect_to = $this->redirect_to;
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="form-group ">
-                                                            <div class="row">
-                                                                <div class="col-sm-4">
-                                                                    <label class="control-label" for="pict">Pict <span class="text-danger">*</span></label>
-                                                                </div>
-                                                                <div class="col-sm-8">
-                                                                    <div class="">
-                                                                        <div class="dropzone required" input="#ctrl-pict" fieldname="pict"    data-multiple="false" dropmsg="Choose files or drag and drop files to upload"    btntext="Browse" filesize="3" maximum="1">
-                                                                            <input name="pict" id="ctrl-pict" required="" class="dropzone-input form-control" value="<?php  echo $this->set_field_value('pict',""); ?>" type="text"  />
-                                                                                <!--<div class="invalid-feedback animated bounceIn text-center">Please a choose file</div>-->
-                                                                                <div class="dz-file-limit animated bounceIn text-center text-danger"></div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+
                                                         <div class="form-group form-submit-btn-holder text-center mt-3">
                                                             <div class="form-ajax-status"></div>
                                                             <button class="btn btn-primary" type="submit">

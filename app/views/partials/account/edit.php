@@ -122,25 +122,6 @@ $redirect_to = $this->redirect_to;
                                                                 <small class="form-text text-muted">Hubungi Administrator kalau perlu ubah role.</small>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                                <div class="form-group ">
-                                                    <div class="row">
-                                                        <div class="col-sm-4">
-                                                            <label class="control-label" for="pict">Foto Profil</label>
-                                                        </div>
-                                                        <div class="col-sm-8">
-                                                            <div class="">
-                                                                <div class="dropzone" input="#ctrl-pict" fieldname="pict"    data-multiple="false" dropmsg="Choose files or drag and drop files to upload"    btntext="Browse" filesize="3" maximum="1">
-                                                                    <input name="pict" id="ctrl-pict" class="dropzone-input form-control" value="<?php  echo $data['pict']; ?>" type="text"  />
-                                                                        <!--<div class="invalid-feedback animated bounceIn text-center">Please a choose file</div>-->
-                                                                        <div class="dz-file-limit animated bounceIn text-center text-danger"></div>
-                                                                    </div>
-                                                                </div>
-                                                                <?php Html :: uploaded_files_list($data['pict'], '#ctrl-pict'); ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                                 <div class="form-ajax-status"></div>
                                                 <div class="form-group text-center">
