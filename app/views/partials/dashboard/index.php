@@ -62,9 +62,10 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-card-heading { align-items: flex-start; display: flex; justify-content: space-between; padding: 18px 20px 0; }
 .am-card-title { font-size: 1rem; font-weight: 650; letter-spacing: -.018em; margin: 0; }
 .am-card-note { color: var(--ak-muted, #6E6E73); font-size: .78rem; margin: 4px 0 0; }
-.am-chart-wrap { height: 330px; padding: 18px 18px 16px; position: relative; }
-.am-queue { list-style: none; margin: 0; padding: 10px 18px 16px; }
-.am-queue-item { align-items: center; border-bottom: 1px solid var(--ak-border, rgba(0,0,0,.07)); display: flex; gap: 12px; padding: 13px 0; }
+.am-queue { list-style: none; margin: 0; padding: 10px 18px 16px; max-height: 330px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.2) transparent; }
+.am-queue::-webkit-scrollbar { width: 6px; }
+.am-queue::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,.2); border-radius: 999px; }
+.am-queue::-webkit-scrollbar-track { background: transparent; }
 .am-queue-item:last-child { border-bottom: 0; }
 .am-queue-main { min-width: 0; flex: 1; }
 .am-queue-machine { font-size: .9rem; font-weight: 650; margin: 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
