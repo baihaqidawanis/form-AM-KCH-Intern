@@ -1,4 +1,5 @@
 @echo off
+setlocal
 :: ===================================================================
 :: SCRIPT AUTO-BACKUP FORM AM - SITE PULOGADUNG (COMPLIANT WITH URS)
 :: Sesuai URS Form AM Poin 4.1.2 & 4.2 (Retensi 5 Tahun & CSV Validation)
@@ -14,12 +15,17 @@ set BACKUP_DIR=D:\BACKUP_FORM_AM
 if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%"
 
 :: 3. Konfigurasi PostgreSQL (Sesuaikan jika path instalasi berbeda)
-set PG_BIN="C:\Program Files\PostgreSQL\17\bin"
-set PGPASSWORD=Admin@123
-set DB_NAME=form_am_plg
-set DB_USER=postgres
-set DB_HOST=localhost
-set DB_PORT=5432
+set "PG_BIN=C:\Program Files\PostgreSQL\17\bin"
+if not defined DB_NAME set "DB_NAME=form_am_plg"
+if not defined DB_USER set "DB_USER=postgres"
+if not defined DB_HOST set "DB_HOST=localhost"
+if not defined DB_PORT set "DB_PORT=5432"
+if not defined DB_PASSWORD (
+    echo [ERROR] Environment variable DB_PASSWORD belum diatur.
+    echo Jalankan: set "DB_PASSWORD=password_database" lalu ulangi script ini.
+    exit /b 1
+)
+set "PGPASSWORD=%DB_PASSWORD%"
 
 :: Tentukan Lokasi Folder Aplikasi Form AM
 set APP_DIR=%~dp0..
@@ -29,8 +35,8 @@ echo [%date% %time%] Memulai Backup Database Form AM...
 echo ===================================================================
 
 :: 4. Eksekusi Backup Database (Format Compressed .dump)
-if exist %PG_BIN%\pg_dump.exe (
-    %PG_BIN%\pg_dump.exe -h %DB_HOST% -p %DB_PORT% -U %DB_USER% -F c -b -v -f "%BACKUP_DIR%\db_form_am_%TANGGAL%_%WAKTU%.dump" %DB_NAME%
+if exist "%PG_BIN%\pg_dump.exe" (
+    "%PG_BIN%\pg_dump.exe" -h %DB_HOST% -p %DB_PORT% -U %DB_USER% -F c -b -v -f "%BACKUP_DIR%\db_form_am_%TANGGAL%_%WAKTU%.dump" %DB_NAME%
     echo [%date% %time%] Backup Database Berhasil: "%BACKUP_DIR%\db_form_am_%TANGGAL%_%WAKTU%.dump"
 ) else (
     echo [ERROR] pg_dump.exe tidak ditemukan di %PG_BIN%!
@@ -48,3 +54,5 @@ echo [%date% %time%] Seluruh Proses Backup Selesai!
 echo Lokasi File Backup: %BACKUP_DIR%
 echo ===================================================================
 pause
+set "PGPASSWORD="
+endlocal

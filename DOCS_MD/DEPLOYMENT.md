@@ -1,80 +1,147 @@
-# 🚀 Rencana Deployment ke Production
+# Deployment Form AM Site Pulogadung
 
-**Status saat ini (14 Agustus 2026): aplikasi belum di-deploy ke server production.** Semua yang sudah dikerjakan — migrasi ke PostgreSQL, sistem role 4-tingkat, penyatuan kode 17 modul mesin, dan seterusnya — baru berjalan di database lokal komputer development. Server production (`10.167.170.71`) masih dalam kondisi sebelum migrasi: masih MySQL/MariaDB, dan kemungkinan besar masih memakai skema data serta struktur role yang lama. Dokumen ini adalah rencana untuk menyambungkan dua kondisi tersebut.
+Dokumen ini adalah checklist deployment aplikasi Form AM terkini ke server baru. Arsitektur resmi menggunakan PHP 8.2+, Apache, dan PostgreSQL. Jangan gunakan skema MySQL lama untuk fresh install.
 
-**Instalasi ke server tidak perlu Docker.** Rencana di dokumen ini murni instalasi langsung (Apache + PHP + PostgreSQL terpasang di server, seperti setup XAMPP tapi versi production) — bukan lewat container. Ada `Dockerfile` di root project sebagai opsi cadangan yang sudah teruji bisa jalan, tapi itu bukan bagian dari rencana ini. Untuk skala aplikasi ini (internal perusahaan, satu server, dipakai puluhan sampai ratusan operator), instalasi langsung lebih sederhana dan lebih mudah dirawat dibanding menambah lapisan container yang sebenarnya tidak dibutuhkan di sini.
+## Cakupan Sistem
 
-## Kenapa Ini Bukan Sekadar "Upload File, Selesai"
+- 21 modul mesin: SIG, JOYEA, Ilapak 1-2, Ilapak 3-12, Unifill B, Chimei, Temach, Check Weigher, Conveyor SIG, Jihcheng, Jinsung 1-4, Jinsung 5, Best Pack, Cosmec, FBD Jaw Chuan, FBD Glatt, Supermixer, Granulator, Storage Tank Silverson, Storage Tank Tetrapak, dan Mixing Tank.
+- Lima role: `1=Administrator`, `2=Manager`, `3=Supervisor`, `4=Staff`, dan `5=Operator`.
+- Fresh install memakai `database/postgres/01_schema.sql` lalu `database/postgres/02_seed.sql`.
+- `02_seed.sql` hanya membuat satu akun initial setup, yaitu `superadmin`. Akun Manager, Supervisor, Staff, dan Operator dibuat melalui registrasi atau menu Users.
 
-Kalau kode di komputer development ini langsung disalin ke server production dan dijalankan begitu saja, aplikasinya akan langsung rusak. Ada empat alasan:
+## 1. Prasyarat Server
 
-1. **Skemanya sudah berubah total.** Kode sekarang mengharapkan struktur database Postgres yang sudah dirapikan (role 4-tingkat, satu kerangka kode untuk semua mesin, nama kolom yang konsisten huruf kecil). Server production masih memakai skema MySQL yang lama.
-2. **Data di production itu data sungguhan.** Bukan data uji coba — ada histori pengisian form dari operator yang sudah berjalan sekian lama, dan itu tidak boleh hilang begitu saja saat proses migrasi.
-3. **Akun-akun di production itu orang sungguhan**, dengan sistem role yang lama. Memetakan role lama ke 4 role baru (Administrator/Manager/Supervisor/Staff-Operator) itu keputusan bisnis — siapa jadi apa — bukan sesuatu yang bisa saya putuskan sendiri dari kode.
-4. **Server production kemungkinan belum siap secara teknis** — versi PHP-nya mungkin belum sesuai, extension yang dibutuhkan (`pdo_pgsql`, dst) mungkin belum terpasang, dan seterusnya.
+- Apache 2.4 dengan `mod_rewrite` dan `mod_headers`.
+- PHP 8.2 atau lebih baru dengan `pdo_pgsql`, `pgsql`, `mbstring`, `dom`, `gd`, `fileinfo`, `openssl`, dan `zip`.
+- PostgreSQL 17 atau versi kompatibel yang sudah diuji tim.
+- Composer 2.
+- Node.js/npm hanya diperlukan untuk menjalankan Playwright E2E; tidak ada proses build frontend untuk runtime production.
+- HTTPS wajib digunakan saat go-live agar cookie sesi memakai flag `Secure`.
 
-## Hal yang Perlu Diputuskan Dulu (Bukan oleh Saya)
+## 2. Konfigurasi Environment
 
-Sebelum proses deployment bisa dimulai, ada beberapa hal yang perlu disepakati oleh tim atau pemilik sistem:
+Salin `.env.example` menjadi `.env`, kemudian isi kredensial khusus server. `.env` tidak boleh masuk Git atau artefak publik.
 
-**1. Apakah production ikut pindah ke PostgreSQL, atau tetap di MySQL?**
+```dotenv
+DB_HOST=127.0.0.1
+DB_USERNAME=form_am_app
+DB_PASSWORD=<password-kuat-dari-secret-manager>
+DB_NAME=form_am_plg
+DB_TYPE=pgsql
+DB_PORT=5432
+DB_CHARSET=utf8
+DEVELOPMENT_MODE=false
+```
 
-Saran saya: pindah ke Postgres. Alasannya, semua pekerjaan yang sudah diuji berbulan-bulan ini memang dibangun di atas Postgres. Tapi ada satu hal yang perlu dipahami: mau pindah ke Postgres atau tetap di MySQL, skema tabelnya **tetap harus dimigrasi/disesuaikan** — karena kode sekarang konsisten pakai nama kolom huruf kecil, sementara skema MySQL lama masih ada beberapa kolom yang capitalized. Jadi kalau proses migrasi skema toh harus dilakukan, sekalian pindah ke Postgres jauh lebih masuk akal, karena itu yang sudah benar-benar teruji.
+Gunakan SMTP perusahaan jika reset password melalui email diaktifkan. Jangan menyalin `.env` development/Ethereal ke production. Verifikasi kembali `DEVELOPMENT_MODE=false` setelah Apache direstart.
 
-**2. Kalau di data production lama ada mesin di luar 17 mesin yang sekarang ada di aplikasi — datanya mau diapakan?** Kalau memang bukan mesin dari pabrik ini, kemungkinan besar tidak perlu ikut dimigrasi (cukup diarsipkan terpisah). Tapi ini perlu dikonfirmasi eksplisit dulu, jangan sampai data itu "ditinggal begitu saja" tanpa ada yang tahu.
+## 3. Fresh Install PostgreSQL
 
-**3. Siapa masuk role apa?** Ini pemetaan dari sistem role lama ke 4 role baru — murni keputusan bisnis, bukan sesuatu yang bisa ditebak dari data.
+Buat role/database dengan user aplikasi sebagai owner. Ownership diperlukan karena fitur Master Data Part membuat kolom part baru secara transaksional menggunakan `ALTER TABLE`.
 
-**4. Kapan waktu yang paling pas untuk proses migrasi?** Prosesnya butuh waktu di mana aplikasi tidak bisa dipakai operator — perlu dicari jendela waktu yang paling tidak mengganggu (misalnya pergantian shift atau akhir pekan).
+```bash
+sudo -u postgres createuser --pwprompt form_am_app
+sudo -u postgres createdb --owner=form_am_app --encoding=UTF8 form_am_plg
+```
 
-## Rencana Kerja (dengan Asumsi Pindah ke Postgres)
+Import harus berhenti pada error pertama. Jangan membuka aplikasi ke jaringan sebelum password awal Super Admin diganti.
 
-Saya bagi jadi lima fase. Fase 0 bisa dikerjakan kapan saja sebelum hari-H, tidak perlu menunggu jendela downtime.
+```bash
+export PGPASSWORD='<password-form_am_app>'
 
-### Fase 0 — Persiapan
+psql -v ON_ERROR_STOP=1 -h <host> -U <user> -d <dbname> \
+  -f database/postgres/01_schema.sql
+psql -v ON_ERROR_STOP=1 -h <host> -U <user> -d <dbname> \
+  -f database/postgres/02_seed.sql
 
-- [ ] Backup penuh database production MySQL yang sekarang — dump lengkap, dan kalau memungkinkan snapshot filenya juga. Ini dilakukan **sebelum** menyentuh apapun.
-- [ ] Backup folder `uploads/` juga (foto profil user, dll) — foto disimpan sebagai file biasa di disk lokal server (bukan S3/MinIO, cukup buat skala internal ini), jadi **gak ikut ke-backup otomatis lewat dump database**. Kalau cuma database yang di-backup, semua foto profil bakal hilang kalau server production nanti crash/reinstall.
-- [ ] Pasang PostgreSQL 17 di server production (atau di server database terpisah kalau memang begitu arsitekturnya).
-- [ ] Pasang PHP 8.2 beserta extension yang dibutuhkan (`pdo_pgsql`, `pgsql`, dan `zip` — yang terakhir ini dibutuhkan supaya export ke Excel bisa jalan, detailnya ada di `TECHNICAL_OVERVIEW.md`).
-- [ ] (Opsional, hati-hati) OPcache bisa dicoba diaktifkan untuk performa, tapi di lingkungan development (Windows) ternyata bikin Apache tidak stabil (`VirtualProtect() failed` di log, request gagal random) — masalah yang dikenal terjadi antara OPcache dan Windows. Kalau server production Linux, kemungkinan besar tidak akan mengalami masalah yang sama, tapi tetap **uji stabilitasnya dulu** sebelum diaktifkan permanen (submit beberapa form berturut-turut, cek log error) — jangan langsung diaktifkan tanpa dicek.
-- [ ] Install dependency lewat Composer dan npm di server. Sebelum itu, cek dulu apakah server bisa mengakses `packagist.org`, `github.com`, dan `registry.npmjs.org` — kalau server production tidak ada akses internet sama sekali, folder `vendor/` dan `node_modules/` perlu disalin manual dari komputer yang punya akses.
-- [ ] Siapkan file `.env` khusus production, isinya kredensial database production. Yang paling penting: pastikan `DEVELOPMENT_MODE=false`. Ini gampang sekali terlewat, tapi dampaknya cukup serius — kalau lupa, detail error PHP (termasuk path file di server) bisa muncul ke siapa saja yang mengakses, bahkan yang belum login.
-- [ ] Ganti kredensial SMTP di `.env` production ke akun email sungguhan (`USE_SMTP=true`, `SMTP_HOST`/`SMTP_USERNAME`/`SMTP_PASSWORD`/dst milik perusahaan). File `.env` di komputer development ini isinya kredensial **Ethereal Email** (`smtp.ethereal.email`) — cuma akun tes gratis buat verifikasi alur reset-password, email yang "terkirim" tidak pernah sampai ke inbox sungguhan mana pun. Kalau file `.env` development ini ikut disalin ke production tanpa diganti, fitur reset password lewat email akan terlihat jalan (tidak error) tapi user tidak akan pernah menerima emailnya.
+unset PGPASSWORD
+```
 
-### Fase 1 — Migrasi Skema dan Data
+Contoh parameter: `<user>=form_am_app` dan `<dbname>=form_am_plg`. Untuk menghindari password tersimpan di shell history, gunakan prompt `psql` atau `.pgpass` berizin `0600`.
 
-- [ ] Bangun skema Postgres berdasarkan skema production yang sesungguhnya (bukan cuma dari yang ada di komputer development — production mungkin punya kolom atau tabel tambahan yang di lokal sudah tidak ada). Semua file migrasi ada di `database/migrations/`.
-- [ ] Migrasikan data SIG — ini kemungkinan satu-satunya mesin yang punya histori data sungguhan dari production lama, karena 16 mesin lainnya memang baru dibuat di aplikasi ini dan belum pernah ada datanya di production.
-- [ ] 16 mesin lainnya mulai dari nol record — itu memang wajar, bukan tanda ada yang salah.
-- [ ] Migrasikan data user, sambil memetakan ke role baru sesuai kesepakatan tim.
-- [ ] Cek dan sesuaikan data master (kategori tag, korelasi, klasifikasi, daftar mesin, dst).
+Verifikasi objek utama:
 
-### Fase 2 — Deploy Kode
+```bash
+psql -h <host> -U <user> -d <dbname> -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'tb_mesin_%';"
+psql -h <host> -U <user> -d <dbname> -c "SELECT role_id, role_name FROM roles ORDER BY role_id;"
+psql -h <host> -U <user> -d <dbname> -c "SELECT username, user_role_id, is_super_admin FROM users;"
+```
 
-- [ ] Deploy kode dari versi yang sudah final dan sudah diuji ke server production.
-- [ ] Pasang file `.env` production yang sudah disiapkan di Fase 0 — bukan file `.env` development.
-- [ ] Restart Apache supaya konfigurasi baru terbaca.
+Hasil yang diharapkan: 21 tabel `tb_mesin_*`, lima role, dan hanya satu user `superadmin`.
 
-### Fase 3 — Uji Coba di Production (Sebelum Operator Mulai Pakai)
+## 4. Dependency dan File Aplikasi
 
-- [ ] Jalankan test otomatis (`vendor/bin/phpunit --testdox` dan `npm run test:e2e`) langsung di server production, arahkan ke domain production-nya.
-- [ ] Jalankan checklist manual di `TESTING.md` — login pakai 4 akun asli (bukan akun dummy), coba isi form tiap kategori mesin, coba approval, coba export.
-- [ ] Bandingkan jumlah record SIG yang berhasil dimigrasi dengan jumlah aslinya di MySQL lama — pastikan tidak ada yang hilang.
-- [ ] Cek sekali lagi `DEVELOPMENT_MODE=false` sebelum operator mulai diberi akses. Ini poin yang sama seperti di Fase 0, tapi cukup penting untuk dicek dua kali.
+Untuk staging/test yang menjalankan PHPUnit dan Playwright:
 
-### Fase 4 — Go-Live
+```bash
+composer install --no-interaction
+npm ci
+npx playwright install --with-deps chromium
+```
 
-- [ ] Informasikan ke operator bahwa sistemnya sudah baru, tapi akun lama tetap bisa dipakai (username sama), dan siapa yang bisa dihubungi kalau ada kendala.
-- [ ] Pantau log error dan Audit Trail lebih intensif di beberapa hari pertama.
-- [ ] Simpan backup MySQL lama minimal beberapa bulan — jangan langsung dihapus, untuk jaga-jaga kalau ternyata ada data yang terlewat saat migrasi.
+Setelah seluruh pengujian lulus, buat artefak runtime production tanpa dependency development:
 
-## Kalau Ada yang Tidak Beres (Rencana Rollback)
+```bash
+composer install --no-dev --no-interaction --optimize-autoloader
+```
 
-Backup MySQL lama dari Fase 0 tetap disimpan, jadi kalau terjadi masalah serius, masih memungkinkan untuk sementara kembali ke sistem lama sambil masalahnya diselidiki. Karena semua kredensial dan tipe database diatur lewat file `.env` (bukan ditulis langsung di kode), secara teknis proses kembali ini cukup dengan mengganti `.env` dan restart web server. Catatan pentingnya: ini hanya berlaku selama skema dan data di sisi MySQL lama masih dijaga utuh — jangan dihapus saat migrasi, setidaknya sampai beberapa minggu setelah go-live terbukti stabil.
+Folder `vendor/` tidak boleh berasal dari instalasi parsial. Gunakan `composer.lock` dan `package-lock.json` yang tersimpan di repository.
 
-## Yang Di Luar Cakupan Dokumen Ini
+## 5. Permission Folder dan Apache
 
-- Penjadwalan waktu downtime — ini keputusan operasional yang perlu dikoordinasikan dengan pihak pabrik.
-- Proses approval/sign-off perubahan sistem produksi — biasanya ada proses change-management tersendiri untuk sistem yang terkait GMP.
-- Training ulang operator kalau ada perubahan tampilan yang cukup signifikan — kemungkinan ini akan cukup banyak, mengingat 16 dari 17 mesin memang benar-benar baru dibanding sistem yang lama.
+Contoh untuk Debian/Ubuntu dengan user Apache `www-data`:
+
+```bash
+sudo install -d -o www-data -g www-data -m 0750 \
+  uploads uploads/files uploads/photos uploads/cached logs
+sudo chmod 0644 uploads/.htaccess
+sudo chown root:www-data uploads/.htaccess
+
+sudo a2enmod rewrite headers
+sudo apachectl configtest
+sudo systemctl restart apache2
+```
+
+VirtualHost aplikasi harus mengizinkan `.htaccess`:
+
+```apache
+<Directory /var/www/form-am>
+    AllowOverride All
+    Require all granted
+</Directory>
+```
+
+Setelah restart, pastikan file script di dalam `uploads/` ditolak HTTP 403 dan file gambar valid tetap dapat dibaca. Folder `logs/` dan subfolder `uploads/` harus writable oleh proses Apache, tetapi file aplikasi lainnya tidak perlu writable.
+
+## 6. Gate Testing Sebelum Go-Live
+
+```bash
+vendor/bin/phpunit
+npm run test:e2e
+```
+
+Lakukan smoke test terautentikasi untuk seluruh kategori mesin: registrasi, aktivasi user, submit OK/NOK, approval Supervisor, laporan harian/periode, TTD Operator/SPV, pembatalan TTD, scan QR, PDF/export, tambah/takeout Master Part, dan multi-shift.
+
+Checklist wajib:
+
+- [ ] Fresh import `01_schema.sql` dan `02_seed.sql` selesai tanpa error.
+- [ ] Hanya akun `superadmin` yang terbentuk dari seed dan password awal sudah diganti.
+- [ ] `DEVELOPMENT_MODE=false`; `.env` development tidak ikut ter-deploy.
+- [ ] PHPUnit dan Playwright E2E lulus pada staging.
+- [ ] `uploads/.htaccess`, `mod_rewrite`, `mod_headers`, dan `AllowOverride All` terverifikasi.
+- [ ] Backup database dan folder `uploads/` berhasil direstore pada database uji.
+- [ ] Audit Trail, TTD, QR integrity re-hash, dan snapshot historis diverifikasi melalui browser.
+- [ ] Backup/rollback dan downtime disetujui pemilik sistem/QA.
+
+## 7. Backup dan Restore
+
+Script Windows membaca password dari environment, bukan dari repository:
+
+```bat
+set "DB_PASSWORD=<password-database>"
+scripts\backup_form_am.bat
+scripts\restore_form_am_test.bat
+set "DB_PASSWORD="
+```
+
+Backup production harus mencakup dump PostgreSQL dan folder `uploads/`. Jangan hapus sistem/database lama sebelum hasil migrasi, jumlah record, dan fungsi utama mendapat sign-off QA.

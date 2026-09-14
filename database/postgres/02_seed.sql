@@ -130,7 +130,9 @@ UPDATE "mesin" SET "nomor_seri" = '2BTNK02036' WHERE "id" = '83';
 
 -- 8 unit fisik Chimei (tanpa nomor seri) -- lihat
 -- database/migrations/2026-08-20_add_chimei_units.sql
-INSERT INTO "mesin" ("nama_mesin") VALUES
+INSERT INTO "mesin" ("nama_mesin")
+SELECT seed."nama_mesin"
+FROM (VALUES
   ('Chimei 12A (JS 1)'),
   ('Chimei 4B (JS 2)'),
   ('Chimei 10A (JS 3)'),
@@ -139,7 +141,10 @@ INSERT INTO "mesin" ("nama_mesin") VALUES
   ('Chimei 9A (Ilapak 11)'),
   ('Chimei 5B (Unifill B)'),
   ('Chimei 1A (SIG 6)')
-ON CONFLICT DO NOTHING;
+) AS seed("nama_mesin")
+WHERE NOT EXISTS (
+  SELECT 1 FROM "mesin" existing WHERE existing."nama_mesin" = seed."nama_mesin"
+);
 
 -- kategori (9 baris)
 INSERT INTO "kategori" ("id", "korelasi_id", "kategori") OVERRIDING SYSTEM VALUE VALUES
@@ -194,26 +199,6 @@ SELECT setval(pg_get_serial_sequence('"roles"', 'role_id'), COALESCE((SELECT MAX
 INSERT INTO "users" ("nama", "email", "username", "password", "account_status", "user_role_id", "is_super_admin")
 VALUES ('Super Admin', 'admin@localhost', 'superadmin', '$2y$10$XT.XFKi3xXDkv12zaWU5VuWnVbmMORonOFJbVe/mOVsXWq2VGfLuy', 'Active', 1, true)
 ON CONFLICT DO NOTHING;
-
--- Fixture lokal untuk pengujian integrasi. Password awal: Test@1234.
--- Wajib diganti atau akun dinonaktifkan sebelum database dipakai di produksi.
-INSERT INTO "users"
-  ("nama", "email", "username", "password", "account_status", "user_role_id", "area", "mesin", "is_super_admin", "failed_login_attempts")
-VALUES
-  ('Test Manager', 'manager@localhost', 'MANAGE01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 2, 'Filling', NULL, false, 0),
-  ('Test Supervisor', 'supervisor@localhost', 'SUPERV01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 3, 'Filling', NULL, false, 0),
-  ('Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 5, 'Filling', '1', false, 0)
-ON CONFLICT ("username") DO UPDATE SET
-  "nama" = EXCLUDED."nama",
-  "email" = EXCLUDED."email",
-  "password" = EXCLUDED."password",
-  "account_status" = 'Active',
-  "user_role_id" = EXCLUDED."user_role_id",
-  "area" = EXCLUDED."area",
-  "mesin" = EXCLUDED."mesin",
-  "is_super_admin" = false,
-  "failed_login_attempts" = 0,
-  "password_reset_key" = NULL;
 
 -- Nomor seri fisik mesin -- lihat database/migrations/2026-08-20_add_mesin_nomor_seri.sql
 UPDATE "mesin" SET "nomor_seri" = '2BMIX13011' WHERE "nama_mesin" = 'Cosmec';
