@@ -161,7 +161,7 @@ if (!function_exists('get_period_image_src')) {
       @media print { .btn-cancel-signature { display:none !important; } }
     </style>
 
-    <table>
+    <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
       <tr>
         <td style="width:14%; text-align:center; vertical-align:middle; padding:2px;">
           <img src="<?php echo get_period_image_src('assets/images/logo.png'); ?>" style="max-height:30px; max-width:85px;" alt="Logo Bintang Toedjoe">
@@ -170,20 +170,24 @@ if (!function_exists('get_period_image_src')) {
           PT. BINTANG TOEDJOE<br>
           <span class="subhead">Total Productive Maintenance<br>Site Pulo Gadung</span>
         </td>
-        <td class="head" style="width:42%; text-align:center;">
+        <td class="head" style="width:40%; text-align:center;">
           AUTONOMOUS MAINTENANCE STANDARD<br>
           <span class="subhead">Check Sheet Kerja</span><br>
           <em style="font-size:7.5px; font-weight:normal;">Saya Pakai, Saya Rawat</em>
         </td>
-        <td style="width:18%; padding:0; vertical-align:top; border:none;">
+        <td style="width:20%; padding:0; vertical-align:top; border:1px solid #000;">
           <?php $sig = $d['period_signature'] ?? array(); ?>
-          <table style="width:100%; border-collapse:collapse; margin:0; border:1px solid #000;">
+          <table style="width:100%; height:100%; table-layout:fixed; border-collapse:collapse; margin:0; border:none;">
+            <colgroup>
+              <col style="width:50%;">
+              <col style="width:50%;">
+            </colgroup>
             <tr>
-              <td style="border:none; border-right:1px solid #000; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:1px; background:#f8f9fa;">
-                Diperiksa Oleh<br><span style="font-size:6.2px; font-weight:normal;">(Operator Produksi)</span>
+              <td style="border:none; border-right:1px solid #000; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:2px 1px; background:#f8f9fa;">
+                Diperiksa Oleh<br><span style="font-size:6.5px; font-weight:normal;">Operator Produksi</span>
               </td>
-              <td style="border:none; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:1px; background:#f8f9fa;">
-                Disetujui Oleh<br><span style="font-size:6.2px; font-weight:normal;">(SPV / Fasilitator)</span>
+              <td style="border:none; border-bottom:1px solid #000; width:50%; text-align:center; font-weight:bold; font-size:7px; padding:2px 1px; background:#f8f9fa;">
+                Disetujui Oleh<br><span style="font-size:6.5px; font-weight:normal;">Supervisor</span>
               </td>
             </tr>
             <tr>
@@ -458,7 +462,7 @@ if (!function_exists('get_period_image_src')) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         var roleType = this.getAttribute('data-role');
-        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'SPV / Fasilitator';
+        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'Supervisor';
 
         if (!confirm('Apakah Anda yakin ingin menandatangani Check Sheet ini secara digital sebagai ' + roleTitle + '?')) {
           return;
@@ -503,7 +507,7 @@ if (!function_exists('get_period_image_src')) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
         var roleType = this.getAttribute('data-role');
-        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'SPV / Fasilitator';
+        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'Supervisor';
         var reason = prompt('Masukkan alasan pembatalan TTD ' + roleTitle + ':');
         if (reason === null) {
           return;

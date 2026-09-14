@@ -1107,7 +1107,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 		if ($role_type === 'spv' && $current_user_role !== 3) {
 			http_response_code(403);
-			render_json(array('success' => false, 'message' => 'Hanya role Supervisor yang dapat menandatangani sebagai SPV/Fasilitator.'));
+			render_json(array('success' => false, 'message' => 'Hanya role Supervisor yang dapat menandatangani sebagai Supervisor.'));
 			return;
 		}
 
@@ -1115,7 +1115,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$signature = QrSignatureHelper::getPeriodSignature($this->machineKey, $mesin, $month, $year, $period);
 			if (!$signature || empty($signature['operator_token'])) {
 				http_response_code(422);
-				render_json(array('success' => false, 'message' => 'Operator Produksi harus menandatangani Check Sheet terlebih dahulu sebelum disetujui oleh SPV/Fasilitator.'));
+				render_json(array('success' => false, 'message' => 'Operator Produksi harus menandatangani Check Sheet terlebih dahulu sebelum disetujui oleh Supervisor.'));
 				return;
 			}
 		}

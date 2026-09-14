@@ -95,11 +95,11 @@ class DigitalSignatureTest extends TestCase
 			// 4. Verify lookup by SPV token
 			$verifiedSpv = QrSignatureHelper::getSignatureByToken($resSpv['token']);
 			$this->assertNotNull($verifiedSpv);
-			$this->assertSame('SPV / Fasilitator', $verifiedSpv['verified_role']);
+			$this->assertSame('Supervisor', $verifiedSpv['verified_role']);
 			$this->assertSame('approved', $verifiedSpv['status']);
 			$verifiedSpvPrefix = QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 8));
 			$this->assertNotNull($verifiedSpvPrefix);
-			$this->assertSame('SPV / Fasilitator', $verifiedSpvPrefix['verified_role']);
+			$this->assertSame('Supervisor', $verifiedSpvPrefix['verified_role']);
 			$this->assertNull(QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 7)));
 		} finally {
 			// Cleanup hanya menyasar namespace data milik test ini.

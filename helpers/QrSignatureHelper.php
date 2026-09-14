@@ -302,7 +302,7 @@ class QrSignatureHelper
         $verifiedRole = $matches[0]['role'];
         if ($row) {
             $isOperator = $verifiedRole === 'operator';
-            $row['verified_role'] = $isOperator ? 'Operator Produksi' : 'SPV / Fasilitator';
+            $row['verified_role'] = $isOperator ? 'Operator Produksi' : 'Supervisor';
             $signerId = $isOperator ? $row['operator_id'] : $row['spv_id'];
             $signedAt = $isOperator ? $row['operator_signed_at'] : $row['spv_signed_at'];
 
