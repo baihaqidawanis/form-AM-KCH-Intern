@@ -460,6 +460,23 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($formdata) {
 			$deactivated_unit = isset($formdata['mesin']) && $this->isUnitDeactivated(intval($formdata['mesin']), $this->operationalDate());
 			if ($deactivated_unit) { $this->set_page_error('Unit mesin sedang DEAKTIVASI. Pemeriksaan AM tidak dapat disimpan.'); return $this->redirect($table . '/add'); }
+			if (isset($formdata['mesin'])) {
+				$op_date = new DateTime($this->operationalDate());
+				$m_month = intval($op_date->format('n'));
+				$m_year = intval($op_date->format('Y'));
+				$m_period = intval($op_date->format('j')) <= 16 ? 1 : 2;
+				$sig = QrSignatureHelper::getPeriodSignature(
+					$this->machineKey,
+					intval($formdata['mesin']),
+					$m_month,
+					$m_year,
+					$m_period
+				);
+				if ($sig && (!empty($sig['operator_token']) || !empty($sig['spv_token']))) {
+					$this->set_flash_msg('Form AM pada periode ini telah ditandatangani secara digital. Untuk melakukan pengisian data baru pada periode ini, batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
+					return $this->redirect($table . '/add');
+				}
+			}
 			$context_error = $this->addContextError($formdata);
 			if ($context_error) {
 				$this->view->page_error[] = $context_error;
@@ -556,9 +573,42 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				'action_by_username' => $du['action_by_username']
 			);
 		}
+		$op_date = new DateTime($today);
+		$m_month = intval($op_date->format('n'));
+		$m_year = intval($op_date->format('Y'));
+		$m_period = intval($op_date->format('j')) <= 16 ? 1 : 2;
+		$signed_units = array();
+		try {
+			$signed_rows = $this->GetModel()->rawQuery("
+				SELECT s.mesin_id, m.nama_mesin, s.status, s.operator_signed_at, s.spv_signed_at, s.operator_token, s.spv_token
+				FROM am_period_signatures s
+				JOIN mesin m ON m.id = s.mesin_id
+				WHERE s.mesin_slug = ? AND s.bulan = ? AND s.tahun = ? AND s.periode = ?
+				  AND (s.operator_token IS NOT NULL OR s.spv_token IS NOT NULL)
+			", array($this->machineKey, $m_month, $m_year, $m_period));
+			if (!empty($signed_rows)) {
+				foreach ($signed_rows as $sr) {
+					$signed_units[intval($sr['mesin_id'])] = array(
+						'mesin_id' => intval($sr['mesin_id']),
+						'nama_mesin' => $sr['nama_mesin'],
+						'status' => $sr['status'],
+						'operator_signed_at' => $sr['operator_signed_at'],
+						'spv_signed_at' => $sr['spv_signed_at'],
+						'is_operator_signed' => !empty($sr['operator_token']),
+						'is_spv_signed' => !empty($sr['spv_token']),
+						'periode' => $m_period,
+						'bulan' => $m_month,
+						'tahun' => $m_year,
+					);
+				}
+			}
+		} catch (Throwable $e) {
+			error_log('Error querying signed_units: ' . $e->getMessage());
+		}
+		$this->view->signed_units = $signed_units;
 		$this->view->deactivated_units = $deactive_map;
 		$this->view->page_title = "Add New AM {$this->displayName}";
-		return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd(), 'deactivated_units' => $deactive_map));
+		return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd(), 'deactivated_units' => $deactive_map, 'signed_units' => $signed_units));
 	}
 
 	function view($rec_id = null, $value = null)

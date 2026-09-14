@@ -358,47 +358,83 @@
 			})();
 			<?php } ?>
 
-			// Banner peringatan dan penguncian form AM jika mesin sedang DIDEAKTIVASI
+			// Banner peringatan dan penguncian form AM jika mesin sedang DIDEAKTIVASI atau PERIODE SUDAH DITANDATANGANI
 			(function(){
 				var deactivatedMap = <?php echo !empty($this->deactivated_units) ? json_encode($this->deactivated_units) : '{}'; ?>;
+				var signedMap = <?php echo !empty($this->signed_units) ? json_encode($this->signed_units) : '{}'; ?>;
 				$(function(){
 					var $mesinCtrl = $('select[name="mesin"], input[name="mesin"]').first();
 					if (!$mesinCtrl.length) { return; }
 					var $form = $mesinCtrl.closest('form');
 					if (!$form.length) { return; }
 
-					function checkDeactivation() {
+					function updateUnitGuards() {
 						var val = parseInt($mesinCtrl.val(), 10);
-						var info = deactivatedMap[val];
-						var $banner = $('#machine-deactivation-banner');
+						var deactInfo = deactivatedMap[val];
+						var sigInfo = signedMap[val];
+						var $deactBanner = $('#machine-deactivation-banner');
+						var $sigBanner = $('#period-signature-lock-banner');
 						var $submitBtns = $form.find('button[type="submit"], input[type="submit"]');
 
-						if (info) {
-							if (!$banner.length) {
-								$banner = $('<div id="machine-deactivation-banner" class="alert alert-warning border-warning shadow-sm mb-3"></div>');
-								$form.prepend($banner);
+						// 1. Pengecekan Deaktivasi Mesin
+						if (deactInfo) {
+							if (!$deactBanner.length) {
+								$deactBanner = $('<div id="machine-deactivation-banner" class="alert alert-warning border-warning shadow-sm mb-3"></div>');
+								$form.prepend($deactBanner);
 							}
-							var notesHtml = info.notes ? '<div class="small mt-1 text-secondary"><strong>Catatan:</strong> ' + $('<div>').text(info.notes).html() + '</div>' : '';
-							$banner.html(
+							var notesHtml = deactInfo.notes ? '<div class="small mt-1 text-secondary"><strong>Catatan:</strong> ' + $('<div>').text(deactInfo.notes).html() + '</div>' : '';
+							$deactBanner.html(
 								'<div class="d-flex align-items-start">' +
 								'  <div class="mr-3 text-warning"><i class="fa fa-exclamation-triangle fa-2x"></i></div>' +
 								'  <div class="flex-grow-1">' +
 								'    <h5 class="alert-heading font-weight-bold mb-1" style="font-size:15px; color:#856404;">PERHATIAN: Mesin Ini Sedang DIDEAKTIVASI!</h5>' +
-								'    <p class="mb-1" style="font-size:13px;">Unit <strong>' + $('<div>').text(info.nama_mesin).html() + '</strong> dinonaktifkan sementara untuk: <strong class="badge badge-warning text-dark font-weight-bold" style="font-size:12px;">' + $('<div>').text(info.reason).html() + '</strong> oleh <strong>' + $('<div>').text(info.action_by_username).html() + '</strong> sejak ' + $('<div>').text(info.started_at).html() + '.</p>' +
+								'    <p class="mb-1" style="font-size:13px;">Unit <strong>' + $('<div>').text(deactInfo.nama_mesin).html() + '</strong> dinonaktifkan sementara untuk: <strong class="badge badge-warning text-dark font-weight-bold" style="font-size:12px;">' + $('<div>').text(deactInfo.reason).html() + '</strong> oleh <strong>' + $('<div>').text(deactInfo.action_by_username).html() + '</strong> sejak ' + $('<div>').text(deactInfo.started_at).html() + '.</p>' +
 								notesHtml +
 								'    <div class="small text-danger font-weight-bold mt-2"><i class="fa fa-lock"></i> Pengisian Form AM pada unit ini DIKUNCI hingga mesin diaktifkan kembali oleh Supervisor/Admin.</div>' +
 								'  </div>' +
 								'</div>'
 							).show();
-							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Unit mesin sedang deaktif');
 						} else {
-							if ($banner.length) { $banner.hide(); }
+							if ($deactBanner.length) { $deactBanner.hide(); }
+						}
+
+						// 2. Pengecekan Tanda Tangan Digital Periode AM
+						if (sigInfo) {
+							if (!$sigBanner.length) {
+								$sigBanner = $('<div id="period-signature-lock-banner" class="alert alert-warning border-warning shadow-sm mb-3"></div>');
+								$form.prepend($sigBanner);
+							}
+							var whoSigned = [];
+							if (sigInfo.is_operator_signed) whoSigned.push('Operator Produksi');
+							if (sigInfo.is_spv_signed) whoSigned.push('Supervisor');
+							var whoText = whoSigned.join(' & ');
+
+							$sigBanner.html(
+								'<div class="d-flex align-items-start">' +
+								'  <div class="mr-3 text-warning"><i class="fa fa-lock fa-2x"></i></div>' +
+								'  <div class="flex-grow-1">' +
+								'    <h5 class="alert-heading font-weight-bold mb-1" style="font-size:15px; color:#856404;"><i class="fa fa-shield"></i> Periode Ini Telah Ditandatangani Digital (' + $('<div>').text(whoText).html() + ')</h5>' +
+								'    <p class="mb-1" style="font-size:13px;">Unit <strong>' + $('<div>').text(sigInfo.nama_mesin).html() + '</strong> pada Periode ' + sigInfo.periode + ' (Bulan ' + sigInfo.bulan + '/' + sigInfo.tahun + ') telah terkunci dengan tanda tangan digital resmi. Penambahan checklist baru pada periode ini tidak diizinkan demi menjamin integritas keabsahan dokumen.</p>' +
+								'    <div class="small text-danger font-weight-bold mt-2"><i class="fa fa-info-circle"></i> Jika perlu mengisi atau merevisi data periode ini, batalkan tanda tangan terlebih dahulu pada menu <em>Cetak Check Sheet AM</em>.</div>' +
+								'  </div>' +
+								'</div>'
+							).show();
+						} else {
+							if ($sigBanner.length) { $sigBanner.hide(); }
+						}
+
+						// Atur disable submit button
+						if (deactInfo) {
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Unit mesin sedang deaktif');
+						} else if (sigInfo) {
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Periode AM telah ditandatangani digital');
+						} else {
 							$submitBtns.prop('disabled', false).removeClass('disabled').removeAttr('title');
 						}
 					}
 
-					$mesinCtrl.on('change input', checkDeactivation);
-					checkDeactivation();
+					$mesinCtrl.on('change input', updateUnitGuards);
+					updateUnitGuards();
 				});
 			})();
 			// Cegah double-submit pada koneksi lambat tanpa mengabaikan validasi HTML5.

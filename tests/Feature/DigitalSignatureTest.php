@@ -217,6 +217,48 @@ class DigitalSignatureTest extends TestCase
 		}
 	}
 
+	public function test_add_is_blocked_when_period_is_signed(): void
+	{
+		$pdo = $this->database();
+		$mesinId = 41; // Cosmec
+		$now = new \DateTime();
+		$month = intval($now->format('n'));
+		$year = intval($now->format('Y'));
+		$period = intval($now->format('j')) <= 16 ? 1 : 2;
+
+		$delete = $pdo->prepare('DELETE FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = ? AND tahun = ? AND periode = ?');
+		$delete->execute(array('cosmec', $mesinId, $month, $year, $period));
+
+		// Insert dummy signature for current period
+		$adminId = (int)$pdo->query("SELECT id_user FROM users WHERE username = 'superadmin' LIMIT 1")->fetchColumn();
+		$dummyToken = hash('sha256', 'dummy-token-for-add-block');
+		$stmt = $pdo->prepare('INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, operator_id, operator_signed_at, operator_token, status) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, ?)');
+		$stmt->execute(array('cosmec', $mesinId, $month, $year, $period, hash('sha256', 'doc-hash-test'), $adminId, $dummyToken, 'signed_operator'));
+
+		try {
+			$client = (new ApiClient())->loginAs('administrator');
+			$formData = array(
+				'mesin' => $mesinId,
+				'cleaning_body_mesin' => 'OK',
+				'cleaning_panel_fbd' => 'OK',
+				'inspection_hmi_panel_fbd' => 'OK',
+				'inspection_seal_bagtight' => 'OK',
+				'inspection_container_updown' => 'OK',
+				'inspection_shaking' => 'OK',
+				'inspection_pressure_gauge_damper' => 'OK',
+				'inspection_seal_container' => 'OK',
+				'inspection_guarding_pengunci' => 'OK',
+				'inspection_container_mesh_roda' => 'OK',
+				'inspection_filter_bag_tight' => 'OK'
+			);
+			$response = $client->postWithCsrfFrom('home', 'cosmec/add', $formData);
+			$this->assertSame(200, $response->getStatusCode());
+			$this->assertStringContainsString('Form AM pada periode ini telah ditandatangani secara digital', (string)$response->getBody());
+		} finally {
+			$delete->execute(array('cosmec', $mesinId, $month, $year, $period));
+		}
+	}
+
 	private function deleteHttpCancelFixture(\PDO $pdo, int $mesinId, int $period): void
 	{
 		$deleteAudit = $pdo->prepare('DELETE FROM audit_log WHERE "Action" = ? AND "RequestData" LIKE ?');
