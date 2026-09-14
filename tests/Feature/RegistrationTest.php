@@ -12,9 +12,9 @@ use Tests\Support\ApiClient;
  * (row ke-insert), bukan gagal.
  *
  * Round 19 Agustus 2026: form registrasi TIDAK LAGI ngasih pilihan role --
- * selalu dipaksa Staff/Operator (role_id 4) di server (IndexController::register()),
- * gak peduli value apa yang dikirim di field user_role_id (hidden input bisa
- * dimanipulasi lewat devtools/curl). Naikkan role dilakukan superadmin manual
+ * selalu dipaksa Operator Produksi (role_id 5) di server (IndexController::register()),
+ * gak peduli value apa yang dikirim lewat request yang dimanipulasi. Naikkan
+ * role dilakukan superadmin manual
  * lewat menu Users setelah akun diaktivasi. Dites dengan tetap ngirim role_id
  * 1/2/3 (simulasi percobaan tampering) untuk buktiin server-side override-nya
  * jalan, bukan cuma UI yang disembunyiin.
@@ -27,7 +27,8 @@ class RegistrationTest extends TestCase
             'coba kirim administrator (role 1)' => array(1),
             'coba kirim manager (role 2)' => array(2),
             'coba kirim supervisor (role 3)' => array(3),
-            'kirim staff/operator (role 4)' => array(4),
+			'kirim staff (role 4)' => array(4),
+			'kirim operator (role 5)' => array(5),
         );
     }
 
@@ -52,13 +53,13 @@ class RegistrationTest extends TestCase
         $body = (string) $resp->getBody();
 		$this->assertStringContainsString('menunggu aktivasi oleh administrator', strtolower($body), "role $roleId: registrasi harusnya sukses insert row tapi status Pending (belum bisa login)");
 
-        // Cari akun test ini & pastikan role_id-nya KEPAKSA jadi 4 (Staff/Operator),
+		// Cari akun test ini & pastikan role_id-nya KEPAKSA jadi 5 (Operator),
         // gak peduli role_id apa yang dikirim di form -- baru hapus.
         $admin = (new ApiClient())->loginAs('administrator');
         $list = (string) $admin->get('users?search=' . $username)->getBody();
         if (preg_match('#/users/view/(\d+)#', $list, $m)) {
             $view = (string) $admin->get('users/view/' . $m[1])->getBody();
-            $this->assertStringContainsString('data-value="4"', $view, "role $roleId yang dikirim harusnya diabaikan server, akun baru harus selalu jadi role_id 4 (Staff/Operator)");
+			$this->assertStringContainsString('data-value="5"', $view, "role $roleId yang dikirim harusnya diabaikan server, akun baru harus selalu jadi role_id 5 (Operator Produksi)");
             $admin->deleteWithCsrf('users/view/' . $m[1], 'users/delete/' . $m[1]);
         }
     }

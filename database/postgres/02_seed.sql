@@ -202,7 +202,7 @@ INSERT INTO "users"
 VALUES
   ('Test Manager', 'manager@localhost', 'MANAGE01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 2, 'Filling', NULL, false, 0),
   ('Test Supervisor', 'supervisor@localhost', 'SUPERV01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 3, 'Filling', NULL, false, 0),
-  ('Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 4, 'Filling', '1', false, 0)
+  ('Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 5, 'Filling', '1', false, 0)
 ON CONFLICT ("username") DO UPDATE SET
   "nama" = EXCLUDED."nama",
   "email" = EXCLUDED."email",

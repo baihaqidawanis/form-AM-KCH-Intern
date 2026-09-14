@@ -1067,9 +1067,53 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return $this->redirect($table);
 	}
 
-	/**
-	 * Sign period document digitally (Operator or SPV)
-	 */
+	/** Bangun dataset kanonis periode untuk penandatanganan dan verifikasi ulang QR. */
+	public function periodDocumentState($mesin, $month, $year, $period)
+	{
+		$mesin = intval($mesin);
+		$month = intval($month);
+		$year = intval($year);
+		$period = intval($period);
+		if (!$mesin || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true)) {
+			throw new InvalidArgumentException('Parameter periode dokumen tidak valid.');
+		}
+
+		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
+		$start_day = $period === 1 ? 1 : 17;
+		$end_day = $period === 1 ? 16 : intval($first->format('t'));
+		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
+		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
+
+		$db = $this->GetModel();
+		$sql = $this->sqlTable();
+		$idcol = $this->idColumn();
+		$rows = $db->where('mesin', $mesin)
+			->where('operational_date', $start, '>=')
+			->where('operational_date', $end, '<=')
+			->orderBy('operational_date', 'ASC')
+			->orderBy('COALESCE(updated_at, created_at)', 'ASC')
+			->get($sql);
+
+		$checks = array();
+		foreach ($rows as $row) {
+			$day = intval((new DateTime($row['operational_date']))->format('j'));
+			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
+				if (!empty($row[$field])) {
+					$shift_key = trim((string)($row['shift'] ?? ''));
+					$shift_key = $shift_key === '' ? '__default__' : $shift_key;
+					$checks[$field][$day][$shift_key] = $row[$field];
+				}
+			}
+		}
+
+		return array(
+			'rows' => $rows,
+			'checks' => $checks,
+			'document_hash' => QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks),
+		);
+	}
+
+	/** Sign period document digitally (Operator or SPV). */
 	function sign_period()
 	{
 		if (!is_post_request()) {
@@ -1120,31 +1164,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 		}
 
-		// Calculate current document hash
-		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
-		$start_day = $period === 1 ? 1 : 17;
-		$end_day = $period === 1 ? 16 : intval($first->format('t'));
-		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
-		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
-
-		$db = $this->GetModel();
-		$sql = $this->sqlTable();
-		$idcol = $this->idColumn();
-		$rows = $db->where('mesin', $mesin)->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->orderBy('operational_date', 'ASC')->orderBy('COALESCE(updated_at, created_at)', 'ASC')->get($sql);
-
-		$checks = array();
-		foreach ($rows as $row) {
-			$day = intval((new DateTime($row['operational_date']))->format('j'));
-			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
-				if (!empty($row[$field])) {
-					$shift_key = trim((string)($row['shift'] ?? ''));
-					$shift_key = $shift_key === '' ? '__default__' : $shift_key;
-					$checks[$field][$day][$shift_key] = $row[$field];
-				}
+		$document_state = $this->periodDocumentState($mesin, $month, $year, $period);
+		foreach ($document_state['rows'] as $row) {
+			if (($row['approval'] ?? null) === null) {
+				http_response_code(422);
+				render_json(array(
+					'success' => false,
+					'message' => 'Tanda tangan digital belum dapat dilakukan: Masih ada checklist harian pada periode ini yang belum direview/diapprove oleh Supervisor.'
+				));
+				return;
 			}
 		}
 
-		$doc_hash = QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks);
+		$doc_hash = $document_state['document_hash'];
 		$result = QrSignatureHelper::savePeriodSignature($this->machineKey, $mesin, $month, $year, $period, $user_id, $role_type, $doc_hash);
 
 		if ($result['success']) {

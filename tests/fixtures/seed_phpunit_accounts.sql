@@ -40,7 +40,7 @@ SET nama = 'Test Operator',
     email = 'operator@localhost',
     password = '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa',
     account_status = 'Active',
-    user_role_id = 4,
+	user_role_id = 5,
     area = 'Filling',
     mesin = '1',
     failed_login_attempts = 0,
@@ -49,5 +49,5 @@ SET nama = 'Test Operator',
 WHERE username = 'STAFOP01';
 
 INSERT INTO users (nama, email, username, password, account_status, user_role_id, area, mesin, failed_login_attempts)
-SELECT 'Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 4, 'Filling', '1', 0
+SELECT 'Test Operator', 'operator@localhost', 'STAFOP01', '$2y$10$TFuuMcK8x/nBu5FrnsmSDOOsLU25gixWLEz6PU8MpxWwXFLx2uQFa', 'Active', 5, 'Filling', '1', 0
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'STAFOP01');

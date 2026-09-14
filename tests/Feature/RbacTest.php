@@ -20,6 +20,13 @@ class RbacTest extends TestCase
 {
     private const MACHINE = 'joeya';
 
+	public function test_form_register_tidak_memuat_pemilihan_role(): void
+	{
+		$body = (string)(new ApiClient())->get('index/register')->getBody();
+		$this->assertDoesNotMatchRegularExpression('/<select\b[^>]*\bname=["\']user_role_id["\']/i', $body);
+		$this->assertDoesNotMatchRegularExpression('/<input\b[^>]*\bname=["\']user_role_id["\']/i', $body);
+	}
+
     public function test_manager_tidak_bisa_add(): void
     {
         $manager = (new ApiClient())->loginAs('manager');
@@ -105,7 +112,7 @@ class RbacTest extends TestCase
         $this->assertMatchesRegularExpression('#/users/view/(\d+)#', $usersList, 'Gagal cari akun operator test di menu Users');
         preg_match('#/users/view/(\d+)#', $usersList, $m);
         $view = (string) $admin->get('users/view/' . $m[1])->getBody();
-        $this->assertStringContainsString('data-value="4"', $view, 'Operator gak boleh berhasil naikkan role sendiri jadi Administrator lewat My Account');
+		$this->assertStringContainsString('data-value="5"', $view, 'Operator gak boleh berhasil naikkan role sendiri jadi Administrator lewat My Account');
     }
 
     /**

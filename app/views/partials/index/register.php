@@ -194,11 +194,8 @@ $redirect_to = $this->redirect_to;
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <!-- Role gak dipilih user sendiri -- akun baru selalu didaftarkan sebagai
-                                                             Staff/Operator (role_id 4). Kalau butuh role lebih tinggi (Manager/
-                                                             Supervisor/Administrator), superadmin yang naikkan manual lewat
-                                                             menu Users -> Edit setelah akun diaktivasi. -->
-                                                         <input type="hidden" name="user_role_id" value="4">
+														<!-- Role tidak dipilih atau dikirim dari browser. Backend selalu
+														     menetapkan akun registrasi sebagai Operator Produksi (role_id 5). -->
                                                         <!--[main-form-end]-->
                                                         <div class="form-group form-submit-btn-holder text-center mt-3">
                                                             <button class="btn btn-primary" type="submit">
@@ -213,4 +210,3 @@ $redirect_to = $this->redirect_to;
                                     </div>
                                 </div>
                             </section>
-                            

@@ -42,13 +42,13 @@ class AreaAccessControlTest extends TestCase
         }
     }
 
-	public function test_verify_is_public_and_operator_cancel_route_is_registered(): void
+	public function test_verify_is_public_and_only_operator_and_supervisor_can_cancel_signature(): void
 	{
 		$this->assertContains('verify', \ACL::$exclude_page_check);
-		foreach (array(4, 5) as $role) {
-			foreach (array_merge(...array_values(\ACL::$area_machines)) as $machine) {
-				$this->assertContains('cancel_period_signature', \ACL::$role_pages[$role][$machine]);
-			}
+		foreach (array_merge(...array_values(\ACL::$area_machines)) as $machine) {
+			$this->assertContains('cancel_period_signature', \ACL::$role_pages[5][$machine]);
+			$this->assertSame('*', \ACL::$role_pages[3][$machine]);
+			$this->assertNotContains('cancel_period_signature', \ACL::$role_pages[4][$machine]);
 		}
 	}
 }

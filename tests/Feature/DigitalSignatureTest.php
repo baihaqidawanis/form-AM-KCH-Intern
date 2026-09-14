@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use QrSignatureHelper;
 use PDODb;
 use Tests\Support\ApiClient;
+use Tests\Support\FormScraper;
 
 class DigitalSignatureTest extends TestCase
 {
@@ -268,7 +269,8 @@ class DigitalSignatureTest extends TestCase
 		$year = intval($now->format('Y'));
 		$period = intval($now->format('j')) <= 16 ? 1 : 2;
 
-		// Ubah STAFOP01 sementara ke role 4 (Staff)
+		$originalRole = (int)$pdo->query("SELECT user_role_id FROM users WHERE username = 'STAFOP01'")->fetchColumn();
+		// Ubah STAFOP01 sementara ke role 4 (Staff).
 		$pdo->prepare("UPDATE users SET user_role_id = 4 WHERE username = 'STAFOP01'")->execute();
 		try {
 			$client = (new ApiClient())->loginAs('operator');
@@ -281,9 +283,98 @@ class DigitalSignatureTest extends TestCase
 			));
 			$this->assertSame(403, $response->getStatusCode());
 		} finally {
-			// Kembalikan STAFOP01 ke role 5 (Operator)
-			$pdo->prepare("UPDATE users SET user_role_id = 5 WHERE username = 'STAFOP01'")->execute();
+			$restore = $pdo->prepare("UPDATE users SET user_role_id = ? WHERE username = 'STAFOP01'");
+			$restore->execute(array($originalRole));
 		}
+	}
+
+	public function test_sign_period_rejects_unreviewed_checklist(): void
+	{
+		$operator = (new ApiClient())->loginAs('operator');
+		$record = $this->createJoeyaRecord($operator);
+		$pdo = $this->database();
+		$pdo->prepare('UPDATE tb_mesin_joeya SET approval = NULL WHERE id_joeya = ?')->execute(array($record['id']));
+
+		try {
+			$response = $operator->postWithCsrfFrom('home', 'joeya/sign_period', $this->signPayload($record));
+			$this->assertSame(422, $response->getStatusCode());
+			$result = json_decode((string)$response->getBody(), true);
+			$this->assertSame(
+				'Tanda tangan digital belum dapat dilakukan: Masih ada checklist harian pada periode ini yang belum direview/diapprove oleh Supervisor.',
+				$result['message'] ?? null
+			);
+		} finally {
+			$this->cleanupJoeyaRecord($record);
+		}
+	}
+
+	public function test_approved_nok_can_be_signed_and_qr_rehash_detects_tampering(): void
+	{
+		$operator = (new ApiClient())->loginAs('operator');
+		$record = $this->createJoeyaRecord($operator);
+		$pdo = $this->database();
+		$pdo->prepare("UPDATE tb_mesin_joeya SET sealing_horizontal = 'NOK', approval = 'Approved' WHERE id_joeya = ?")
+			->execute(array($record['id']));
+
+		try {
+			$signResponse = $operator->postWithCsrfFrom('home', 'joeya/sign_period', $this->signPayload($record));
+			$this->assertSame(200, $signResponse->getStatusCode());
+			$signResult = json_decode((string)$signResponse->getBody(), true);
+			$this->assertTrue($signResult['success'] ?? false, (string)$signResponse->getBody());
+			$this->assertNotEmpty($signResult['token'] ?? null);
+
+			$validBody = (string)(new ApiClient())->get('verify/signature/' . $signResult['token'])->getBody();
+			$this->assertStringContainsString('Dokumen Sah &amp; Integritas Terjamin', $validBody);
+
+			// Simulasikan perubahan langsung setelah TTD untuk memastikan scan QR
+			// membandingkan ulang isi database, bukan sekadar menerima token.
+			$pdo->prepare("UPDATE tb_mesin_joeya SET sealing_horizontal = 'OK' WHERE id_joeya = ?")
+				->execute(array($record['id']));
+			$invalidBody = (string)(new ApiClient())->get('verify/signature/' . $signResult['token'])->getBody();
+			$this->assertStringContainsString('PERINGATAN: Integritas Dokumen Telah Berubah / Data Tidak Valid!', $invalidBody);
+		} finally {
+			$this->cleanupJoeyaRecord($record);
+		}
+	}
+
+	private function createJoeyaRecord(ApiClient $operator): array
+	{
+		$addPage = $operator->get('joeya/add');
+		$payload = FormScraper::buildAllOkPayload((string)$addPage->getBody());
+		$submit = $operator->postWithCsrf('joeya/add', $payload);
+		$id = FormScraper::firstViewId((string)$submit->getBody(), 'joeya');
+		$this->assertNotNull($id, 'Gagal membuat checklist Joeya untuk fixture TTD.');
+		$stmt = $this->database()->prepare('SELECT mesin, operational_date FROM tb_mesin_joeya WHERE id_joeya = ?');
+		$stmt->execute(array($id));
+		$row = $stmt->fetch(\PDO::FETCH_ASSOC);
+		$this->assertIsArray($row);
+		$date = new \DateTime($row['operational_date']);
+		return array(
+			'id' => (string)$id,
+			'mesin' => (int)$row['mesin'],
+			'year' => (int)$date->format('Y'),
+			'month' => (int)$date->format('n'),
+			'period' => (int)$date->format('j') <= 16 ? 1 : 2,
+		);
+	}
+
+	private function signPayload(array $record): array
+	{
+		return array(
+			'mesin' => $record['mesin'],
+			'year' => $record['year'],
+			'month' => $record['month'],
+			'period' => $record['period'],
+			'role_type' => 'operator',
+		);
+	}
+
+	private function cleanupJoeyaRecord(array $record): void
+	{
+		$deleteSignature = $this->database()->prepare('DELETE FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = ? AND tahun = ? AND periode = ?');
+		$deleteSignature->execute(array('joeya', $record['mesin'], $record['month'], $record['year'], $record['period']));
+		$admin = (new ApiClient())->loginAs('administrator');
+		$admin->deleteWithCsrf('joeya/view/' . $record['id'], 'joeya/delete/' . $record['id']);
 	}
 
 	private function deleteHttpCancelFixture(\PDO $pdo, int $mesinId, int $period): void

@@ -2,6 +2,7 @@
 $d = $this->view_data;
 $sig = $d['signature'] ?? null;
 $is_valid = !empty($d['is_valid']);
+$is_registered = !empty($d['is_registered']);
 $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember');
 ?>
 <div class="container py-4 my-3" style="max-width: 680px;">
@@ -20,7 +21,7 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
                     <i class="fa fa-check-circle" style="font-size: 52px;"></i>
                 </div>
                 <h4 class="font-weight-bold mb-1">DOKUMEN TERVERIFIKASI ASLI</h4>
-                <p class="mb-0 small" style="opacity: 0.9;">Tanda Tangan Digital Sah & Integritas Dokumen Terjamin (CPOB Compliant)</p>
+                <p class="mb-0 small" style="opacity: 0.9;">Dokumen Sah &amp; Integritas Terjamin</p>
             </div>
 
             <div class="card-body p-4">
@@ -116,6 +117,40 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
                     <small class="text-muted">
                         <i class="fa fa-qrcode mr-1"></i> Dipindai melalui Kalbe AM Digital Signature QR System
                     </small>
+                </div>
+            </div>
+        </div>
+    <?php } elseif ($is_registered && $sig) { ?>
+        <!-- Registered token, but the current checklist no longer matches the signed hash. -->
+        <div class="card shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="card-header bg-danger text-white text-center py-4">
+                <div class="mb-2">
+                    <i class="fa fa-exclamation-triangle" style="font-size: 52px;"></i>
+                </div>
+                <h4 class="font-weight-bold mb-1">PERINGATAN INTEGRITAS DOKUMEN</h4>
+                <p class="mb-0 small">PERINGATAN: Integritas Dokumen Telah Berubah / Data Tidak Valid!</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-danger mb-4">
+                    Token tanda tangan terdaftar, tetapi hash isi checklist terkini tidak sama dengan hash saat dokumen ditandatangani. Dokumen ini tidak boleh dianggap sah.
+                </div>
+                <table class="table table-sm table-borderless mb-4" style="font-size: 13.5px;">
+                    <tr>
+                        <td class="text-muted" style="width: 40%;">Mesin / Line:</td>
+                        <td class="font-weight-bold text-dark"><?php echo htmlspecialchars($sig['machine_name']); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Periode Check Sheet:</td>
+                        <td class="font-weight-bold text-dark">
+                            Bulan <?php echo ($month_names[$sig['bulan']] ?? $sig['bulan']) . ' ' . $sig['tahun']; ?> (Periode <?php echo $sig['periode']; ?>)
+                        </td>
+                    </tr>
+                </table>
+                <div class="bg-light p-3 rounded mb-3" style="border: 1px dashed #dc3545;">
+                    <small class="text-muted d-block font-weight-bold mb-1">Hash saat TTD:</small>
+                    <code class="d-block text-break mb-2" style="font-size: 11px;"><?php echo htmlspecialchars($sig['document_hash'] ?? '-'); ?></code>
+                    <small class="text-muted d-block font-weight-bold mb-1">Hash checklist terkini:</small>
+                    <code class="d-block text-break text-danger" style="font-size: 11px;"><?php echo htmlspecialchars($d['current_document_hash'] ?? 'Tidak dapat dihitung'); ?></code>
                 </div>
             </div>
         </div>

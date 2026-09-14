@@ -120,7 +120,7 @@ class IndexController extends BaseController
 			$request = $this->request;
 			$db = $this->GetModel();
 			$tablename = $this->tablename;
-			$fields = $this->fields = array("nama", "email", "username", "area", "mesin", "password", "account_status", "user_role_id"); //registration fields
+			$fields = $this->fields = array("nama", "email", "username", "area", "mesin", "password"); //registration fields
 			$postdata = $this->format_request_data($formdata);
 			$cpassword = $postdata['confirm_password'];
 			$password = $postdata['password'];
@@ -134,7 +134,6 @@ class IndexController extends BaseController
 				'area' => 'required',
 				'mesin' => 'required',
 				'password' => 'required',
-				'user_role_id' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
@@ -142,7 +141,6 @@ class IndexController extends BaseController
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 				'mesin' => 'sanitize_string',
-				'user_role_id' => 'sanitize_string',
 			);
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
@@ -162,10 +160,9 @@ class IndexController extends BaseController
 			//update modeldata with the password hash
 			$modeldata['password'] = $this->modeldata['password'] = password_hash($password_text, PASSWORD_DEFAULT);
 			$modeldata['account_status'] = "Pending";
-			//Self-register selalu jadi Staff/Operator (role_id 4) -- paksa di server,
-			//jangan percaya nilai user_role_id dari form (hidden input bisa dimanipulasi
-			//lewat devtools/curl). Naikkan role dilakukan superadmin manual lewat Users.
-			$modeldata['user_role_id'] = $this->modeldata['user_role_id'] = 4;
+			// Self-register selalu menjadi Operator Produksi. Nilai role dari request
+			// tidak masuk whitelist, sehingga manipulasi form tidak dapat mengubahnya.
+			$modeldata['user_role_id'] = $this->modeldata['user_role_id'] = 5;
 			//Check if Duplicate Record Already Exit In The Database
 			$db->where("email", $modeldata['email']);
 			if ($db->has($tablename)) {
