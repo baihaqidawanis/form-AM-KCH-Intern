@@ -62,19 +62,22 @@ $visible_groups = array_filter($machine_groups, function($machines){
 .am-card-heading { align-items: flex-start; display: flex; justify-content: space-between; padding: 18px 20px 0; }
 .am-card-title { font-size: 1rem; font-weight: 650; letter-spacing: -.018em; margin: 0; }
 .am-card-note { color: var(--ak-muted, #6E6E73); font-size: .78rem; margin: 4px 0 0; }
-.am-queue { list-style: none; margin: 0; padding: 10px 18px 16px; max-height: 330px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.2) transparent; }
+.am-chart-wrap { height: 380px; position: relative; padding: 12px 20px 16px; }
+.am-queue { list-style: none; margin: 0; padding: 4px 20px 16px; max-height: 380px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.2) transparent; }
 .am-queue::-webkit-scrollbar { width: 6px; }
 .am-queue::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,.2); border-radius: 999px; }
 .am-queue::-webkit-scrollbar-track { background: transparent; }
+.am-queue-item { align-items: center; border-bottom: 1px solid var(--ak-border, rgba(0,0,0,.07)); display: flex; gap: 12px; justify-content: space-between; padding: 12px 0; }
 .am-queue-item:last-child { border-bottom: 0; }
 .am-queue-main { min-width: 0; flex: 1; }
-.am-queue-machine { font-size: .9rem; font-weight: 650; margin: 0 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.am-queue-meta { color: var(--ak-muted, #6E6E73); font-size: .76rem; }
-.am-queue-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-.am-queue-badge { border-radius: 999px; display: inline-flex; font-size: .68rem; font-weight: 700; padding: 3px 7px; }
-.am-queue-badge--nok { background: #FEECEB; color: #D92D20; }
-.am-queue-badge--pending { background: #FFF6E5; color: #A75E00; }
-.am-queue-action { flex: 0 0 auto; font-size: .75rem !important; padding: 6px 10px !important; }
+.am-queue-machine { color: #1D1D1F; font-size: .88rem; font-weight: 650; margin: 0 0 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.am-queue-meta { color: var(--ak-muted, #6E6E73); font-size: .75rem; }
+.am-queue-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.am-queue-badge { border-radius: 999px; display: inline-flex; font-size: .68rem; font-weight: 700; line-height: 1.2; padding: 2.5px 8px; }
+.am-queue-badge--nok { background: #FEECEB; border: 1px solid #FCD4D0; color: #D92D20; }
+.am-queue-badge--pending { background: #FFF6E5; border: 1px solid #FFE4B5; color: #A75E00; }
+.am-queue-action { align-items: center; background: var(--ak-green, #009639) !important; border: 1px solid var(--ak-green, #009639) !important; border-radius: 6px !important; color: #fff !important; display: inline-flex !important; flex: 0 0 auto !important; font-size: .74rem !important; font-weight: 650 !important; gap: 3px !important; padding: 5px 11px !important; text-decoration: none !important; transition: all .16s ease !important; white-space: nowrap !important; }
+.am-queue-action:hover { background: #007d30 !important; border-color: #007d30 !important; color: #fff !important; text-decoration: none !important; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0, 150, 57, .25); }
 .am-empty-state { color: var(--ak-green, #009639); padding: 50px 24px; text-align: center; }
 .am-empty-state .fa { display: block; font-size: 1.5rem; margin-bottom: 10px; }
 .am-unit-card .card-header { padding: 0; }
@@ -197,7 +200,7 @@ $visible_groups = array_filter($machine_groups, function($machines){
                                             <?php if(empty($item['approval'])){ ?><span class="am-queue-badge am-queue-badge--pending">Pending</span><?php } ?>
                                         </div>
                                     </div>
-                                    <?php if(!empty($item['action_path'])){ ?><a class="btn btn-sm btn-primary am-queue-action" href="<?php print_link($item['action_path']); ?>"><?php echo $escape($item['action_label'] ?? 'Lihat'); ?></a><?php } ?>
+                                    <?php if(!empty($item['action_path'])){ ?><a class="btn btn-sm btn-primary am-queue-action" href="<?php print_link($item['action_path']); ?>"><?php echo $escape($item['action_label'] ?? 'Lihat'); ?> <i class="fa fa-angle-right ml-1"></i></a><?php } ?>
                                 </li>
                             <?php } ?>
                         </ul>
@@ -288,7 +291,18 @@ $visible_groups = array_filter($machine_groups, function($machines){
                 callbacks: { label: function(item, chartData){ var set = chartData.datasets[item.datasetIndex]; return ' ' + set.label + ': ' + item.yLabel + ' temuan NOK'; } }
             },
             scales: {
-                xAxes: [{ stacked: false, gridLines: { display: false }, ticks: { fontColor: '#6E6E73', fontSize: 10, maxRotation: <?php echo $days === 30 ? 45 : 0; ?>, minRotation: 0 } }],
+                xAxes: [{
+                    stacked: false,
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8,
+                    gridLines: { display: false },
+                    ticks: {
+                        fontColor: '#6E6E73',
+                        fontSize: 10,
+                        maxRotation: <?php echo $days === 30 ? 45 : 0; ?>,
+                        minRotation: 0
+                    }
+                }],
                 yAxes: [{
                     ticks: {
                         beginAtZero: true,

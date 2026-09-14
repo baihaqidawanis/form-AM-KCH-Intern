@@ -176,7 +176,7 @@ class DashboardController extends SecureController{
 				'approved_percent' => $todayTotal > 0 ? round(($todayApproved / $todayTotal) * 100) : 0,
 			),
 			'trend' => array('labels' => $labels, 'areas' => $trend),
-			'queue' => array_slice($urgent, 0, 7),
+			'queue' => $urgent,
 			'queue_total' => count($urgent),
 			'machine_groups' => $machineGroups,
 			'has_restricted_scope' => in_array(intval(get_active_user('user_role_id')), array(4, 5), true),
