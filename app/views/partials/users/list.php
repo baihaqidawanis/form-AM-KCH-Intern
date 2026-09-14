@@ -240,15 +240,15 @@ $show_pagination = $this->show_pagination;
                                                         </span>
                                                     </td>
                                                     <th class="td-btn">
-                                                        <a class="btn btn-sm btn-primary has-tooltip" title="View Record" href="<?php print_link("users/view/$rec_id"); ?>">
+                                                        <a class="btn btn-sm has-tooltip text-white font-weight-bold" style="background-color: #20c997; border-color: #20c997;" title="View Record" href="<?php print_link("users/view/$rec_id"); ?>">
                                                             <i class="fa fa-eye"></i> View
                                                         </a>
                                                         <?php if (in_array(strtolower($data['account_status']), array('pending_activation', 'pending')) && intval(get_active_user('user_role_id')) === 1) { ?>
-                                                        <a class="btn btn-sm btn-success has-tooltip text-white font-weight-bold" title="Aktivasi Akun" href="<?php print_link('users/activate_password/' . $rec_id . '?csrf_token=' . $csrf_token); ?>" onclick="return confirm('Aktifkan akun ini?');">
+                                                        <a class="btn btn-sm btn-warning has-tooltip text-dark font-weight-bold" title="Aktivasi Akun" href="<?php print_link('users/activate_password/' . $rec_id . '?csrf_token=' . $csrf_token); ?>" onclick="return confirm('Aktifkan akun ini?');">
                                                             <i class="fa fa-check-circle"></i> Aktivasi
                                                         </a>
                                                         <?php } ?>
-                                                        <a class="btn btn-sm btn-warning has-tooltip text-dark font-weight-bold" title="Edit This Record" href="<?php print_link("users/edit/$rec_id"); ?>">
+                                                        <a class="btn btn-sm has-tooltip text-white font-weight-bold" style="background-color: #0096e6; border-color: #0096e6;" title="Edit This Record" href="<?php print_link("users/edit/$rec_id"); ?>">
                                                             <i class="fa fa-edit"></i> Edit
                                                         </a>
                                                         <a class="btn btn-sm btn-danger has-tooltip record-delete-btn" title="Delete this record" href="<?php print_link("users/delete/$rec_id/?csrf_token=$csrf_token&redirect=$current_page"); ?>" data-prompt-msg="Are you sure you want to delete this record?" data-display-style="modal">
