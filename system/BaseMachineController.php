@@ -754,7 +754,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 		$current_user_role = intval(get_active_user('user_role_id'));
-		$can_sign_operator = in_array($current_user_role, array(4, 5), true); // Staff, Operator
+		$can_sign_operator = $current_user_role === 5; // Hanya role Operator (Role 5), Staff (Role 4) tidak bisa TTD
 		$can_sign_spv = $current_user_role === 3; // Supervisor only
 		$can_cancel_own_operator = !empty($signature['operator_token'])
 			&& empty($signature['spv_token'])
@@ -1099,9 +1099,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			return;
 		}
 
-		if ($role_type === 'operator' && !in_array($current_user_role, array(4, 5), true)) {
+		if ($role_type === 'operator' && $current_user_role !== 5) {
 			http_response_code(403);
-			render_json(array('success' => false, 'message' => 'Hanya role Operator atau Staff yang dapat menandatangani sebagai Operator Produksi.'));
+			render_json(array('success' => false, 'message' => 'Hanya role Operator yang dapat menandatangani sebagai Operator Produksi.'));
 			return;
 		}
 

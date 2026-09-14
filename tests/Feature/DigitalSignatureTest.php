@@ -259,6 +259,33 @@ class DigitalSignatureTest extends TestCase
 		}
 	}
 
+	public function test_staff_role_cannot_sign_operator(): void
+	{
+		$pdo = $this->database();
+		$mesinId = 2147477500 + (getmypid() % 300);
+		$now = new \DateTime();
+		$month = intval($now->format('n'));
+		$year = intval($now->format('Y'));
+		$period = intval($now->format('j')) <= 16 ? 1 : 2;
+
+		// Ubah STAFOP01 sementara ke role 4 (Staff)
+		$pdo->prepare("UPDATE users SET user_role_id = 4 WHERE username = 'STAFOP01'")->execute();
+		try {
+			$client = (new ApiClient())->loginAs('operator');
+			$response = $client->postWithCsrfFrom('home', 'sig/sign_period', array(
+				'mesin' => $mesinId,
+				'year' => $year,
+				'month' => $month,
+				'period' => $period,
+				'role_type' => 'operator'
+			));
+			$this->assertSame(403, $response->getStatusCode());
+		} finally {
+			// Kembalikan STAFOP01 ke role 5 (Operator)
+			$pdo->prepare("UPDATE users SET user_role_id = 5 WHERE username = 'STAFOP01'")->execute();
+		}
+	}
+
 	private function deleteHttpCancelFixture(\PDO $pdo, int $mesinId, int $period): void
 	{
 		$deleteAudit = $pdo->prepare('DELETE FROM audit_log WHERE "Action" = ? AND "RequestData" LIKE ?');
