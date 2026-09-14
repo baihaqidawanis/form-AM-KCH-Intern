@@ -87,7 +87,9 @@ ON "riwayat_status_mesin" ("mesin_id", "started_at", "ended_at");
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "paraf_image" TEXT NULL;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "user_initials" VARCHAR(10) NULL;
 
--- Role Operator (ID 5)
+-- Normalisasi Role 4 (Staff) dan Role 5 (Operator)
+UPDATE "roles" SET "role_name" = 'Staff' WHERE "role_id" = 4;
+
 INSERT INTO "roles" ("role_id", "role_name") OVERRIDING SYSTEM VALUE 
 VALUES (5, 'Operator')
 ON CONFLICT ("role_id") DO NOTHING;

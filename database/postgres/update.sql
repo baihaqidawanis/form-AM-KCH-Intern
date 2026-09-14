@@ -8,6 +8,8 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "paraf_image" text NULL;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "user_initials" varchar(10) NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_username" ON "users" ("username");
 
+UPDATE "roles" SET "role_name" = 'Staff' WHERE "role_id" = 4;
+
 INSERT INTO "roles" ("role_id", "role_name") OVERRIDING SYSTEM VALUE
 VALUES (5, 'Operator')
 ON CONFLICT ("role_id") DO UPDATE SET "role_name" = EXCLUDED."role_name";
