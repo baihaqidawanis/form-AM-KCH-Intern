@@ -177,7 +177,7 @@ if (!function_exists('get_period_image_src')) {
         </td>
         <td style="width:20%; padding:0; vertical-align:top; border:1px solid #000;">
           <?php $sig = $d['period_signature'] ?? array(); ?>
-          <table style="width:100%; height:100%; table-layout:fixed; border-collapse:collapse; margin:0; border:none;">
+          <table style="width:100%; table-layout:fixed; border-collapse:collapse; margin:0; border:none;">
             <colgroup>
               <col style="width:50%;">
               <col style="width:50%;">
