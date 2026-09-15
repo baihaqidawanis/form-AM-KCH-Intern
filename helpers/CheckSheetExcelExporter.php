@@ -215,7 +215,7 @@ class CheckSheetExcelExporter
         return 'FILLING';
     }
 
-    private static function setLandscapePrintLayout(string $file): void
+
     private static function symbol(string $type): string
     {
         $symbols = array(
@@ -226,7 +226,9 @@ class CheckSheetExcelExporter
         return $symbols[$type] ?? '';
     }
 
+    private static function setLandscapePrintLayout(string $file): void
     {
+        if (!class_exists('ZipArchive')) return;
         $zip = new ZipArchive();
         if ($zip->open($file) !== true) return;
         $xml = $zip->getFromName('xl/worksheets/sheet1.xml');
