@@ -391,7 +391,14 @@ class BaseView
 			return;
 		} elseif ($page_format == "excel") {
 			if ($this->report_layout === 'check_sheet_layout.php' && is_array($this->view_data)) {
-				CheckSheetExcelExporter::download($this->view_data, $this->report_filename);
+				// Use PhpSpreadsheet exporter (supports embedded images) when available;
+				// fall back to lightweight XLSXWriter exporter.
+				if (class_exists('CheckSheetSpreadsheetExporter')
+					&& class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+					CheckSheetSpreadsheetExporter::download($this->view_data, $this->report_filename);
+				} else {
+					CheckSheetExcelExporter::download($this->view_data, $this->report_filename);
+				}
 				return;
 			}
 			/* https://github.com/mk-j/PHP_XLSXWriter
