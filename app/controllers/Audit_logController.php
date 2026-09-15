@@ -21,12 +21,20 @@ class Audit_logController extends SecureController{
 		//"UserID" nyimpen id_user numerik doang -- gak kebaca manusia di list
 		//(cuma keliatan "1", "13", dst). Join ke users buat ikut nampilin
 		//username di kolom yang sama, TANPA ubah apa yang disimpen di UserID.
-		$fields = array("log_id",
-			'"Timestamp"',
-			'"Action"',
-			'"TableName"',
-			'"UserID"',
-			'users.username AS user_username');
+		$fields = array(
+			"audit_log.log_id",
+			'audit_log."Timestamp"',
+			'audit_log."Action"',
+			'audit_log."TableName"',
+			'audit_log."UserID"',
+			'audit_log."ServerIP"',
+			'audit_log."RequestURL"',
+			'audit_log."RequestData"',
+			'audit_log."RequestMsg"',
+			'users.username AS user_username',
+			'users.nama AS user_nama',
+			'users.area AS user_area'
+		);
 		$db->join('users', 'CAST(users.id_user AS VARCHAR) = audit_log."UserID"', 'LEFT');
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); // get current pagination e.g array(page_number, page_limit)
 		//search table record
