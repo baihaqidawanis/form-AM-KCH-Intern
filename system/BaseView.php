@@ -390,6 +390,10 @@ class BaseView
 			echo $csv_data;
 			return;
 		} elseif ($page_format == "excel") {
+			if ($this->report_layout === 'check_sheet_layout.php' && is_array($this->view_data)) {
+				CheckSheetExcelExporter::download($this->view_data, $this->report_filename);
+				return;
+			}
 			/* https://github.com/mk-j/PHP_XLSXWriter
 			Lightwight XLSX Excel Spreadsheet Writer in PHP
 			This library is designed to be lightweight, and have minimal memory usage.
