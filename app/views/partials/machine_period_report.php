@@ -208,7 +208,7 @@ if (!function_exists('get_period_image_src')) {
                     </div>
                   </a>
                   <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_operator'])) { ?>
-                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="operator" style="font-size:6.5px; line-height:1.2;">
+                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="operator" style="font-size:0.41rem !important; padding:2.5px 7px !important; line-height:0.675 !important; margin:1.5px 2px !important;">
                       <i class="fa fa-times"></i> Batalkan TTD
                     </button>
                   <?php } ?>
@@ -238,7 +238,7 @@ if (!function_exists('get_period_image_src')) {
                     </div>
                   </a>
                   <?php if (!$hide_interactive_actions && !empty($d['can_cancel_own_spv'])) { ?>
-                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="spv" style="font-size:6.5px; line-height:1.2;">
+                    <button type="button" class="btn btn-xs btn-danger d-print-none px-1 py-0 mt-1 btn-cancel-signature" data-role="spv" style="font-size:0.41rem !important; padding:2.5px 7px !important; line-height:0.675 !important; margin:1.5px 2px !important;">
                       <i class="fa fa-times"></i> Batalkan TTD
                     </button>
                   <?php } ?>

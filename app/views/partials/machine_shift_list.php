@@ -61,7 +61,7 @@ foreach ($records as $row) {
         <?php if ($can_delete_reports) { ?><th class="td-checkbox"><label class="custom-control custom-checkbox custom-control-inline"><input class="toggle-check-all custom-control-input" type="checkbox" aria-label="Pilih semua report harian di halaman"><span class="custom-control-label"></span></label></th><?php } ?>
         <th>#</th><th>Tanggal</th><th>Mesin</th><th>Pembuat</th><th class="text-center text-nowrap" style="min-width: 96px;">Shift Terisi</th><th>Status</th><th>Approval</th><th>Approval Oleh</th><th>Tanggal Approval</th><th>User Update</th><th>Tanggal Update</th><th>Aksi</th>
       </tr></thead>
-      <tbody><?php if ($groups) { $i = 0; foreach ($groups as $report) { $i++; $record_ids=array(); $shifts=array(); $creators=array(); $nok=false; $all_approved=true; $updaters=array(); $updated_at=null; $approval_date=null; $report_created_at=null;
+      <tbody><?php if ($groups) { $i = 0; foreach ($groups as $report) { $i++; $record_ids=array(); $shifts=array(); $creators=array(); $nok=false; $all_approved=true; $approval_by_shift=array(); $approval_dates_by_shift=array(); $updaters=array(); $updated_at=null; $approval_date=null; $report_created_at=null;
         foreach ($report['rows'] as $row) {
           $record_ids[] = $row[$d->id_column]; if ($report_created_at === null || $row['created_at'] < $report_created_at) { $report_created_at = $row['created_at']; }
           $shift_val = !empty($row['shift']) ? $row['shift'] : '1';
@@ -69,6 +69,10 @@ foreach ($records as $row) {
           $shifts[] = $shift_clean ?: '1';
           $creators[] = $row['user_create'];
           if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
+          if (($row['approval'] ?? null) === 'Approved') {
+            $approval_by_shift[] = 'S' . ($shift_clean ?: '1') . ': ' . (trim((string)($row['user_approve'] ?? '')) ?: '-');
+            if (!empty($row['tanggal_perubahan'])) { $approval_dates_by_shift[] = 'S' . ($shift_clean ?: '1') . ': ' . format_am_date($row['tanggal_perubahan']); }
+          }
           if (!empty($row['updated_at'])) { $updated_at = $row['updated_at']; }
           if (!empty($row['user_perubah'])) { $updaters[] = $row['user_perubah']; }
           if (!empty($row['tanggal_perubahan'])) { $approval_date = $row['tanggal_perubahan']; }
@@ -87,7 +91,7 @@ foreach ($records as $row) {
           <?php } else { echo '-'; } ?>
         </td>
         <td><?php echo $nok ? '<span class="badge badge-danger">Ada NOK</span>' : '<span class="badge badge-success"><i class="fa fa-check-circle"></i> OK</span>'; ?></td>
-        <td><?php echo $all_approved ? 'Approved' : '-'; ?></td><td><?php echo $all_approved ? 'System' : '-'; ?></td><td><?php echo $all_approved && $approval_date ? format_am_date($approval_date) : '-'; ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($updaters)) ?: '-'); ?></td><td><?php echo $updated_at ? format_am_date($updated_at) : '-'; ?></td>
+        <td><?php echo $all_approved ? 'Approved' : '-'; ?></td><td><?php echo $all_approved ? implode('<br>', array_map('htmlspecialchars', $approval_by_shift)) : '-'; ?></td><td><?php echo $all_approved ? (implode('<br>', array_map('htmlspecialchars', $approval_dates_by_shift)) ?: '-') : '-'; ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($updaters)) ?: '-'); ?></td><td><?php echo $updated_at ? format_am_date($updated_at) : '-'; ?></td>
         <td><a class="btn btn-sm btn-success" href="<?php print_link($d->machine_key . '/daily_report?mesin=' . urlencode($report['mesin']) . '&date=' . urlencode($report['date'])); ?>">Buka Report Harian</a></td>
       </tr><?php } } else { ?><tr><td colspan="<?php echo $can_delete_reports ? 13 : 12; ?>" class="text-center text-muted">Belum ada report harian <?php echo htmlspecialchars($d->display_name); ?>.</td></tr><?php } ?></tbody>
     </table></div>
