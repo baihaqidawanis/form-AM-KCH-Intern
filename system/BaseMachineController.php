@@ -437,7 +437,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	}
 
 	/** Validasi status part dan detail abnormalitas dilakukan di server untuk semua mesin. */
-	protected function hasValidPartAndNokInput(array $formdata, array $part_fields)
+	protected function hasValidPartAndNokInput(array $formdata, array $part_fields, $rec_id = null)
 	{
 		$valid = true;
 		$detail_fields = array(
@@ -456,7 +456,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 			if ($status === 'ON_PROCESS_RED_TAG') {
 				$mesinId = intval($formdata['mesin'] ?? 0);
-				if (!$mesinId || !$this->isOnProcessEligible($mesinId, $field)) {
+				if (!$mesinId || !$this->isOnProcessEligible($mesinId, $field, $rec_id)) {
 					$this->view->page_error[] = 'On Process Red Tag tidak berlaku untuk part ' . $label . '.';
 					$valid = false;
 				}
@@ -473,12 +473,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return $valid;
 	}
 
-	private function isOnProcessEligible($mesinId, $field)
+	private function isOnProcessEligible($mesinId, $field, $recId = null)
 	{
 		if (!in_array($field, $this->part_fields(), true) || !$mesinId) { return false; }
 		$sql = $this->sqlTable();
+		if ($recId) {
+			$cur = $this->GetModel()->where($this->idColumn(), (int)$recId)->getOne($sql, array($field));
+			if (in_array($cur[$field] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true)) {
+				return true;
+			}
+		}
+		$excludeClause = $recId ? "AND {$this->idColumn()} != " . (int)$recId : "";
 		$row = $this->GetModel()->rawQueryOne(
-			"SELECT {$field} AS status FROM {$sql} WHERE mesin = ? AND {$field} IN ('OK','NOK','ON_PROCESS_RED_TAG') ORDER BY operational_date DESC, COALESCE(updated_at, created_at) DESC, {$this->idColumn()} DESC LIMIT 1",
+			"SELECT {$field} AS status FROM {$sql} WHERE mesin = ? {$excludeClause} AND {$field} IN ('OK','NOK','ON_PROCESS_RED_TAG') ORDER BY operational_date DESC, COALESCE(updated_at, created_at) DESC, {$this->idColumn()} DESC LIMIT 1",
 			array((int)$mesinId)
 		);
 		return in_array($row['status'] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true);
@@ -487,11 +494,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	function on_process_options()
 	{
 		$mesinId = intval($this->request->mesin ?? 0);
+		$recId = intval($this->request->rec_id ?? 0);
+		if (!$mesinId && $recId) {
+			$db = $this->GetModel();
+			$row = $db->where($this->idColumn(), $recId)->getOne($this->sqlTable(), array('mesin'));
+			if ($row && !empty($row['mesin'])) {
+				$mesinId = intval($row['mesin']);
+			}
+		}
 		if (!$mesinId || !ACL::is_machine_allowed($this->machineKey, intval(get_active_user('user_role_id')), get_active_user('area'))) {
 			http_response_code(403); return render_json(array('success' => false, 'fields' => array()));
 		}
 		$fields = array();
-		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field)) { $fields[] = $field; } }
+		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field, $recId)) { $fields[] = $field; } }
 		return render_json(array('success' => true, 'fields' => $fields));
 	}
 
@@ -1021,7 +1036,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			} else {
 				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
 			}
-			$valid_parts = $this->hasValidPartAndNokInput($formdata, $this->parts);
+			$valid_parts = $this->hasValidPartAndNokInput($formdata, $this->parts, $rec_id);
 			$valid_photos = $this->prepareNokPhotos($formdata, $this->parts, $existing_abnormalities);
 			if ($this->validated() && $valid_parts && $valid_photos) {
 				try {

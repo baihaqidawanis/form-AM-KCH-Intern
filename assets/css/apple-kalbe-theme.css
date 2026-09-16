@@ -596,6 +596,10 @@ label, .form-text, .text-muted, .form-group > label {
     cursor: pointer;
     transition: all 0.15s ease-in-out;
 }
+.part-card .custom-control.custom-radio.d-none,
+.part-card .custom-control.custom-radio[style*="display: none"] {
+    display: none !important;
+}
 .part-card .custom-control.custom-radio:hover {
     background: #F2F2F7;
     border-color: #D1D1D6;

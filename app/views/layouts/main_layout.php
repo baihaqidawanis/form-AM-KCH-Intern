@@ -181,18 +181,35 @@
 					if (!$form.length) { return; }
 					var $machine = $form.find('[name="mesin"]').first();
 					var action = $form.attr('action') || '';
+					var recIdMatch = action.match(/\/edit_data\/(\d+)/i);
+					var recId = recIdMatch ? recIdMatch[1] : '';
 					var endpoint = action.replace(/\/(add|edit_data)(?:\/[^?]*)?(?:\?.*)?$/i, '/on_process_options');
 					function updateOnProcess(){
 						var machineId = $machine.val();
 						var $options = $form.find('input.part-kondisi[value="ON_PROCESS_RED_TAG"]');
-						$options.prop('disabled', true).closest('.custom-control').hide();
-						if (!machineId || endpoint === action) { return; }
-						$.getJSON(endpoint, { mesin: machineId }).done(function(data){
+						$options.prop('disabled', true).closest('.custom-control').addClass('d-none').hide();
+						if ((!machineId && !recId) || endpoint === action) { return; }
+						var params = {};
+						if (machineId) { params.mesin = machineId; }
+						if (recId) { params.rec_id = recId; }
+						$.getJSON(endpoint, params).done(function(data){
 							var allowed = data && data.success ? data.fields : [];
 							$options.each(function(){
 								var enabled = allowed.indexOf(this.name) !== -1;
-								$(this).prop('disabled', !enabled).closest('.custom-control').toggle(enabled);
+								var $ctrl = $(this).prop('disabled', !enabled).closest('.custom-control');
+								$ctrl.toggleClass('d-none', !enabled);
+								if (enabled) {
+									$ctrl.show();
+								} else {
+									$ctrl.hide();
+									if (this.checked) {
+										this.checked = false;
+										$(this).closest('.part-card').find('.part-kondisi').first().trigger('change');
+									}
+								}
 							});
+						}).fail(function(){
+							$options.prop('disabled', true).closest('.custom-control').addClass('d-none').hide();
 						});
 					}
 					$machine.on('change', updateOnProcess); updateOnProcess();
