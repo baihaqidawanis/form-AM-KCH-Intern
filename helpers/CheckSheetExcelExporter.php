@@ -127,7 +127,7 @@ class CheckSheetExcelExporter
                         $value = '';
                         $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
                         if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
-                        $values[$col] = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : ''));
+                        $values[$col] = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'ON_PROCESS_RED_TAG' ? self::symbol('process') : ($value === 'OK' ? self::symbol('ok') : '')));
                         $styles[$col] = $center + ($value === 'NOK' ? array('font-style' => 'bold') : array());
                     }
                 }
@@ -152,7 +152,7 @@ class CheckSheetExcelExporter
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, 7);
         $rowIndex++;
 
-        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('deactive') . ') Deaktivasi Mesin', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
+        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process Red Tag | (' . self::symbol('deactive') . ') Deaktivasi Mesin', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, $totalCols - 5);
         $writer->markMergedCell($sheet, $rowIndex, $totalCols - 4, $rowIndex, $totalCols - 1);
         $rowIndex++;
@@ -223,6 +223,7 @@ class CheckSheetExcelExporter
         $symbols = array(
             'ok' => "\xE2\x9C\x93",
             'nok' => "\xC3\x97",
+            'process' => "\xE2\x80\xA2",
             'deactive' => "\xE2\x80\x94",
         );
         return $symbols[$type] ?? '';

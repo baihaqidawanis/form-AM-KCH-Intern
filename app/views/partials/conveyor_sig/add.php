@@ -60,7 +60,7 @@ $page_element_id = 'conveyor_sig-add-' . random_str();
 <div class="alert alert-info"><strong>Pilih Shift Pemeriksaan</strong><div class="form-inline mt-2"><select id="shift-selector" class="custom-select mr-2"><option value="">Pilih shift ...</option><?php foreach (($this->configured_shifts ?? array('1')) as $shift_option) { ?><option value="<?php echo $shift_option; ?>">Shift <?php echo $shift_option; ?></option><?php } ?></select><button type="button" class="btn btn-primary" onclick="var s=document.getElementById('shift-selector').value;if(s){window.location.href=window.location.pathname+'?shift='+s;}">Tampilkan Checklist</button></div></div>
 <?php } ?>
           <form id="conveyor_sig-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("conveyor_sig/add?csrf_token=$csrf_token") ?>" method="post"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
+            action="<?php print_link("conveyor_sig/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <div class="form-group col-md-6 px-0">
               <label class="d-block" for="ctrl-mesin">Mesin <span class="text-danger">*</span></label>
               <select required class="custom-select" id="ctrl-mesin" name="mesin">
@@ -165,7 +165,7 @@ $page_element_id = 'conveyor_sig-add-' . random_str();
                               <option value="">Pilih ...</option>
                             </select></div>
                         </div>
-                      <?php include dirname(__DIR__) . '/machine_no_wr_field.php'; ?>
+                      <?php include dirname(__DIR__) . '/machine_nok_evidence_field.php'; ?>
                     </div>
                     </div>
                   </div>

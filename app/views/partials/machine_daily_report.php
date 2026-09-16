@@ -73,6 +73,8 @@ $part_shift_schedules = $d['part_shift_schedules'] ?? array();
                     <td class="text-center align-middle py-2">
                       <?php if ($v === 'NOK') { ?>
                         <span class="badge badge-danger px-2 py-1" style="font-size: 0.75rem;">NOK</span>
+                      <?php } elseif ($v === 'ON_PROCESS_RED_TAG') { ?>
+                        <span class="badge badge-info px-2 py-1" style="font-size: 0.75rem;">&bull; On Process Red Tag</span>
                       <?php } elseif ($v === 'OK') { ?>
                         <span class="badge badge-success px-2 py-1" style="font-size: 0.75rem;"><i class="fa fa-check mr-1"></i>OK</span>
                       <?php } elseif ($v === 'N/A') { ?>

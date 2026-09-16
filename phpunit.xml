@@ -16,5 +16,6 @@
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="DB_NAME" value="form_am_plg_test" force="true"/>
         <env name="APP_BASE_URL" value="http://127.0.0.1:8099" force="true"/>
+        <env name="SIGNATURE_HMAC_KEY" value="phpunit-only-signature-hmac-key-change-me" force="true"/>
     </php>
 </phpunit>

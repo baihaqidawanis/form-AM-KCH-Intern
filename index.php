@@ -8,6 +8,7 @@
 	//            server HTTP (kondisi sekarang), user malah gak akan bisa login.
 	ini_set('session.use_strict_mode', 1);
 	session_set_cookie_params(array(
+		'lifetime' => 0,
 		'httponly' => true,
 		'samesite' => 'Lax',
 		'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
@@ -125,5 +126,4 @@
 
 	$page = new Router;
 	$page->init(); // Bootstrap Page with the Current URL
-	
 	

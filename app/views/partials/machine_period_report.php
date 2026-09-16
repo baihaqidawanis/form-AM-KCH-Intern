@@ -155,6 +155,7 @@ if (!function_exists('get_period_image_src')) {
       .day { width: <?php echo $col_day; ?>; text-align: center; padding: 1px 0; font-size: 7px; }
       .mark-ok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-nok { color: #000; font-weight: bold; font-size: 8.5px; }
+      .mark-process { color: #0d6efd; font-weight: bold; font-size: 9px; }
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .mark-to { color: #495057; font-weight: bold; font-size: 7px; }
       .mark-na { color: #6c757d; font-weight: bold; font-size: 8px; }
@@ -323,7 +324,7 @@ if (!function_exists('get_period_image_src')) {
               if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
               elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
               elseif (is_array($schedule) && !in_array((string)$curr_shift, $schedule, true)) { $cell_val = '&mdash;'; $c = 'mark-na'; }
-              else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok'; $cell_val = $value === 'NOK' ? '&times;' : '&radic;'; } }
+              else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { if ($value === 'NOK') { $c = 'mark-nok'; $cell_val = '&times;'; } elseif ($value === 'ON_PROCESS_RED_TAG') { $c = 'mark-process'; $cell_val = '&bull;'; } else { $c = 'mark-ok'; $cell_val = '&radic;'; } } }
             ?><td class="day" style="<?php echo $cell_style; ?>"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td><?php } ?>
           </tr>
         <?php }
@@ -350,7 +351,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process Red Tag &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>
@@ -380,19 +381,43 @@ if (!function_exists('get_period_image_src')) {
     <a class="btn btn-success" target="_blank" href="<?php print_link($this->set_current_page_link(array('format' => 'excel'))); ?>"><i class="fa fa-file-excel-o"></i> Export Excel</a>
   </div>
 
+  <div class="modal fade" id="signature-password-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Konfirmasi Tanda Tangan Digital</h5><button type="button" class="close" data-dismiss="modal">&times;</button></div>
+      <div class="modal-body">
+        <p class="small text-muted">Masukkan password akun Anda. Tanda tangan akan mengikat identitas akun dan isi dokumen periode ini.</p>
+        <label for="signature-account-password">Password akun</label>
+        <input id="signature-account-password" type="password" class="form-control" autocomplete="current-password" maxlength="255">
+        <div id="signature-password-error" class="text-danger small mt-2" style="display:none"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button><button type="button" id="signature-password-confirm" class="btn btn-primary">Tandatangani</button></div>
+    </div></div>
+  </div>
+
   <script>
   document.addEventListener('DOMContentLoaded', function() {
+    var pendingSignButton = null;
+    var pendingRoleType = null;
     var signButtons = document.querySelectorAll('.btn-sign-digital');
     signButtons.forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
-        var roleType = this.getAttribute('data-role');
-        var roleTitle = roleType === 'operator' ? 'Operator Produksi' : 'Supervisor';
+        pendingSignButton = this;
+        pendingRoleType = this.getAttribute('data-role');
+        document.getElementById('signature-account-password').value = '';
+        document.getElementById('signature-password-error').style.display = 'none';
+        $('#signature-password-modal').modal('show');
+        setTimeout(function(){ document.getElementById('signature-account-password').focus(); }, 300);
+      });
+    });
 
-        if (!confirm('Apakah Anda yakin ingin menandatangani Check Sheet ini secara digital sebagai ' + roleTitle + '?')) {
-          return;
-        }
-
+    document.getElementById('signature-password-confirm').addEventListener('click', function() {
+        var btn = pendingSignButton;
+        var roleType = pendingRoleType;
+        var password = document.getElementById('signature-account-password').value;
+        var errorBox = document.getElementById('signature-password-error');
+        if (!btn || !roleType || !password) { errorBox.textContent = 'Password wajib diisi.'; errorBox.style.display = 'block'; return; }
+        $('#signature-password-modal').modal('hide');
         btn.disabled = true;
         btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Memproses...';
 
@@ -402,6 +427,7 @@ if (!function_exists('get_period_image_src')) {
         formData.append('month', '<?php echo $d["month"] ?? 0; ?>');
         formData.append('period', '<?php echo $d["period"] ?? 0; ?>');
         formData.append('role_type', roleType);
+        formData.append('password', password);
         formData.append('csrf_token', <?php echo json_encode(Csrf::$token); ?>);
 
         fetch('<?php print_link($d["machine_key"] . "/sign_period?csrf_token=" . urlencode(Csrf::$token)); ?>', {
@@ -424,7 +450,7 @@ if (!function_exists('get_period_image_src')) {
           btn.disabled = false;
           btn.innerHTML = (roleType === 'operator' ? '<i class="fa fa-pencil"></i> TTD Digital' : '<i class="fa fa-check"></i> TTD SPV');
         });
-      });
+        document.getElementById('signature-account-password').value = '';
     });
 
     var cancelButtons = document.querySelectorAll('.btn-cancel-signature');

@@ -27,6 +27,8 @@ abstract class BaseMachineController extends SecureController
 	private $hasRetriedTransientRead = false;
 
 	private $snapshotSchema = null;
+	private $preparedNokPhotos = array();
+	private $newPhotoPaths = array();
 	function __construct()
 	{
 		parent::__construct();
@@ -380,24 +382,58 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	}
 
 
-	/** Nomor WR tetap string agar nol depan dan hingga 20 digit tidak hilang. */
-	protected function noWrForField(array $formdata, $field)
+	/** Kompatibilitas sementara untuk adapter RTWT lama yang belum diintegrasikan. */
+	protected function noWrForField(array $formdata, $field) { return null; }
+
+	private function uploadedPhotoForField($field)
 	{
-		$no_wr = trim((string)($formdata['no_wr_' . $field] ?? ''));
-		return $no_wr === '' ? null : $no_wr;
+		foreach (array('foto_camera_' . $field, 'foto_before_' . $field) as $name) {
+			if (isset($_FILES[$name]) && intval($_FILES[$name]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) { return $_FILES[$name]; }
+		}
+		return null;
 	}
 
-	protected function hasValidNoWrInput(array $formdata, array $part_fields)
+	private function storeNokPhoto(array $file)
 	{
+		if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) { throw new RuntimeException('Upload Foto Before gagal.'); }
+		if (intval($file['size'] ?? 0) <= 0 || intval($file['size']) > 5 * 1024 * 1024) { throw new RuntimeException('Foto Before maksimal 5 MB.'); }
+		$finfo = new finfo(FILEINFO_MIME_TYPE); $mime = $finfo->file($file['tmp_name']);
+		if (!in_array($mime, array('image/jpeg', 'image/png', 'image/webp'), true)) { throw new RuntimeException('Foto Before harus JPEG, PNG, atau WebP.'); }
+		$raw = @file_get_contents($file['tmp_name']); $src = $raw === false ? false : @imagecreatefromstring($raw);
+		if (!$src) { throw new RuntimeException('Isi Foto Before tidak valid.'); }
+		$width = imagesx($src); $height = imagesy($src); $scale = min(1, 1920 / max($width, $height));
+		$newWidth = max(1, (int)round($width * $scale)); $newHeight = max(1, (int)round($height * $scale));
+		$dst = imagecreatetruecolor($newWidth, $newHeight);
+		imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height); imagedestroy($src);
+		$relativeDir = 'uploads/photos/nok/' . date('Y/m'); $absoluteDir = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativeDir);
+		if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0775, true) && !is_dir($absoluteDir)) { imagedestroy($dst); throw new RuntimeException('Folder Foto Before tidak dapat dibuat.'); }
+		$relative = $relativeDir . '/' . bin2hex(random_bytes(16)) . '.jpg'; $absolute = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+		if (!imagejpeg($dst, $absolute, 85)) { imagedestroy($dst); throw new RuntimeException('Foto Before tidak dapat disimpan.'); }
+		imagedestroy($dst); $this->newPhotoPaths[] = $absolute;
+		return array('foto_before' => $relative, 'foto_before_sha256' => hash_file('sha256', $absolute),
+			'foto_before_mime' => 'image/jpeg', 'foto_before_size' => filesize($absolute));
+	}
+
+	private function prepareNokPhotos(array $formdata, array $part_fields, array $existing = array())
+	{
+		$this->preparedNokPhotos = array(); $valid = true;
 		foreach ($part_fields as $field => $label) {
 			if (($formdata[$field] ?? null) !== 'NOK') { continue; }
-			$no_wr = trim((string)($formdata['no_wr_' . $field] ?? ''));
-			if ($no_wr !== '' && !preg_match('/^[0-9]{1,20}$/', $no_wr)) {
-				$this->view->page_error[] = 'Nomor WR untuk ' . $label . ' harus berisi maksimal 20 digit angka.';
-				return false;
-			}
+			try {
+				$file = $this->uploadedPhotoForField($field);
+				if ($file) { $this->preparedNokPhotos[$field] = $this->storeNokPhoto($file); }
+				elseif (!empty($existing[$field]['foto_before'])) {
+					$this->preparedNokPhotos[$field] = array_intersect_key($existing[$field], array_flip(array('foto_before', 'foto_before_sha256', 'foto_before_mime', 'foto_before_size')));
+				} else { throw new RuntimeException('Foto Before wajib untuk part NOK: ' . $label . '.'); }
+			} catch (Throwable $e) { $this->view->page_error[] = $e->getMessage(); $valid = false; }
 		}
-		return true;
+		return $valid;
+	}
+
+	private function cleanupNewPhotos()
+	{
+		foreach ($this->newPhotoPaths as $path) { if (is_file($path)) { @unlink($path); } }
+		$this->newPhotoPaths = array();
 	}
 
 	/** Validasi status part dan detail abnormalitas dilakukan di server untuk semua mesin. */
@@ -413,9 +449,17 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		);
 		foreach ($part_fields as $field => $label) {
 			$status = trim((string)($formdata[$field] ?? ''));
-			if (!in_array($status, array('OK', 'NOK', 'N/A', 'Tidak Dilakukan'), true)) {
+			if (!in_array($status, array('OK', 'NOK', 'ON_PROCESS_RED_TAG', 'N/A', 'Tidak Dilakukan'), true)) {
 				$this->view->page_error[] = 'Status part ' . $label . ' tidak valid.';
 				$valid = false;
+				continue;
+			}
+			if ($status === 'ON_PROCESS_RED_TAG') {
+				$mesinId = intval($formdata['mesin'] ?? 0);
+				if (!$mesinId || !$this->isOnProcessEligible($mesinId, $field)) {
+					$this->view->page_error[] = 'On Process Red Tag tidak berlaku untuk part ' . $label . '.';
+					$valid = false;
+				}
 				continue;
 			}
 			if ($status !== 'NOK') { continue; }
@@ -429,6 +473,28 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return $valid;
 	}
 
+	private function isOnProcessEligible($mesinId, $field)
+	{
+		if (!in_array($field, $this->part_fields(), true) || !$mesinId) { return false; }
+		$sql = $this->sqlTable();
+		$row = $this->GetModel()->rawQueryOne(
+			"SELECT {$field} AS status FROM {$sql} WHERE mesin = ? AND {$field} IN ('OK','NOK','ON_PROCESS_RED_TAG') ORDER BY operational_date DESC, COALESCE(updated_at, created_at) DESC, {$this->idColumn()} DESC LIMIT 1",
+			array((int)$mesinId)
+		);
+		return in_array($row['status'] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true);
+	}
+
+	function on_process_options()
+	{
+		$mesinId = intval($this->request->mesin ?? 0);
+		if (!$mesinId || !ACL::is_machine_allowed($this->machineKey, intval(get_active_user('user_role_id')), get_active_user('area'))) {
+			http_response_code(403); return render_json(array('success' => false, 'fields' => array()));
+		}
+		$fields = array();
+		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field)) { $fields[] = $field; } }
+		return render_json(array('success' => true, 'fields' => $fields));
+	}
+
 	private function nokDetailData(array $formdata, $field, $rec_id, $mesin_id)
 	{
 		return array(
@@ -440,9 +506,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'korelasi_tag' => trim((string)$formdata['korelasi_tag_' . $field]),
 			'klasifikasi_tag' => trim((string)$formdata['klasifikasi_tag_' . $field]),
 			'kategori_ketidaksesuaian' => trim((string)$formdata['kategori_ketidaksesuaian_' . $field]),
-			'no_wr' => $this->noWrForField($formdata, $field),
 			'created_at' => datetime_now(),
-		);
+		) + ($this->preparedNokPhotos[$field] ?? array());
 	}
 
 	protected function isUnitDeactivated($mesin_id, $operational_date)
@@ -510,10 +575,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			foreach (array_keys($parts_for_add) as $pf) { if ((isset($modeldata[$pf]) ? $modeldata[$pf] : null) === 'NOK') { $all_ok = false; break; } }
 			if ($all_ok) { $modeldata['approval'] = 'Approved'; $modeldata['user_approve'] = 'System'; $modeldata['tanggal_perubahan'] = datetime_now(); }
 			// Mesin biasa hanya satu form per hari. Mesin shift tetap satu form per shift.
-			$valid_no_wr = $this->hasValidNoWrInput($formdata, $parts_for_add);
 			$valid_parts = $this->hasValidPartAndNokInput($formdata, $parts_for_add);
+			$valid_photos = $this->prepareNokPhotos($formdata, $parts_for_add);
 			$is_duplicate = false;
-			if ($this->validated() && $valid_no_wr && $valid_parts) {
+			if ($this->validated() && $valid_parts && $valid_photos) {
 				$db->where('mesin', $modeldata['mesin'])->where('operational_date', $modeldata['operational_date']);
 				if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $modeldata['shift']); }
 				if ($db->has($sql)) {
@@ -521,7 +586,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$this->view->page_error[] = in_array('shift', $this->extraFields, true) ? 'Shift ini sudah diisi untuk tanggal operasional tersebut.' : 'Form mesin ini sudah diisi untuk tanggal operasional tersebut.';
 				}
 			}
-			if ($this->validated() && $valid_no_wr && $valid_parts && !$is_duplicate) {
+			if ($this->validated() && $valid_parts && $valid_photos && !$is_duplicate) {
 				$snapshot_schema = $this->snapshotSchema();
 				try {
 					$db->startTransaction();
@@ -539,8 +604,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema);
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
+					// Sync every NOK Red/White Tag to RTWT Mesin (fail-safe, non-blocking).
+					$this->syncRedTagToRtwt($formdata, $parts_for_add, $modeldata, $rec_id);
 					return $this->redirect($table . '/view/' . $rec_id);
 				} catch (Throwable $e) {
+					$this->cleanupNewPhotos();
 					$this->rollbackTransactionSafely($db, 'add ' . $this->machineKey);
 					error_log('add ' . $this->machineKey . ' failed: ' . $e->getMessage() . ' | SQL Error: ' . ($db->getLastError() ?: 'none'));
 					$raw_err = ($db->getLastError() ?: '') . ' ' . $e->getMessage();
@@ -554,6 +622,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				}
 			}
 		}
+		// Tidak ada transaksi berhasil (validasi/duplikat gagal): jangan sisakan file orphan.
+		if (!empty($this->newPhotoPaths)) { $this->cleanupNewPhotos(); }
 		$today = $this->operationalDate();
 		$deactive_units = $this->GetModel()->rawQuery("
 			SELECT r.mesin_id, m.nama_mesin, r.reason, r.started_at, r.notes, r.action_by_username
@@ -890,6 +960,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->set_page_error($db->getLastError() ?: 'Data form AM tidak ditemukan.');
 			return $this->redirect($table);
 		}
+		$existing_abnormalities = array();
+		foreach ($db->where('id_am', $rec_id)->get($this->kendalaTable()) as $detail) {
+			$existing_abnormalities[(string)$detail['nama_bagian']] = $detail;
+		}
 
 		//URS 3.1: Manager/Supervisor/Staff-Operator cuma boleh edit_data submission sendiri; Administrator bebas.
 		$is_owner = (($existing_record['user_create'] ?? null) === USER_NAME);
@@ -915,6 +989,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 		if ($formdata) {
+			$formdata['mesin'] = $formdata['mesin'] ?? $existing_record['mesin'];
 			$postdata = $this->format_request_data($formdata);
 			$this->fields = array_merge(array('perubahan'), $this->part_fields(), $this->extraFields);
 			$this->rules_array = array('perubahan' => 'required');
@@ -946,9 +1021,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			} else {
 				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
 			}
-			$valid_no_wr = $this->hasValidNoWrInput($formdata, $this->parts);
 			$valid_parts = $this->hasValidPartAndNokInput($formdata, $this->parts);
-			if ($this->validated() && $valid_no_wr && $valid_parts) {
+			$valid_photos = $this->prepareNokPhotos($formdata, $this->parts, $existing_abnormalities);
+			if ($this->validated() && $valid_parts && $valid_photos) {
 				try {
 					$db->startTransaction();
 					$db->where($idcol, $rec_id);
@@ -974,6 +1049,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$this->set_flash_msg('Data berhasil diperbarui', 'success');
 					return $this->redirect("$table/view/$rec_id");
 				} catch (Throwable $e) {
+					$this->cleanupNewPhotos();
 					$this->rollbackTransactionSafely($db, 'edit_data ' . $this->machineKey);
 					error_log('edit_data ' . $this->machineKey . ' failed: ' . $e->getMessage() . ' | SQL Error: ' . ($db->getLastError() ?: 'none'));
 					$this->set_page_error('Gagal memperbarui form AM. Silakan coba kembali atau hubungi administrator.');
@@ -988,7 +1064,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			// Preservasi input yang baru saja diketik user bila submit/update gagal
 			if (!empty($formdata) && is_array($formdata)) {
 				foreach ($formdata as $k => $v) {
-					if (!is_array($v) && !str_starts_with($k, 'kendala_') && !str_starts_with($k, 'kategori_') && !str_starts_with($k, 'korelasi_') && !str_starts_with($k, 'klasifikasi_') && !str_starts_with($k, 'no_wr_')) {
+					if (!is_array($v) && !str_starts_with($k, 'kendala_') && !str_starts_with($k, 'kategori_') && !str_starts_with($k, 'korelasi_') && !str_starts_with($k, 'klasifikasi_')) {
 						$record[$k] = $v;
 					}
 				}
@@ -999,7 +1075,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					if (isset($formdata[$field])) {
 						$record[$field] = $formdata[$field];
 					}
-					if (!empty($_POST['kendala_' . $field]) || !empty($_POST['kategori_tag_' . $field]) || !empty($_POST['no_wr_' . $field])) {
+					if (!empty($_POST['kendala_' . $field]) || !empty($_POST['kategori_tag_' . $field])) {
 						$record['abnormalitas'][$field] = array(
 							'nama_bagian' => $field,
 							'kendala' => $_POST['kendala_' . $field] ?? '',
@@ -1007,7 +1083,6 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 							'korelasi_tag' => $_POST['korelasi_tag_' . $field] ?? null,
 							'klasifikasi_tag' => $_POST['klasifikasi_tag_' . $field] ?? null,
 							'kategori_ketidaksesuaian' => $_POST['kategori_ketidaksesuaian_' . $field] ?? null,
-							'no_wr' => $this->noWrForField($formdata, $field),
 						);
 					}
 				}
@@ -1097,22 +1172,58 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			->orderBy('COALESCE(updated_at, created_at)', 'ASC')
 			->get($sql);
 
-		$checks = array();
+		$checks = array(); $document_rows = array();
 		foreach ($rows as $row) {
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
-			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$idcol] ?? null) as $field => $label) {
+			$form_id = intval($row[$idcol] ?? 0);
+			$part_details = $this->partDetailsForRecord($row['operational_date'], $row['created_at'] ?? null, $form_id);
+			$abnormalities = $db->where('id_am', $form_id)->orderBy('nama_bagian', 'ASC')->get($this->kendalaTable());
+			$abnormality_map = array();
+			foreach ($abnormalities as $item) {
+				$field_name = (string)($item['nama_bagian'] ?? '');
+				$abnormality_map[$field_name] = array(
+					'kendala' => $item['kendala'] ?? null, 'kategori_tag' => $item['kategori_tag'] ?? null,
+					'korelasi_tag' => $item['korelasi_tag'] ?? null, 'klasifikasi_tag' => $item['klasifikasi_tag'] ?? null,
+					'kategori_ketidaksesuaian' => $item['kategori_ketidaksesuaian'] ?? null,
+					'foto_before_sha256' => $item['foto_before_sha256'] ?? null,
+				);
+			}
+			$canonical_parts = array();
+			foreach ($part_details as $part) {
+				$field = (string)($part['field_name'] ?? '');
+				if ($field === '') { continue; }
+				$canonical_parts[] = array(
+					'field_name' => $field, 'label' => $part['label'] ?? '', 'section' => $part['section'] ?? '',
+					'metode' => $part['metode'] ?? '', 'alat' => $part['alat'] ?? '', 'standard' => $part['standard'] ?? '',
+					'durasi' => $part['durasi'] ?? '', 'pelaksanaan' => $part['pelaksanaan'] ?? '',
+					'highlight' => $part['highlight'] ?? '', 'image_path' => $part['image_path'] ?? '',
+					'shift_schedule' => $part['shift_schedule'] ?? '1', 'status' => $row[$field] ?? null,
+					'abnormality' => $abnormality_map[$field] ?? null,
+				);
+			}
+			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $form_id) as $field => $label) {
 				if (!empty($row[$field])) {
 					$shift_key = trim((string)($row['shift'] ?? ''));
 					$shift_key = $shift_key === '' ? '__default__' : $shift_key;
 					$checks[$field][$day][$shift_key] = $row[$field];
 				}
 			}
+			$document_rows[] = array(
+				'form_id' => $form_id, 'operational_date' => $row['operational_date'], 'shift' => $row['shift'] ?? null,
+				'created_at' => $row['created_at'] ?? null, 'user_create' => $row['user_create'] ?? null,
+				'approval' => $row['approval'] ?? null, 'user_approve' => $row['user_approve'] ?? null,
+				'approval_at' => $row['tanggal_perubahan'] ?? null, 'updated_at' => $row['updated_at'] ?? null,
+				'user_update' => $row['user_perubah'] ?? null, 'parts' => $canonical_parts,
+			);
 		}
+		$deactivations = $db->rawQuery('SELECT started_at, ended_at, reason, notes, action_by_username, reactivated_by_username FROM riwayat_status_mesin WHERE mesin_id = ? AND started_at <= ? AND (ended_at IS NULL OR ended_at >= ?) ORDER BY started_at ASC', array($mesin, $end . ' 23:59:59', $start . ' 00:00:00'));
+		$document_payload = array('records' => $document_rows, 'deactivations' => $deactivations);
 
 		return array(
 			'rows' => $rows,
 			'checks' => $checks,
-			'document_hash' => QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks),
+			'document_payload' => $document_payload,
+			'document_hash' => QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $document_payload),
 		);
 	}
 
@@ -1181,6 +1292,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$month = intval($request->month ?? 0);
 		$period = intval($request->period ?? 0);
 		$role_type = trim((string)($request->role_type ?? '')); // 'operator' or 'spv'
+		$password = (string)($request->password ?? '');
 
 		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !in_array($role_type, array('operator', 'spv'), true)) {
 			http_response_code(400);
@@ -1229,8 +1341,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 		}
 
+		// Re-authentication dilakukan setelah semua rule role/alur terpenuhi agar
+		// respons otorisasi tidak berubah dan password tidak diproses sia-sia.
+		$reauth = $_SESSION[APP_ID . 'signature_reauth'] ?? array('failures' => 0, 'locked_until' => 0);
+		if (($reauth['locked_until'] ?? 0) > time()) {
+			http_response_code(429); render_json(array('success' => false, 'message' => 'Terlalu banyak password salah. Coba lagi dalam 5 menit.')); return;
+		}
+		$user = $this->GetModel()->where('id_user', (int)$user_id)->getOne('users', array('password'));
+		if ($password === '' || !$user || !password_verify($password, (string)$user['password'])) {
+			$failures = intval($reauth['failures'] ?? 0) + 1;
+			$_SESSION[APP_ID . 'signature_reauth'] = array('failures' => $failures, 'locked_until' => $failures >= 5 ? time() + 300 : 0);
+			http_response_code(401); render_json(array('success' => false, 'message' => 'Password akun tidak sesuai.')); return;
+		}
+		unset($_SESSION[APP_ID . 'signature_reauth']);
+
 		$doc_hash = $document_state['document_hash'];
-		$result = QrSignatureHelper::savePeriodSignature($this->machineKey, $mesin, $month, $year, $period, $user_id, $role_type, $doc_hash);
+		$result = QrSignatureHelper::savePeriodSignature($this->machineKey, $mesin, $month, $year, $period, $user_id, $role_type, $doc_hash, $document_state['document_payload']);
 
 		if ($result['success']) {
 			$this->write_to_log('sign_period', 'true');
@@ -1321,6 +1447,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$role_type . '_id' => null,
 				$role_type . '_signed_at' => null,
 				$token_column => null,
+				$role_type . '_name' => null,
+				$role_type . '_username' => null,
+				$role_type . '_role_id' => null,
+				$role_type . '_signature_mac' => null,
 				'updated_at' => datetime_now()
 			);
 			$other_token = $role_type === 'operator' ? ($signature['spv_token'] ?? null) : ($signature['operator_token'] ?? null);
@@ -1368,4 +1498,72 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			render_json(array('success' => false, 'message' => 'Gagal membatalkan tanda tangan digital.'));
 		}
 	}
+
+	/**
+	 * Sync NOK Red/White Tag findings from Form AM to RTWT Mesin (Local/API).
+	 * Completely non-blocking and fail-safe with short timeout.
+	 */
+	protected function syncRedTagToRtwt(array $formdata, array $parts, array $modeldata, $rec_id)
+	{
+		try {
+			$machine = $this->GetModel()->where('id', intval($modeldata['mesin'] ?? 0))->getOne('mesin', array('nama_mesin'));
+			$machine_name = trim((string)($machine['nama_mesin'] ?? ''));
+			if ($machine_name === '') {
+				throw new RuntimeException('Nama unit mesin Form AM tidak ditemukan.');
+			}
+			$compounding = array('cosmec','fbd_jaw_chuan','fbd_glatt','supermixer','storage_tank','storage_tank_tetrapak','mixing_tank','granulator');
+			$packing = array('chimei','temach','jihcheng','jinsung_1_4','jinsung_5','best_pack','check_weigher','conveyor_sig');
+			$area_name = in_array($this->machineKey, $compounding, true) ? 'Compounding' : (in_array($this->machineKey, $packing, true) ? 'Kemas' : 'Filling');
+			$line_name = $area_name === 'Compounding' ? 'Compounding' : 'Line A';
+
+			foreach ($parts as $field => $label) {
+				$kondisi = $formdata[$field] ?? ($modeldata[$field] ?? null);
+				if ($kondisi !== 'NOK') continue;
+
+				$tag = trim((string)($formdata['kategori_tag_' . $field] ?? ''));
+				$tag_type = ($tag === '1' || stripos($tag, 'red') !== false) ? 'RED'
+					: (($tag === '2' || stripos($tag, 'white') !== false) ? 'WHITE' : null);
+				if ($tag_type !== null) {
+					$correlation_raw = trim((string)($formdata['korelasi_tag_' . $field] ?? ''));
+					$correlation_map = array('1' => '5R', '2' => 'HSE', '3' => 'PRODUCTIVITY', '5' => 'MESIN');
+					$correlation = $correlation_map[$correlation_raw] ?? strtoupper($correlation_raw);
+					if (!in_array($correlation, array('MESIN', 'PRODUCTIVITY', '5R', 'HSE'), true)) {
+						$correlation = 'MESIN';
+					}
+					$no_wr = $this->noWrForField($formdata, $field);
+					$payload = array(
+						'area_id' => $area_name,
+						'line_id' => $line_name,
+						'mesin_id' => $machine_name,
+						'bagian_mesin' => $label ?: $field,
+						'no_wr' => $no_wr,
+						'deskripsi_masalah' => trim((string)($formdata['kendala_' . $field] ?? ('Temuan ' . $tag_type . ' Tag dari Form AM'))),
+						'tag_type' => $tag_type,
+						'korelasi' => $correlation,
+						'kategori_masalah' => 'Abnormalitas Mesin',
+					);
+
+					$ch = curl_init('http://localhost/breakdown_management1/rtwt_mesin/api_sync');
+					curl_setopt_array($ch, array(
+						CURLOPT_POST => true,
+						CURLOPT_POSTFIELDS => json_encode($payload),
+						CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+						CURLOPT_RETURNTRANSFER => true,
+						CURLOPT_TIMEOUT => 2,
+						CURLOPT_CONNECTTIMEOUT => 1,
+						CURLOPT_NOSIGNAL => true,
+					));
+					$response = curl_exec($ch);
+					$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+					if ($response === false || $status < 200 || $status >= 300) {
+						error_log('RTWT NOK Tag Sync ditolak untuk ' . $machine_name . '/' . $field . ' (HTTP ' . $status . '): ' . ($response ?: curl_error($ch)));
+					}
+					curl_close($ch);
+				}
+			}
+		} catch (Throwable $e) {
+			error_log('RTWT NOK Tag Sync error: ' . $e->getMessage());
+		}
+	}
+
 }

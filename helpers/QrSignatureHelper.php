@@ -7,8 +7,6 @@ use chillerlan\QRCode\Output\QRGdImagePNG;
 
 class QrSignatureHelper
 {
-    private static $salt = 'KalbeConsumerHealth_AM_Form_2026_Security_Key';
-
     /**
      * Generate a QR Code with the Kalbe logo centered and return as a Base64 data URI (PNG).
      *
@@ -98,17 +96,17 @@ class QrSignatureHelper
      * @param array $checks
      * @return string
      */
-    public static function computeDocumentHash($mesinSlug, $mesinId, $bulan, $tahun, $periode, array $checks = array())
+    public static function canonicalJson(array $payload)
     {
-        $payload = array(
-            'machine' => $mesinSlug,
-            'machine_id' => (int)$mesinId,
-            'month' => (int)$bulan,
-            'year' => (int)$tahun,
-            'period' => (int)$periode,
-            'checks' => $checks
-        );
-        return hash('sha256', json_encode($payload));
+        return json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    public static function computeDocumentHash($mesinSlug, $mesinId, $bulan, $tahun, $periode, array $document = array())
+    {
+        $payload = array('machine' => (string)$mesinSlug, 'machine_id' => (int)$mesinId,
+            'month' => (int)$bulan, 'year' => (int)$tahun, 'period' => (int)$periode,
+            'document' => $document);
+        return hash('sha256', self::canonicalJson($payload));
     }
 
     /**
@@ -123,20 +121,39 @@ class QrSignatureHelper
      * @param int $userId
      * @return string
      */
-    public static function generateToken($mesinSlug, $mesinId, $bulan, $tahun, $periode, $role, $userId)
+    public static function generateToken($mesinSlug = null, $mesinId = null, $bulan = null, $tahun = null, $periode = null, $role = null, $userId = null)
     {
-        $raw = sprintf('%s|%d|%d|%d|%d|%s|%d|%s|%s',
-            $mesinSlug,
-            $mesinId,
-            $bulan,
-            $tahun,
-            $periode,
-            $role,
-            $userId,
-            microtime(true),
-            self::$salt
+        return bin2hex(random_bytes(32));
+    }
+
+    private static function hmacKey()
+    {
+        $key = defined('SIGNATURE_HMAC_KEY') ? (string)SIGNATURE_HMAC_KEY : '';
+        if (strlen($key) < 32) { throw new RuntimeException('SIGNATURE_HMAC_KEY belum dikonfigurasi dengan aman.'); }
+        return $key;
+    }
+
+    private static function signatureMac(array $row, $role)
+    {
+        $payload = array(
+            'version' => (int)($row['signature_version'] ?? 2),
+            'machine' => (string)$row['mesin_slug'], 'machine_id' => (int)$row['mesin_id'],
+            'month' => (int)$row['bulan'], 'year' => (int)$row['tahun'], 'period' => (int)$row['periode'],
+            'role' => $role, 'user_id' => (int)$row[$role . '_id'],
+            'username' => (string)$row[$role . '_username'], 'name' => (string)$row[$role . '_name'],
+            'role_id' => (int)$row[$role . '_role_id'], 'signed_at' => (string)$row[$role . '_signed_at'],
+            'document_hash' => (string)$row['document_hash'], 'token' => (string)$row[$role . '_token'],
         );
-        return hash('sha256', $raw);
+        return hash_hmac('sha256', self::canonicalJson($payload), self::hmacKey());
+    }
+
+    public static function verifyStoredSignature(array $row, $role)
+    {
+        if (!in_array($role, array('operator', 'spv'), true)) { return false; }
+        $stored = (string)($row[$role . '_signature_mac'] ?? '');
+        if (!preg_match('/^[a-f0-9]{64}$/', $stored)) { return false; }
+        try { return hash_equals($stored, self::signatureMac($row, $role)); }
+        catch (Throwable $e) { return false; }
     }
 
     /**
@@ -169,16 +186,15 @@ class QrSignatureHelper
 
         $row = $db->getOne('am_period_signatures');
         if ($row) {
-            // Enrich with user info
+            // Tampilan memakai snapshot signer; perubahan profil akun tidak boleh
+            // mengubah identitas yang melekat pada tanda tangan lama.
             if (!empty($row['operator_id'])) {
-                $db->where('id_user', $row['operator_id']);
-                $opUser = $db->getOne('users', array('id_user', 'nama', 'username', 'user_role_id', 'paraf_image', 'user_initials'));
-                $row['operator_user'] = $opUser;
+                $row['operator_user'] = array('id_user' => $row['operator_id'], 'nama' => $row['operator_name'],
+                    'username' => $row['operator_username'], 'user_role_id' => $row['operator_role_id']);
             }
             if (!empty($row['spv_id'])) {
-                $db->where('id_user', $row['spv_id']);
-                $spvUser = $db->getOne('users', array('id_user', 'nama', 'username', 'user_role_id', 'paraf_image', 'user_initials'));
-                $row['spv_user'] = $spvUser;
+                $row['spv_user'] = array('id_user' => $row['spv_id'], 'nama' => $row['spv_name'],
+                    'username' => $row['spv_username'], 'user_role_id' => $row['spv_role_id']);
             }
         }
         return $row ?: null;
@@ -197,19 +213,23 @@ class QrSignatureHelper
      * @param string $docHash
      * @return array ['success' => bool, 'token' => string, 'error' => string]
      */
-    public static function savePeriodSignature($mesinSlug, $mesinId, $bulan, $tahun, $periode, $userId, $role, $docHash)
+    public static function savePeriodSignature($mesinSlug, $mesinId, $bulan, $tahun, $periode, $userId, $role, $docHash, array $documentPayload = array())
     {
         if (!in_array($role, array('operator', 'spv'), true) || !preg_match('/^[a-f0-9]{64}$/', (string)$docHash)) {
             return array('success' => false, 'error' => 'Parameter tanda tangan tidak valid.');
         }
         $db = self::getDb();
-        $token = self::generateToken($mesinSlug, $mesinId, $bulan, $tahun, $periode, $role, $userId);
+        try { self::hmacKey(); } catch (Throwable $e) { return array('success' => false, 'error' => $e->getMessage()); }
+        $token = self::generateToken();
         $now = date('Y-m-d H:i:s');
         try {
+            $db->where('id_user', (int)$userId);
+            $signer = $db->getOne('users', array('id_user', 'nama', 'username', 'user_role_id'));
+            if (!$signer) { throw new RuntimeException('Akun penandatangan tidak ditemukan.'); }
             $db->startTransaction();
             $db->rawQuery(
-                'INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (mesin_slug, mesin_id, bulan, tahun, periode) DO NOTHING',
-                array($mesinSlug, (int)$mesinId, (int)$bulan, (int)$tahun, (int)$periode, $docHash, 'draft', $now)
+                'INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, document_payload, signature_version, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, 2, ?, ?) ON CONFLICT (mesin_slug, mesin_id, bulan, tahun, periode) DO NOTHING',
+                array($mesinSlug, (int)$mesinId, (int)$bulan, (int)$tahun, (int)$periode, $docHash, self::canonicalJson($documentPayload), 'draft', $now)
             );
             $existing = $db->rawQueryOne(
                 'SELECT * FROM am_period_signatures WHERE mesin_slug = ? AND mesin_id = ? AND bulan = ? AND tahun = ? AND periode = ? FOR UPDATE',
@@ -238,11 +258,18 @@ class QrSignatureHelper
                 return array('success' => false, 'error' => 'Operator harus menandatangani dokumen terlebih dahulu.');
             }
 
-            $updateData = array('document_hash' => $docHash, 'updated_at' => $now);
+            $updateData = array('document_hash' => $docHash, 'document_payload' => self::canonicalJson($documentPayload), 'signature_version' => 2, 'updated_at' => $now);
+            $prefix = $role . '_';
+            $updateData += array($prefix . 'id' => (int)$userId, $prefix . 'signed_at' => $now,
+                $prefix . 'token' => $token, $prefix . 'name' => (string)$signer['nama'],
+                $prefix . 'username' => (string)$signer['username'], $prefix . 'role_id' => (int)$signer['user_role_id']);
+            $macRow = array_merge($existing, $updateData, array('mesin_slug' => $mesinSlug, 'mesin_id' => (int)$mesinId,
+                'bulan' => (int)$bulan, 'tahun' => (int)$tahun, 'periode' => (int)$periode));
+            $updateData[$prefix . 'signature_mac'] = self::signatureMac($macRow, $role);
             if ($role === 'operator') {
-                $updateData += array('operator_id' => (int)$userId, 'operator_signed_at' => $now, 'operator_token' => $token, 'status' => 'signed_operator');
+                $updateData['status'] = 'signed_operator';
             } else {
-                $updateData += array('spv_id' => (int)$userId, 'spv_signed_at' => $now, 'spv_token' => $token, 'status' => 'approved');
+                $updateData['status'] = 'approved';
             }
             $db->where('id', $existing['id']);
             if (!$db->update('am_period_signatures', $updateData) || !$db->getRowCount()) {
@@ -266,17 +293,14 @@ class QrSignatureHelper
     public static function getSignatureByToken($token)
     {
         $token = strtolower(trim((string)$token));
-        $tokenLength = strlen($token);
-        if ($tokenLength < 8 || $tokenLength > 64 || !preg_match('/^[a-f0-9]+$/', $token)) {
+        if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
             return null;
         }
 
         $db = self::getDb();
-        $operatorLookup = $tokenLength === 64 ? $token : $token . '%';
-        $comparison = $tokenLength === 64 ? '=' : 'LIKE';
         $rows = $db->rawQuery(
-            "SELECT * FROM am_period_signatures WHERE operator_token {$comparison} ? OR spv_token {$comparison} ? LIMIT 2",
-            array($operatorLookup, $operatorLookup)
+            "SELECT * FROM am_period_signatures WHERE operator_token = ? OR spv_token = ? LIMIT 2",
+            array($token, $token)
         );
 
         // Prefix pendek hanya sah jika menunjuk tepat ke satu token dan satu role.
@@ -285,9 +309,7 @@ class QrSignatureHelper
         foreach ($rows as $candidate) {
             foreach (array('operator', 'spv') as $role) {
                 $candidateToken = strtolower((string)($candidate[$role . '_token'] ?? ''));
-                $matched = $tokenLength === 64
-                    ? hash_equals($candidateToken, $token)
-                    : strncmp($candidateToken, $token, $tokenLength) === 0;
+                $matched = hash_equals($candidateToken, $token);
                 if ($candidateToken !== '' && $matched) {
                     $matches[] = array('row' => $candidate, 'role' => $role);
                 }
@@ -303,16 +325,11 @@ class QrSignatureHelper
         if ($row) {
             $isOperator = $verifiedRole === 'operator';
             $row['verified_role'] = $isOperator ? 'Operator Produksi' : 'Supervisor';
-            $signerId = $isOperator ? $row['operator_id'] : $row['spv_id'];
             $signedAt = $isOperator ? $row['operator_signed_at'] : $row['spv_signed_at'];
-
-            $signerUser = null;
-            if ($signerId) {
-                $db->where('id_user', $signerId);
-                $signerUser = $db->getOne('users', array('id_user', 'nama', 'username', 'email', 'area', 'mesin', 'user_role_id'));
-            }
-            $row['signer_user'] = $signerUser;
+            $row['signer_user'] = array('id_user' => $row[$verifiedRole . '_id'], 'nama' => $row[$verifiedRole . '_name'],
+                'username' => $row[$verifiedRole . '_username'], 'user_role_id' => $row[$verifiedRole . '_role_id']);
             $row['verified_signed_at'] = $signedAt;
+            $row['signature_authentic'] = self::verifyStoredSignature($row, $verifiedRole);
 
             // Machine name
             $db->where('id', $row['mesin_id']);

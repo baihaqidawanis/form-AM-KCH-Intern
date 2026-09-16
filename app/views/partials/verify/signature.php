@@ -28,7 +28,7 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
                 <div class="alert alert-success d-flex align-items-center mb-4" style="background: #e8f5e9; border-color: #c8e6c9; color: #1b5e20;">
                     <i class="fa fa-shield fa-2x mr-3 text-success"></i>
                     <div class="small">
-                        Dokumen Autonomous Maintenance Check Sheet ini telah ditandatangani secara elektronik resmi sesuai standar CPOB / BPOM dan tersimpan dalam audit trail sistem.
+                        Identitas penandatangan, waktu tanda tangan, dan hash isi dokumen cocok dengan rekaman audit internal sistem.
                     </div>
                 </div>
 

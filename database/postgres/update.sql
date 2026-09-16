@@ -26,12 +26,22 @@ CREATE TABLE IF NOT EXISTS "am_period_signatures" (
   "tahun" integer NOT NULL CHECK ("tahun" BETWEEN 2020 AND 2100),
   "periode" integer NOT NULL CHECK ("periode" IN (1, 2)),
   "document_hash" varchar(64) NOT NULL,
+  "document_payload" jsonb NOT NULL DEFAULT '{}'::jsonb,
+  "signature_version" smallint NOT NULL DEFAULT 2,
   "operator_id" integer NULL REFERENCES "users"("id_user") ON DELETE SET NULL,
   "operator_signed_at" timestamp NULL,
   "operator_token" varchar(64) UNIQUE NULL,
+  "operator_name" varchar(255) NULL,
+  "operator_username" varchar(100) NULL,
+  "operator_role_id" integer NULL,
+  "operator_signature_mac" varchar(64) NULL,
   "spv_id" integer NULL REFERENCES "users"("id_user") ON DELETE SET NULL,
   "spv_signed_at" timestamp NULL,
   "spv_token" varchar(64) UNIQUE NULL,
+  "spv_name" varchar(255) NULL,
+  "spv_username" varchar(100) NULL,
+  "spv_role_id" integer NULL,
+  "spv_signature_mac" varchar(64) NULL,
   "status" varchar(20) NOT NULL DEFAULT 'draft',
   "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp NULL,
@@ -42,6 +52,50 @@ CREATE INDEX IF NOT EXISTS "idx_aps_operator_token"
   ON "am_period_signatures" ("operator_token") WHERE "operator_token" IS NOT NULL;
 CREATE INDEX IF NOT EXISTS "idx_aps_spv_token"
   ON "am_period_signatures" ("spv_token") WHERE "spv_token" IS NOT NULL;
+
+-- Upgrade tanda tangan v1 tidak kompatibel: hapus approval lama sekali saat
+-- kolom v2 pertama kali diperkenalkan, lalu simpan snapshot identitas signer.
+DO $$
+DECLARE had_v2 boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'am_period_signatures'
+      AND column_name = 'signature_version'
+  ) INTO had_v2;
+
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "document_payload" jsonb NOT NULL DEFAULT '{}'::jsonb;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "signature_version" smallint NOT NULL DEFAULT 2;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "operator_name" varchar(255) NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "operator_username" varchar(100) NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "operator_role_id" integer NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "operator_signature_mac" varchar(64) NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "spv_name" varchar(255) NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "spv_username" varchar(100) NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "spv_role_id" integer NULL;
+  ALTER TABLE "am_period_signatures" ADD COLUMN IF NOT EXISTS "spv_signature_mac" varchar(64) NULL;
+
+  IF NOT had_v2 THEN DELETE FROM "am_period_signatures"; END IF;
+END $$;
+
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b',
+    'chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5',
+    'best_pack', 'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer',
+    'storage_tank', 'storage_tank_tetrapak', 'mixing_tank', 'granulator',
+    'check_weigher', 'conveyor_sig'
+  ] LOOP
+    EXECUTE format('ALTER TABLE public.%I DROP COLUMN IF EXISTS no_wr', 'kendala_' || t);
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before varchar(255)', 'kendala_' || t);
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_sha256 char(64)', 'kendala_' || t);
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_mime varchar(50)', 'kendala_' || t);
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_size integer', 'kendala_' || t);
+  END LOOP;
+END $$;
 
 ALTER TABLE "users" DROP COLUMN IF EXISTS "login_session_key";
 

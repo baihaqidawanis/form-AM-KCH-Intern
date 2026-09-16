@@ -122,15 +122,10 @@ define("DB_NAME", env("DB_NAME", "form_am_plg"));
 define("DB_TYPE", env("DB_TYPE", "mysql"));
 define("DB_PORT", env("DB_PORT", "3306"));
 define("DB_CHARSET", env("DB_CHARSET", "utf8"));
+define("SIGNATURE_HMAC_KEY", (string)env("SIGNATURE_HMAC_KEY", ""));
 
 define("MAX_RECORD_COUNT", 20); //Default Max Records to Retrieve  per Page
 define("ORDER_TYPE", "DESC");  //Default Order Type
-
-// URS 1.3: session berakhir setelah 30 menit idle (mouse/keyboard/touch).
-// Bisa di-override lewat .env KHUSUS buat automated testing (Playwright, tests/e2e/)
-// biar gak perlu nunggu 30 menit beneran tiap jalanin test -- JANGAN di-set di
-// .env production, defaultnya tetap 30 menit kalau env var-nya gak ada.
-define("SESSION_TIMEOUT_SECONDS", intval(env("SESSION_TIMEOUT_SECONDS", 30 * 60)));
 
 // Active User Profile Details
 define('USER_ID', (isset($_SESSION[APP_ID . 'user_data']) ? $_SESSION[APP_ID . 'user_data']['id_user'] : null));

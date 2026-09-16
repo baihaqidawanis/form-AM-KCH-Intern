@@ -219,6 +219,7 @@ class Menu
 	public static function kondisi_options($highlight = '')
 	{
 		$options = self::$Kondisi_Harian;
+		$options[] = array("value" => "ON_PROCESS_RED_TAG", "label" => "On Process Red Tag");
 		if ($highlight === 'mingguan' || $highlight === 'bulanan') {
 			$options[] = array("value" => "N/A", "label" => "Tidak Dilakukan");
 		}
@@ -233,6 +234,10 @@ class Menu
 		array(
 			"value" => "NOK",
 			"label" => "Kondisi Tidak Baik",
+		),
+		array(
+			"value" => "ON_PROCESS_RED_TAG",
+			"label" => "On Process Red Tag",
 		),
 		array(
 			"value" => "N/A",

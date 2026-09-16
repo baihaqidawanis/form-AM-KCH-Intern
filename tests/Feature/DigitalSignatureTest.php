@@ -89,18 +89,16 @@ class DigitalSignatureTest extends TestCase
 			$this->assertNotNull($verifiedOp);
 			$this->assertSame('Operator Produksi', $verifiedOp['verified_role']);
 			$this->assertSame($docHash, $verifiedOp['document_hash']);
-			$verifiedOpPrefix = QrSignatureHelper::getSignatureByToken(substr($resOp['token'], 0, 8));
-			$this->assertNotNull($verifiedOpPrefix);
-			$this->assertSame('Operator Produksi', $verifiedOpPrefix['verified_role']);
+			$this->assertTrue($verifiedOp['signature_authentic']);
+			$this->assertNull(QrSignatureHelper::getSignatureByToken(substr($resOp['token'], 0, 8)));
 
 			// 4. Verify lookup by SPV token
 			$verifiedSpv = QrSignatureHelper::getSignatureByToken($resSpv['token']);
 			$this->assertNotNull($verifiedSpv);
 			$this->assertSame('Supervisor', $verifiedSpv['verified_role']);
 			$this->assertSame('approved', $verifiedSpv['status']);
-			$verifiedSpvPrefix = QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 8));
-			$this->assertNotNull($verifiedSpvPrefix);
-			$this->assertSame('Supervisor', $verifiedSpvPrefix['verified_role']);
+			$this->assertTrue($verifiedSpv['signature_authentic']);
+			$this->assertNull(QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 8)));
 			$this->assertNull(QrSignatureHelper::getSignatureByToken(substr($resSpv['token'], 0, 7)));
 		} finally {
 			// Cleanup hanya menyasar namespace data milik test ini.
@@ -366,6 +364,7 @@ class DigitalSignatureTest extends TestCase
 			'month' => $record['month'],
 			'period' => $record['period'],
 			'role_type' => 'operator',
+			'password' => 'Test@1234',
 		);
 	}
 

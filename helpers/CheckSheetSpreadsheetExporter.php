@@ -294,7 +294,7 @@ class CheckSheetSpreadsheetExporter
                         $value   = '';
                         $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
                         if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
-                        $symbol = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : ''));
+                        $symbol = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'ON_PROCESS_RED_TAG' ? self::symbol('process') : ($value === 'OK' ? self::symbol('ok') : '')));
                         $isNok  = ($value === 'NOK');
                         $sheet->setCellValue($col . $row, $symbol);
                         self::applyStyle($sheet, $col . $row, [
@@ -359,7 +359,7 @@ class CheckSheetSpreadsheetExporter
 
         // Keterangan row
         $sheet->getRowDimension($row)->setRowHeight(18);
-        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('deactive') . ') Deaktivasi Mesin';
+        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process Red Tag | (' . self::symbol('deactive') . ') Deaktivasi Mesin';
         $doc = 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1';
         $refCol = self::colLetter($totalCols - 4);
         $sheet->setCellValue('A' . $row, $ket);
@@ -578,6 +578,7 @@ class CheckSheetSpreadsheetExporter
         return [
             'ok'       => "\xE2\x9C\x93",
             'nok'      => "\xC3\x97",
+            'process'  => "\xE2\x80\xA2",
             'deactive' => "\xE2\x80\x94",
         ][$type] ?? '';
     }

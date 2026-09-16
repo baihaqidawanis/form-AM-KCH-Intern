@@ -88,7 +88,7 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
             <a class="btn btn-sm btn-outline-primary" href="<?php print_link('illapak_1_2/add'); ?>">Ganti shift</a>
           </div>
           <form id="illapak_1_2-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("illapak_1_2/add?csrf_token=$csrf_token") ?>" method="post">
+            action="<?php print_link("illapak_1_2/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
             <input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>">
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select
                 required id="ctrl-mesin" name="mesin" class="custom-select">
@@ -198,7 +198,7 @@ $page_element_id = 'illapak_1_2-add-' . random_str();
                               <option value="">Pilih ...</option>
                             </select></div>
                         </div>
-                      <?php include dirname(__DIR__) . '/machine_no_wr_field.php'; ?>
+                      <?php include dirname(__DIR__) . '/machine_nok_evidence_field.php'; ?>
                     </div>
                     </div>
                   </div>

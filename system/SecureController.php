@@ -36,19 +36,6 @@ class SecureController extends BaseController{
 	 */
 	private function authenticate_user()
 	{
-		//URS 1.3: session timeout 30 menit idle. Ini backstop server-side --
-		//pengecekan utama (deteksi idle + peringatan) jalan di sisi client lewat
-		//assets/js/idle-timeout.js, ini cuma jaga-jaga kalau JS gak jalan/nonaktif.
-		if (user_login_status() == true) {
-			$last_activity = get_session("last_activity");
-			if (!empty($last_activity) && (time() - $last_activity) > SESSION_TIMEOUT_SECONDS) {
-				clear_session("user_data");
-				clear_session("last_activity");
-				set_session("session_timed_out", true);
-				return false;
-			}
-			set_session("last_activity", time());
-		}
 		return user_login_status();
 	}
 }

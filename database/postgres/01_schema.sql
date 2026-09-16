@@ -95,7 +95,6 @@ CREATE TABLE IF NOT EXISTS "kendala_sig" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -183,7 +182,6 @@ CREATE TABLE IF NOT EXISTS "kendala_joeya" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -236,7 +234,6 @@ CREATE TABLE IF NOT EXISTS "kendala_illapak_1_2" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) NOT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "klasifikasi_tag" integer DEFAULT NULL,
@@ -289,7 +286,6 @@ CREATE TABLE IF NOT EXISTS "kendala_illapak_3_12" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) NOT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "klasifikasi_tag" integer DEFAULT NULL,
@@ -339,7 +335,6 @@ CREATE TABLE IF NOT EXISTS "kendala_unifill_b" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -385,7 +380,6 @@ CREATE TABLE IF NOT EXISTS "kendala_chimei" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -431,7 +425,6 @@ CREATE TABLE IF NOT EXISTS "kendala_temach" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -479,7 +472,6 @@ CREATE TABLE IF NOT EXISTS "kendala_jihcheng" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -524,7 +516,6 @@ CREATE TABLE IF NOT EXISTS "kendala_jinsung_1_4" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -569,7 +560,6 @@ CREATE TABLE IF NOT EXISTS "kendala_jinsung_5" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -612,7 +602,6 @@ CREATE TABLE IF NOT EXISTS "kendala_best_pack" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -656,7 +645,6 @@ CREATE TABLE IF NOT EXISTS "kendala_cosmec" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -704,7 +692,6 @@ CREATE TABLE IF NOT EXISTS "kendala_fbd_jaw_chuan" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -752,7 +739,6 @@ CREATE TABLE IF NOT EXISTS "kendala_fbd_glatt" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -796,7 +782,6 @@ CREATE TABLE IF NOT EXISTS "kendala_supermixer" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -840,7 +825,6 @@ CREATE TABLE IF NOT EXISTS "kendala_storage_tank" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -883,7 +867,6 @@ CREATE TABLE IF NOT EXISTS "kendala_storage_tank_tetrapak" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -925,7 +908,6 @@ CREATE TABLE IF NOT EXISTS "kendala_mixing_tank" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -1026,7 +1008,6 @@ CREATE TABLE IF NOT EXISTS "kendala_granulator" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -1071,7 +1052,6 @@ CREATE TABLE IF NOT EXISTS "kendala_check_weigher" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -1117,7 +1097,6 @@ CREATE TABLE IF NOT EXISTS "kendala_conveyor_sig" (
   "mesin" integer DEFAULT NULL,
   "nama_bagian" varchar(255) DEFAULT NULL,
   "kendala" text DEFAULT NULL,
-  "no_wr" varchar(20) DEFAULT NULL,
   "kategori_tag" integer DEFAULT NULL,
   "korelasi_tag" integer DEFAULT NULL,
   "kategori_ketidaksesuaian" integer DEFAULT NULL,
@@ -1127,7 +1106,7 @@ CREATE TABLE IF NOT EXISTS "kendala_conveyor_sig" (
 );
 
 -- Baseline fresh start: seluruh mesin mendukung shift dinamis, tanggal
--- operasional, Nomor WR, dan hard guard duplikat pada level PostgreSQL.
+-- operasional, bukti foto NOK, dan hard guard duplikat pada level PostgreSQL.
 DO $$
 DECLARE
     t text;
@@ -1142,7 +1121,11 @@ BEGIN
     LOOP
         EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS shift varchar(1) DEFAULT NULL', 'tb_mesin_' || t);
         EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS operational_date date NULL', 'tb_mesin_' || t);
-        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS no_wr varchar(20) DEFAULT NULL', 'kendala_' || t);
+        EXECUTE format('ALTER TABLE public.%I DROP COLUMN IF EXISTS no_wr', 'kendala_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before varchar(255) DEFAULT NULL', 'kendala_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_sha256 char(64) DEFAULT NULL', 'kendala_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_mime varchar(50) DEFAULT NULL', 'kendala_' || t);
+        EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_size integer DEFAULT NULL', 'kendala_' || t);
 
         -- Nama lama dibersihkan agar schema tetap idempotent pada database dev.
         EXECUTE format('DROP INDEX IF EXISTS public.%I', 'uq_tb_mesin_' || t || '_operational');
@@ -1184,12 +1167,22 @@ CREATE TABLE IF NOT EXISTS "am_period_signatures" (
   "tahun" integer NOT NULL CHECK ("tahun" BETWEEN 2020 AND 2100),
   "periode" integer NOT NULL CHECK ("periode" IN (1, 2)),
   "document_hash" varchar(64) NOT NULL,
+  "document_payload" jsonb NOT NULL DEFAULT '{}'::jsonb,
+  "signature_version" smallint NOT NULL DEFAULT 2,
   "operator_id" integer NULL REFERENCES "users"("id_user") ON DELETE SET NULL,
   "operator_signed_at" timestamp NULL,
   "operator_token" varchar(64) UNIQUE NULL,
+  "operator_name" varchar(255) NULL,
+  "operator_username" varchar(100) NULL,
+  "operator_role_id" integer NULL,
+  "operator_signature_mac" varchar(64) NULL,
   "spv_id" integer NULL REFERENCES "users"("id_user") ON DELETE SET NULL,
   "spv_signed_at" timestamp NULL,
   "spv_token" varchar(64) UNIQUE NULL,
+  "spv_name" varchar(255) NULL,
+  "spv_username" varchar(100) NULL,
+  "spv_role_id" integer NULL,
+  "spv_signature_mac" varchar(64) NULL,
   "status" varchar(20) NOT NULL DEFAULT 'draft',
   "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp NULL,

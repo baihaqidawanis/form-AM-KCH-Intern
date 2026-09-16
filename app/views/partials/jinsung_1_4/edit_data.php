@@ -38,7 +38,7 @@ $rec_id = !empty($data['id_jinsung_1_4']) ? $data['id_jinsung_1_4'] : null;
         <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="jinsung_1_4-edit-data-form" class="form page-form needs-validation" novalidate
-        action="<?php print_link("jinsung_1_4/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post">
+        action="<?php print_link("jinsung_1_4/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
         <?php if (!empty($data['shift'])) { ?>
           <input type="hidden" name="shift" value="<?php echo htmlspecialchars($data['shift']); ?>">
         <?php } ?>
@@ -131,7 +131,7 @@ $rec_id = !empty($data['id_jinsung_1_4']) ? $data['id_jinsung_1_4'] : null;
                         </select>
                     </div>
                     </div>
-                    <?php include dirname(__DIR__) . '/machine_no_wr_field.php'; ?>
+                    <?php include dirname(__DIR__) . '/machine_nok_evidence_field.php'; ?>
                   </div>
                 </div>
               </div>

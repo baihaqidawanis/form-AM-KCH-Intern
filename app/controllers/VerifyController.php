@@ -59,15 +59,9 @@ class VerifyController extends BaseController
 						$signature['tahun'],
 						$signature['periode']
 					);
-					$current_document_hash = QrSignatureHelper::computeDocumentHash(
-						$signature['mesin_slug'],
-						$signature['mesin_id'],
-						$signature['bulan'],
-						$signature['tahun'],
-						$signature['periode'],
-						$state['checks']
-					);
-					$integrity_valid = hash_equals((string)$signature['document_hash'], $current_document_hash);
+					$current_document_hash = $state['document_hash'];
+					$integrity_valid = !empty($signature['signature_authentic'])
+						&& hash_equals((string)$signature['document_hash'], $current_document_hash);
 				} catch (Throwable $e) {
 					error_log('QR signature re-hash failed: ' . $e->getMessage());
 				}
