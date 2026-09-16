@@ -5,5 +5,5 @@
   <?php if ($existing_photo) { ?>
     <div class="mb-2"><a class="part-image-link" target="_blank" href="<?php print_link($existing_photo); ?>"><img src="<?php print_link($existing_photo); ?>" alt="Foto Before" style="max-width:160px;max-height:120px;border-radius:8px;border:1px solid #ddd"></a></div>
   <?php } ?>
-  <div class="mb-2"><label class="small">Upload dari perangkat</label><input type="file" name="foto_before_<?php echo $field; ?>" class="form-control-file nok-photo-input" accept="image/jpeg,image/png,image/webp"></div>
+  <div class="mb-2"><label class="small">Upload dari perangkat</label><input type="file" name="foto_before_<?php echo $field; ?>" class="form-control-file nok-photo-input" accept="image/jpeg,image/png,image/webp"><button type="button" class="btn btn-sm btn-outline-secondary mt-2 nok-photo-cancel d-none">Batalkan pilihan foto</button></div>
 </div>

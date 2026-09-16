@@ -215,17 +215,27 @@
 					$machine.on('change', updateOnProcess); updateOnProcess();
 
 					$form.on('change', '.nok-photo-input', function(){
-
 						if (this.files && this.files[0] && this.files[0].size > 5 * 1024 * 1024) {
 							alert('Foto Before maksimal 5 MB.'); $(this).val('');
 						}
+						$(this).siblings('.nok-photo-cancel').toggleClass('d-none', !(this.files && this.files.length));
 					});
+					$form.on('click', '.nok-photo-cancel', function(){
+						$(this).siblings('.nok-photo-input').val('');
+						$(this).addClass('d-none');
+					});
+					function syncNokPhotoBox($card) {
+						var $box = $card.find('.nok-photo-box');
+						var isNok = $card.find('.part-kondisi[value="NOK"]').is(':checked');
+						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); }
+						$box.toggle(isNok);
+						var required = isNok && $box.attr('data-existing-photo') !== '1';
+						$box.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');
+					}
 					$form.on('change', '.part-kondisi', function(){
-						var $card = $(this).closest('.part-card');
-						var required = $card.find('.part-kondisi[value="NOK"]').is(':checked') && $card.find('.nok-photo-box').attr('data-existing-photo') !== '1';
-						// Server tetap mewajibkan satu foto untuk setiap part NOK.
-						$card.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');
+						syncNokPhotoBox($(this).closest('.part-card'));
 					});
+					$form.find('.part-card').each(function(){ syncNokPhotoBox($(this)); });
 					$form.on('submit', function(e){
 						var missing = false;
 						$form.find('.part-card').each(function(){
