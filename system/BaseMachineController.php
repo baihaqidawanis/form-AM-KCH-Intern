@@ -668,6 +668,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 		}
 		$part_details = $this->partDetailsForRows($rows, $start);
+		list($report_parts, $display_checks) = $this->periodReportDisplay($rows, $start, $end);
 
 		// Ambil riwayat status deaktivasi unit ini pada rentang periode
 		$deactivation_rows = $db->where('mesin_id', $mesin)
@@ -776,6 +777,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'parts' => $this->partsForRows($rows, $start),
 			'part_details' => $part_details,
 			'checks' => $checks,
+			'report_parts' => $report_parts,
+			'display_checks' => $display_checks,
 			'deactivated_days' => $deactivated_days,
 			'deactivation_records' => $deactivation_rows,
 			'daily_paraf' => $daily_paraf,
@@ -1111,6 +1114,56 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'checks' => $checks,
 			'document_hash' => QrSignatureHelper::computeDocumentHash($this->machineKey, $mesin, $month, $year, $period, $checks),
 		);
+	}
+
+	/**
+	 * Data tampilan check sheet periode harus berasal dari snapshot form, bukan
+	 * dari Master Part yang berlaku hari ini. Satu part dapat memiliki beberapa
+	 * versi deskripsi dalam satu periode; jadwal shift tidak membuat versi baru.
+	 */
+	protected function periodReportDisplay($rows, $start, $end)
+	{
+		$parts = array(); $checks = array(); $latest_version = array();
+		foreach ($rows as $row) {
+			$day = intval((new DateTime($row['operational_date']))->format('j'));
+			$shift = trim((string)($row['shift'] ?? '')) ?: '1';
+			foreach ($this->partDetailsForRecord($row['operational_date'], $row['created_at'] ?? null, $row[$this->idColumn()] ?? null) as $part) {
+				$field = (string)($part['field_name'] ?? '');
+				if ($field === '') { continue; }
+				// Shift adalah konfigurasi form, bukan bagian dari teks/deskripsi part.
+				$identity = array($field, $part['label'] ?? '', $part['section'] ?? '', $part['metode'] ?? '', $part['alat'] ?? '', $part['standard'] ?? '', $part['durasi'] ?? '', $part['pelaksanaan'] ?? '', $part['highlight'] ?? '', $part['image_path'] ?? '');
+				$key = $field . '-' . substr(sha1(json_encode($identity)), 0, 12);
+				if (!isset($parts[$key])) {
+					$part['display_id'] = $key; $part['active_days'] = array();
+					$part['schedule_by_day'] = array(); $part['shifts'] = array();
+					$parts[$key] = $part;
+				}
+				$raw_schedule = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
+				$schedule = array_values(array_intersect($raw_schedule, array('1', '2', '3'))) ?: array('1');
+				$parts[$key]['active_days'][$day] = true;
+				$parts[$key]['schedule_by_day'][$day] = $schedule;
+				if (!isset($latest_version[$field]) || $day >= $latest_version[$field]['day']) {
+					$latest_version[$field] = array('day' => $day, 'key' => $key);
+				}
+				foreach ($schedule as $scheduled_shift) { $parts[$key]['shifts'][$scheduled_shift] = true; }
+				if (!empty($row[$field])) { $checks[$key][$day][$shift] = $row[$field]; }
+			}
+		}
+
+		// TO adalah status part, berbeda dari deaktivasi unit mesin.
+		$taken_out = $this->GetModel()->where('machine_key', $this->machineKey)
+			->where('taken_out_at', $end . ' 23:59:59', '<=')->where('taken_out_at', null, 'IS NOT')
+			->get('master_part', null, array('field_name', 'taken_out_at'));
+		foreach ($taken_out as $row) {
+			$field = (string)($row['field_name'] ?? '');
+			$to_date = (new DateTime($row['taken_out_at']))->format('Y-m-d');
+			$to_day = $to_date <= $start ? intval((new DateTime($start))->format('j')) : intval((new DateTime($row['taken_out_at']))->format('j'));
+			$key = $latest_version[$field]['key'] ?? null;
+			if ($key !== null && isset($parts[$key])) { $parts[$key]['taken_out_from_day'] = $to_day; }
+		}
+		foreach ($parts as &$part) { $part['shifts'] = array_keys($part['shifts']); sort($part['shifts'], SORT_NUMERIC); }
+		unset($part);
+		return array(array_values($parts), $checks);
 	}
 
 	/** Sign period document digitally (Operator or SPV). */

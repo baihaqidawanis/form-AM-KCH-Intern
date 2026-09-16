@@ -267,6 +267,40 @@ h4 > b {
     color: var(--ak-green) !important;
 }
 
+/* Desktop navigation stays fixed; only the Form AM content scrolls. */
+@media (min-width: 992px) {
+    #sidebar {
+        position: fixed;
+        top: 50px;
+        bottom: 0;
+        height: calc(100vh - 50px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 1020;
+        scrollbar-width: thin;
+        scrollbar-color: #9aa0a6 transparent;
+    }
+    #sidebar::-webkit-scrollbar { width: 10px; }
+    #sidebar::-webkit-scrollbar-track {
+        margin: 10px 2px;
+        background: transparent;
+        border-radius: 999px;
+    }
+    #sidebar::-webkit-scrollbar-thumb {
+        background: #9aa0a6;
+        border: 3px solid #fff;
+        border-radius: 999px;
+    }
+    #sidebar::-webkit-scrollbar-thumb:hover { background: #6e6e73; }
+    #main #main-content {
+        margin-left: 250px;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    #main #main-content { margin-left: 220px; }
+}
+
 /* ==========================================================================
    Cards & Surfaces
    ========================================================================== */

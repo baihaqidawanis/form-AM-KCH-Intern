@@ -24,13 +24,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 class CheckSheetSpreadsheetExporter
 {
     private const COLOR_BLACK  = 'FF000000';
-    private const COLOR_WHITE  = 'FFFFFFFF';
     private const COLOR_GRAY   = 'FFF2F2F2';
-    private const COLOR_HEADER = 'FF009639'; // Kalbe green
+    private const COLOR_HEADER = 'FFFFFFFF';
 
-    private const ROW_LOGO_HEIGHT    = 70;
-    private const ROW_HEADER_HEIGHT  = 20;
-    private const ROW_DATA_HEIGHT    = 50;
+    private const ROW_LOGO_HEIGHT    = 18;
+    private const ROW_HEADER_HEIGHT  = 18;
+    private const ROW_DATA_HEIGHT    = 18;
     private const ROW_SECTION_HEIGHT = 15;
     private const ROW_FOOTER_HEIGHT  = 15;
 
@@ -73,11 +72,12 @@ class CheckSheetSpreadsheetExporter
             ->setPaperSize(PageSetup::PAPERSIZE_A4)
             ->setFitToPage(true)
             ->setFitToWidth(1)
-            ->setFitToHeight(0);
+            ->setFitToHeight(1);
         $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 6);
         $sheet->getPageMargins()->setTop(0.39)->setBottom(0.39)
             ->setLeft(0.39)->setRight(0.39)->setHeader(0)->setFooter(0);
         $sheet->setShowGridlines(false);
+        $sheet->getSheetView()->setZoomScale(80);
 
         // Apply column widths inline
         $colWidths = ['A'=>13,'B'=>5,'C'=>26,'D'=>14,'E'=>13,'F'=>36,'G'=>7,'H'=>17];
@@ -92,7 +92,8 @@ class CheckSheetSpreadsheetExporter
         $nextRow = self::buildHeader($sheet, $d, $totalCols, $days);
         $nextRow = self::buildColumnHeaders($sheet, $nextRow, $days, $totalCols);
         $nextRow = self::buildDataRows($sheet, $d, $nextRow, $days, $totalCols);
-        self::buildFooter($sheet, $d, $nextRow, $days, $totalCols);
+        $lastRow = self::buildFooter($sheet, $d, $nextRow, $days, $totalCols);
+        $sheet->getPageSetup()->setPrintArea('A1:' . self::colLetter($totalCols - 1) . $lastRow);
 
         return $spreadsheet;
     }
@@ -102,13 +103,15 @@ class CheckSheetSpreadsheetExporter
     private static function buildHeader($sheet, array $d, int $totalCols, array $days): int
     {
         $lastCol      = self::colLetter($totalCols - 1);
-        $sigStart     = $totalCols - 4;
-        $titleEnd     = $sigStart - 1;
+        // Reserve the last 20% of the sheet for signatures, matching the PDF.
+        $sigStart     = $totalCols - 5;
         $sigC1        = self::colLetter($sigStart);
         $sigC2        = self::colLetter($sigStart + 2);
 
         $sheet->getRowDimension(1)->setRowHeight(self::ROW_LOGO_HEIGHT);
-        foreach ([2, 3, 4] as $r) { $sheet->getRowDimension($r)->setRowHeight(22); }
+        $sheet->getRowDimension(2)->setRowHeight(46);
+        $sheet->getRowDimension(3)->setRowHeight(18);
+        $sheet->getRowDimension(4)->setRowHeight(14);
         $sheet->getRowDimension(5)->setRowHeight(16);
 
         $bStyle = self::baseBorderStyle();
@@ -117,7 +120,7 @@ class CheckSheetSpreadsheetExporter
 
         // Logo cell
         $sheet->setCellValue('A1', "KALBE\nConsumer Health");
-        self::applyStyle($sheet, 'A1', $bStyle + [
+        self::applyStyle($sheet, 'A1:C4', $bStyle + [
             'font' => ['bold' => true, 'size' => 9],
             'alignment' => $centerWrap,
         ]);
@@ -125,37 +128,40 @@ class CheckSheetSpreadsheetExporter
 
         // Title
         $sheet->setCellValue('D1', "PT. BINTANG TOEDJOE\nTotal Productive Maintenance\nSite Pulo Gadung");
-        self::applyStyle($sheet, 'D1', $bStyle + ['font' => ['bold' => true, 'size' => 9], 'alignment' => $centerWrap]);
-        $sheet->mergeCells('D1:' . self::colLetter($titleEnd) . '4');
+        self::applyStyle($sheet, 'D1:H4', $bStyle + ['font' => ['bold' => true, 'size' => 9], 'alignment' => $centerWrap]);
+        $sheet->mergeCells('D1:H4');
 
         // AM Standard
         $amEnd = self::colLetter($sigStart - 1);
         $sheet->setCellValue('I1', "AUTONOMOUS MAINTENANCE STANDARD\nCheck Sheet Kerja\nSaya Pakai, Saya Rawat");
-        self::applyStyle($sheet, 'I1', $bStyle + ['font' => ['bold' => true, 'size' => 9], 'alignment' => $centerWrap]);
+        self::applyStyle($sheet, 'I1:' . $amEnd . '4', $bStyle + ['font' => ['bold' => true, 'size' => 9], 'alignment' => $centerWrap]);
         if ('I' !== $amEnd) { $sheet->mergeCells('I1:' . $amEnd . '4'); }
 
         // Sig labels
-        $operatorName = $d['period_signature']['operator_user']['nama'] ?? '(Belum TTD)';
-        $spvName      = $d['period_signature']['spv_user']['nama']      ?? '(Belum TTD)';
+        $operatorName = $d['period_signature']['operator_user']['nama'] ?? 'Operator';
+        $spvName      = $d['period_signature']['spv_user']['nama']      ?? 'Supervisor';
+        $operatorSigned = !empty($d['period_signature']['operator_token']);
+        $spvSigned      = !empty($d['period_signature']['spv_token']);
         $opDetail     = self::signatureDetail($d, 'operator');
         $spvDetail    = self::signatureDetail($d, 'spv');
         $periodText   = self::monthName((int)$d['month']) . ' ' . $d['year'] . ' (P' . $d['period'] . ')';
 
         $sigData = [
             1 => ["Diperiksa Oleh\nOperator Produksi", "Disetujui Oleh\nSupervisor"],
-            2 => [$operatorName, $spvName],
-            3 => [$opDetail,     $spvDetail],
+            2 => [$operatorSigned ? '' : '(Belum TTD)', $spvSigned ? '' : '(Belum TTD)'],
+            3 => [$operatorSigned ? $operatorName . PHP_EOL . $opDetail : '',
+                  $spvSigned ? $spvName . PHP_EOL . $spvDetail : ''],
         ];
 
         foreach ($sigData as $r => [$v1, $v2]) {
             $sheet->setCellValue($sigC1 . $r, $v1);
             $sheet->setCellValue($sigC2 . $r, $v2);
             $isBold = ($r === 1);
-            self::applyStyle($sheet, $sigC1 . $r, $bStyle + [
+            self::applyStyle($sheet, $sigC1 . $r . ':' . self::colLetter($sigStart + 1) . $r, $bStyle + [
                 'font' => ['bold' => $isBold, 'size' => $r === 3 ? 7 : 8],
                 'alignment' => $centerWrap,
             ]);
-            self::applyStyle($sheet, $sigC2 . $r, $bStyle + [
+            self::applyStyle($sheet, $sigC2 . $r . ':' . $lastCol . $r, $bStyle + [
                 'font' => ['bold' => $isBold, 'size' => $r === 3 ? 7 : 8],
                 'alignment' => $centerWrap,
             ]);
@@ -165,7 +171,7 @@ class CheckSheetSpreadsheetExporter
 
         // Period row 4
         $sheet->setCellValue($sigC1 . '4', 'Periode: ' . $periodText);
-        self::applyStyle($sheet, $sigC1 . '4', $bStyle + [
+        self::applyStyle($sheet, $sigC1 . '4:' . $lastCol . '4', $bStyle + [
             'font' => ['bold' => true, 'size' => 8],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
@@ -205,7 +211,7 @@ class CheckSheetSpreadsheetExporter
             $cell = self::colLetter($i) . $row;
             $sheet->setCellValue($cell, $h);
             self::applyStyle($sheet, $cell, [
-                'font'      => ['bold' => true, 'size' => 8, 'color' => ['argb' => self::COLOR_WHITE]],
+                'font'      => ['bold' => true, 'size' => 8, 'color' => ['argb' => self::COLOR_BLACK]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER,
                                 'vertical'   => Alignment::VERTICAL_CENTER, 'wrapText' => true],
                 'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => self::COLOR_HEADER]],
@@ -224,7 +230,9 @@ class CheckSheetSpreadsheetExporter
         $lastSection = null;
         $lastCol     = self::colLetter($totalCols - 1);
 
-        foreach (($d['part_details'] ?? []) as $part) {
+        $reportParts = $d['report_parts'] ?? ($d['part_details'] ?? []);
+        $displayChecks = $d['display_checks'] ?? ($d['checks'] ?? []);
+        foreach ($reportParts as $part) {
             if (($part['section'] ?? '') !== $lastSection) {
                 $lastSection = (string)($part['section'] ?? '');
                 $sheet->getRowDimension($row)->setRowHeight(self::ROW_SECTION_HEIGHT);
@@ -242,14 +250,13 @@ class CheckSheetSpreadsheetExporter
             }
 
             $number++;
-            $field    = (string)$part['field_name'];
-            $shifts   = self::shiftsForPart($part, $d['checks'][$field] ?? []);
+            $field    = (string)($part['display_id'] ?? $part['field_name']);
+            $shifts   = $part['shifts'] ?? self::shiftsForPart($part, $displayChecks[$field] ?? []);
             $startR   = $row;
             $hasPhoto = !empty($part['image_path']);
 
             foreach ($shifts as $shiftOffset => $shift) {
-                $rowH = ($shiftOffset === 0 && $hasPhoto) ? self::ROW_DATA_HEIGHT : 18;
-                $sheet->getRowDimension($row)->setRowHeight($rowH);
+                $sheet->getRowDimension($row)->setRowHeight(self::ROW_DATA_HEIGHT);
 
                 if ($shiftOffset === 0) {
                     $sheet->setCellValue('A' . $row, '');
@@ -261,12 +268,19 @@ class CheckSheetSpreadsheetExporter
                     $sheet->setCellValue('G' . $row, (string)($part['durasi']   ?? ''));
                 }
 
-                $pelak = count($shifts) > 1 ? 'Awal Shift ' . $shift : (string)($part['pelaksanaan'] ?? '');
+                $pelak = count($shifts) === 1
+                    ? (string)($part['pelaksanaan'] ?? '')
+                    : (($shiftOffset === 0 ? (string)($part['pelaksanaan'] ?? '') . "\n" : '') . 'Shift ' . $shift);
                 $sheet->setCellValue('H' . $row, $pelak);
 
                 foreach ($days as $dayOffset => $day) {
                     $col = self::colLetter(8 + $dayOffset);
-                    if (isset($d['deactivated_days'][$day])) {
+                    $schedule = $part['schedule_by_day'][$day] ?? null;
+                    $isTakenOut = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
+                    if ($isTakenOut) {
+                        $sheet->setCellValue($col . $row, 'TO');
+                        self::applyStyle($sheet, $col . $row, ['font' => ['bold' => true, 'size' => 7], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFE9ECEF']], 'borders' => self::thinBorders()]);
+                    } elseif (isset($d['deactivated_days'][$day])) {
                         $sheet->setCellValue($col . $row, self::symbol('deactive'));
                         self::applyStyle($sheet, $col . $row, [
                             'font'      => ['size' => 8],
@@ -276,14 +290,11 @@ class CheckSheetSpreadsheetExporter
                             'borders'   => self::thinBorders(),
                         ]);
                     } else {
-                        $entries = $d['checks'][$field][$day] ?? [];
+                        $entries = $displayChecks[$field][$day] ?? [];
                         $value   = '';
-                        if (count($shifts) > 1) {
-                            $value = $entries[(string)$shift] ?? ($shiftOffset === 0 ? ($entries['__default__'] ?? '') : '');
-                        } elseif (!empty($entries)) {
-                            $value = in_array('NOK', $entries, true) ? 'NOK' : reset($entries);
-                        }
-                        $symbol = $value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : '');
+                        $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
+                        if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
+                        $symbol = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : ''));
                         $isNok  = ($value === 'NOK');
                         $sheet->setCellValue($col . $row, $symbol);
                         self::applyStyle($sheet, $col . $row, [
@@ -318,7 +329,7 @@ class CheckSheetSpreadsheetExporter
             }
 
             if ($hasPhoto) {
-                self::embedPartPhoto($sheet, $part['image_path'], $startR);
+                self::embedPartPhoto($sheet, $part['image_path'], $startR, $row - 1);
             }
         }
 
@@ -327,7 +338,7 @@ class CheckSheetSpreadsheetExporter
 
     // ─── Footer ────────────────────────────────────────────────────────────────
 
-    private static function buildFooter($sheet, array $d, int $row, array $days, int $totalCols): void
+    private static function buildFooter($sheet, array $d, int $row, array $days, int $totalCols): int
     {
         $lastCol = self::colLetter($totalCols - 1);
         $bStyle  = self::baseBorderStyle();
@@ -362,6 +373,36 @@ class CheckSheetSpreadsheetExporter
         $sheet->mergeCells($refCol . $row . ':' . $lastCol . $row);
         $row++;
 
+        // Deactivation notes use data already prepared for the PDF report.
+        if (!empty($d['deactivation_records'])) {
+            $notes = ['Catatan Deaktivasi Mesin pada Periode Ini:'];
+            foreach ($d['deactivation_records'] as $record) {
+                $start = !empty($record['started_at']) ? date('d/m/Y H:i', strtotime($record['started_at'])) : '-';
+                $end = !empty($record['ended_at'])
+                    ? date('d/m/Y H:i', strtotime($record['ended_at']))
+                    : 'Sekarang (Masih Deaktivasi)';
+                $line = '- Periode: ' . $start . ' s/d ' . $end
+                    . ' - Alasan: ' . ($record['reason'] ?? '-');
+                if (!empty($record['notes'])) {
+                    $line .= ' (' . $record['notes'] . ')';
+                }
+                $line .= ' - Oleh: ' . ($record['action_by_username'] ?? '-');
+                $notes[] = $line;
+            }
+            $noteRange = 'A' . $row . ':' . $lastCol . $row;
+            $sheet->setCellValue('A' . $row, implode(PHP_EOL, $notes));
+            $sheet->getRowDimension($row)->setRowHeight(max(24, 11 * count($notes)));
+            self::applyStyle($sheet, $noteRange, [
+                'font' => ['bold' => false, 'size' => 7],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT,
+                    'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFF2CC']],
+                'borders' => self::thinBorders(),
+            ]);
+            $sheet->mergeCells($noteRange);
+            $row++;
+        }
+
         // Approval row
         $sheet->getRowDimension($row)->setRowHeight(16);
         $approval = !empty($d['all_approved']) ? 'APPROVED' : 'MENUNGGU APPROVAL';
@@ -372,6 +413,7 @@ class CheckSheetSpreadsheetExporter
             'alignment' => $centerAlign,
         ]);
         $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+        return $row;
     }
 
     // ─── Image helpers ─────────────────────────────────────────────────────────
@@ -414,7 +456,8 @@ class CheckSheetSpreadsheetExporter
     private static function generateQrPngForToken(string $token): ?string
     {
         if (!class_exists('QrSignatureHelper')) return null;
-        $verifyUrl = (defined('BASE_URL') ? rtrim(BASE_URL, '/') : '') . '/verify/' . urlencode($token);
+        $baseUrl = defined('SITE_ADDR') ? rtrim(SITE_ADDR, '/') : '';
+        $verifyUrl = $baseUrl . '/verify/signature/' . rawurlencode($token);
         try {
             $b64 = QrSignatureHelper::generateQrBase64($verifyUrl, 6, true);
             $pos = strpos($b64, ',');
@@ -422,7 +465,7 @@ class CheckSheetSpreadsheetExporter
         } catch (\Throwable $e) { return null; }
     }
 
-    private static function embedPartPhoto($sheet, string $imagePath, int $excelRow): void
+    private static function embedPartPhoto($sheet, string $imagePath, int $startRow, int $endRow): void
     {
         if (!$imagePath) return;
         $absPath = $imagePath;
@@ -432,9 +475,10 @@ class CheckSheetSpreadsheetExporter
         if (!file_exists($absPath)) return;
         try {
             $drawing = new Drawing();
-            $drawing->setName('Part_' . $excelRow)->setDescription('Part photo')
-                ->setPath($absPath)->setCoordinates('A' . $excelRow)
-                ->setOffsetX(3)->setOffsetY(3)->setHeight(44)
+            $availableHeight = max(18, (($endRow - $startRow + 1) * self::ROW_DATA_HEIGHT) - 5);
+            $drawing->setName('Part_' . $startRow)->setDescription('Part photo')
+                ->setPath($absPath)->setCoordinates('A' . $startRow)
+                ->setOffsetX(3)->setOffsetY(2)->setHeight((int)min(38, $availableHeight))
                 ->setWorksheet($sheet);
         } catch (\Throwable $e) { /* silently skip */ }
     }
@@ -494,11 +538,7 @@ class CheckSheetSpreadsheetExporter
             array_map('trim', explode(',', (string)($part['shift_schedule'] ?? ''))),
             fn($v) => in_array($v, ['1','2','3'], true)
         )));
-        if (empty($shifts) || $shifts === ['1']) {
-            if (preg_match('/(?<!\d)1\s*,\s*2(?:\s*,\s*3)?(?!\d)/', (string)($part['pelaksanaan'] ?? ''), $m)) {
-                $shifts = array_values(array_unique(array_map('trim', explode(',', $m[0]))));
-            }
-        }
+        // Pelaksanaan adalah deskripsi kerja, bukan sumber jadwal shift.
         foreach ($checks as $entries) {
             foreach ((array)$entries as $key => $_) {
                 if (in_array((string)$key, ['2','3'], true)) { $shifts[] = (string)$key; }

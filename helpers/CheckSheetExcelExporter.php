@@ -83,7 +83,9 @@ class CheckSheetExcelExporter
         $rowIndex = 6;
         $number = 0;
         $lastSection = null;
-        foreach (($d['part_details'] ?? array()) as $part) {
+        $reportParts = $d['report_parts'] ?? ($d['part_details'] ?? array());
+        $displayChecks = $d['display_checks'] ?? ($d['checks'] ?? array());
+        foreach ($reportParts as $part) {
             if (($part['section'] ?? '') !== $lastSection) {
                 $lastSection = (string)($part['section'] ?? '');
                 self::writeRow($writer, $sheet, $totalCols, array(0 => $lastSection . ', diisi dengan memberikan tanda (' . self::symbol('ok') . ')'), $section, 15);
@@ -91,8 +93,8 @@ class CheckSheetExcelExporter
                 $rowIndex++;
             }
             $number++;
-            $field = (string)$part['field_name'];
-            $shifts = self::shiftsForPart($part, $d['checks'][$field] ?? array());
+            $field = (string)($part['display_id'] ?? $part['field_name']);
+            $shifts = $part['shifts'] ?? self::shiftsForPart($part, $displayChecks[$field] ?? array());
             $startRow = $rowIndex;
             foreach ($shifts as $shiftOffset => $shift) {
                 $values = array_fill(0, $totalCols, '');
@@ -105,23 +107,27 @@ class CheckSheetExcelExporter
                     $values[5] = (string)($part['standard'] ?? '');
                     $values[6] = (string)($part['durasi'] ?? '');
                 }
-                $values[7] = count($shifts) > 1 ? 'Awal Shift ' . $shift : (string)($part['pelaksanaan'] ?? '');
+                $values[7] = count($shifts) === 1
+                    ? (string)($part['pelaksanaan'] ?? '')
+                    : (($shiftOffset === 0 ? (string)($part['pelaksanaan'] ?? '') . "\n" : '') . 'Shift ' . $shift);
                 $styles = array_fill(0, $totalCols, $border);
                 $styles[0] = $styles[1] = $styles[6] = $styles[7] = $center;
                 foreach ($days as $dayOffset => $day) {
                     $col = 8 + $dayOffset;
-                    if (isset($d['deactivated_days'][$day])) {
+                    $schedule = $part['schedule_by_day'][$day] ?? null;
+                    $isTakenOut = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
+                    if ($isTakenOut) {
+                        $values[$col] = 'TO';
+                        $styles[$col] = $center;
+                    } elseif (isset($d['deactivated_days'][$day])) {
                         $values[$col] = self::symbol('deactive');
                         $styles[$col] = $yellow;
                     } else {
-                        $entries = $d['checks'][$field][$day] ?? array();
+                        $entries = $displayChecks[$field][$day] ?? array();
                         $value = '';
-                        if (count($shifts) > 1) {
-                            $value = $entries[(string)$shift] ?? ($shiftOffset === 0 ? ($entries['__default__'] ?? '') : '');
-                        } elseif (!empty($entries)) {
-                            $value = in_array('NOK', $entries, true) ? 'NOK' : reset($entries);
-                        }
-                        $values[$col] = $value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : '');
+                        $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
+                        if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
+                        $values[$col] = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'OK' ? self::symbol('ok') : ''));
                         $styles[$col] = $center + ($value === 'NOK' ? array('font-style' => 'bold') : array());
                     }
                 }
@@ -179,11 +185,7 @@ class CheckSheetExcelExporter
     private static function shiftsForPart(array $part, array $checks): array
     {
         $shifts = array_values(array_unique(array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? ''))), fn($v) => in_array($v, array('1','2','3'), true))));
-        if (empty($shifts) || $shifts === array('1')) {
-            if (preg_match('/(?<!\d)1\s*,\s*2(?:\s*,\s*3)?(?!\d)/', (string)($part['pelaksanaan'] ?? ''), $m)) {
-                $shifts = array_values(array_unique(array_map('trim', explode(',', $m[0]))));
-            }
-        }
+        // Pelaksanaan adalah deskripsi kerja, bukan sumber jadwal shift.
         foreach ($checks as $entries) {
             foreach ((array)$entries as $key => $_) {
                 if (in_array((string)$key, array('2','3'), true)) { $shifts[] = (string)$key; }

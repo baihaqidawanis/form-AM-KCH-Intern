@@ -24,7 +24,7 @@ $report_machine_labels = array(
     'mixing_tank' => array('mt silverson', 'mt tetrapak 1', 'mt tetrapak 2', 'mt tetrapak 3'),
     'supermixer' => array('supermixer'),
     'temach' => array('temach'),
-    'unifill_b' => array('unifill b'),
+    'unifill_b' => array('unifill a', 'unifill b'),
     'check_weigher' => array('check weigher jinsung 1', 'check weigher jinsung 2', 'check weigher jinsung 3', 'check weigher jinsung 4', 'check weigher jinsung 5'),
     'storage_tank' => array('st liq no 1', 'st liq no 2', 'st liq no 3', 'st liq no 4', 'st liq no 5', 'st liq no 6', 'st liq no 7', 'st liq no 8', 'st liq no 9', 'st liq no 10', 'st liq no 11', 'st liq no 12', 'st liq no 13', 'st liq no 14', 'st liq no 15'),
     'storage_tank_tetrapak' => array('st liq 2 no 3', 'st liq 2 no 4', 'st liq 2 no 5', 'st liq 2 no 6', 'st liq 2 no 7', 'st liq 2 no 8', 'st liq 2 no 9', 'st liq 2 no 10', 'st liq 2 no 11', 'st liq 2 no 12', 'st liq 2 no 13', 'st liq 2 no 14', 'st liq 2 no 15', 'st liq 2 no 16', 'st liq 2 no 17'),
@@ -156,6 +156,8 @@ if (!function_exists('get_period_image_src')) {
       .mark-ok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-nok { color: #000; font-weight: bold; font-size: 8.5px; }
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
+      .mark-to { color: #495057; font-weight: bold; font-size: 7px; }
+      .mark-na { color: #6c757d; font-weight: bold; font-size: 8px; }
       .cell-deactive { background: #fff3cd !important; }
       .signature { height: <?php echo $css_sig_h; ?>; }
       @media print { .btn-cancel-signature { display:none !important; } }
@@ -291,7 +293,9 @@ if (!function_exists('get_period_image_src')) {
       $section = '';
       $total_cols = 8 + ($d['end_day'] - $d['start_day'] + 1);
 
-      foreach (($d['part_details'] ?: array()) as $part) {
+      $report_parts = $d['report_parts'] ?? ($d['part_details'] ?: array());
+      $display_checks = $d['display_checks'] ?? $d['checks'];
+      foreach ($report_parts as $part) {
         if ($section !== $part['section']) {
           $section = $part['section'];
           ?>
@@ -301,107 +305,28 @@ if (!function_exists('get_period_image_src')) {
           <?php
         }
         $number++;
-        $field = $part['field_name'];
-        // Utamakan master schedule; bila legacy/default, pulihkan informasi multi-shift
-        // dari teks pelaksanaan atau dari data shift yang benar-benar ada pada periode ini.
-        $shift_schedule = trim((string)($part['shift_schedule'] ?? ''));
-        $shifts = array_values(array_unique(array_filter(array_map('trim', explode(',', $shift_schedule)), function ($shift) {
-          return in_array($shift, array('1', '2', '3'), true);
-        })));
-        $schedule_is_default = empty($shifts) || $shifts === array('1');
-        if ($schedule_is_default) {
-          $pelaksanaan = (string)($part['pelaksanaan'] ?? '');
-          if (preg_match('/(?<!\d)1\s*,\s*2(?:\s*,\s*3)?(?!\d)/', $pelaksanaan, $matches)) {
-            $shifts = array_values(array_unique(array_filter(array_map('trim', explode(',', $matches[0])))));
-          }
-        }
-        $period_shifts = array();
-        foreach (($d['checks'][$field] ?? array()) as $day_entries) {
-          foreach ((array)$day_entries as $shift_key => $value) {
-            if (in_array((string)$shift_key, array('2', '3'), true)) { $period_shifts[] = (string)$shift_key; }
-          }
-        }
-        if (!empty($period_shifts)) { $shifts = array_values(array_unique(array_merge($shifts, $period_shifts))); }
+        $field = $part['display_id'] ?? $part['field_name'];
+        $shifts = $part['shifts'] ?? array('1');
         if (empty($shifts)) { $shifts = array('1'); }
-        sort($shifts, SORT_NUMERIC);
-        $is_multi_shift = count($shifts) > 1;
         $rowspan = count($shifts);
-
-        // Sub-baris pertama
-        $first_shift = $shifts[0];
-        $pelaksanaan_label = $is_multi_shift ? 'Awal Shift ' . $first_shift : $part['pelaksanaan'];
-        ?>
-        <tr>
-          <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;">
-            <?php if (!empty($part['image_path'])) { ?>
-              <img style="max-width:<?php echo $css_img_w; ?>;max-height:<?php echo $css_img_h; ?>;" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>">
-            <?php } ?>
-          </td>
-          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td>
-          <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
-          <td style="font-weight:bold;"><?php echo htmlspecialchars($pelaksanaan_label); ?></td>
-          <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
-            $is_deactive = isset($d['deactivated_days'][$day]);
-            $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
-            $tooltip = $is_deactive ? 'DEAKTIVASI: ' . htmlspecialchars($deact['reason'] ?? '') . ' | Oleh: ' . htmlspecialchars($deact['action_by_username'] ?? '-') . ' (' . htmlspecialchars($deact['started_at'] ?? '') . ')' : '';
-            $entries = $d['checks'][$field][$day] ?? array();
-            $cell_val = '';
-            $c = '';
-            $cell_style = '';
-            if ($is_deactive) {
-              $cell_style = 'background:#fff3cd !important; text-align:center;';
-              $cell_val = '&mdash;';
-              $c = 'mark-deactive';
-            } elseif ($is_multi_shift) {
-              $value = $entries[(string)$first_shift] ?? ($entries['__default__'] ?? '');
-              if ($value !== '') { $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok'; $cell_val = $value === 'NOK' ? '&times;' : '&radic;'; }
-            } elseif (!empty($entries)) {
-              // Untuk part single-shift, satu NOK pada hari tersebut selalu lebih penting daripada OK.
-              $value = in_array('NOK', $entries, true) ? 'NOK' : reset($entries);
-              $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
-              $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
-            }
-          ?>
-            <td class="day" style="<?php echo $cell_style; ?>" <?php if ($is_deactive) { ?>title="<?php echo $tooltip; ?>"<?php } ?>><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
-          <?php } ?>
-        </tr>
-        <?php
-        // Sub-baris untuk shift berikutnya (Shift 2, Shift 3)
-        for ($s_idx = 1; $s_idx < count($shifts); $s_idx++) {
-          $curr_shift = $shifts[$s_idx];
-          $sub_pelaksanaan = 'Awal Shift ' . $curr_shift;
-          ?>
+        foreach ($shifts as $s_idx => $curr_shift) { ?>
           <tr>
-            <td style="font-weight:bold;"><?php echo htmlspecialchars($sub_pelaksanaan); ?></td>
-            <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
-              $is_deactive = isset($d['deactivated_days'][$day]);
-              $deact = $is_deactive ? $d['deactivated_days'][$day] : null;
-              $tooltip = $is_deactive ? 'DEAKTIVASI: ' . htmlspecialchars($deact['reason'] ?? '') . ' | Oleh: ' . htmlspecialchars($deact['action_by_username'] ?? '-') . ' (' . htmlspecialchars($deact['started_at'] ?? '') . ')' : '';
-              $entries = $d['checks'][$field][$day] ?? array();
-              $cell_val = '';
-              $c = '';
-              $cell_style = '';
-              if ($is_deactive) {
-                $cell_style = 'background:#fff3cd !important; text-align:center;';
-                $cell_val = '&mdash;';
-                $c = 'mark-deactive';
-              } else {
-                $value = $entries[(string)$curr_shift] ?? '';
-                if ($value !== '') {
-                  $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok';
-                  $cell_val = $value === 'NOK' ? '&times;' : '&radic;';
-                }
-              }
-            ?>
-              <td class="day" style="<?php echo $cell_style; ?>" <?php if ($is_deactive) { ?>title="<?php echo $tooltip; ?>"<?php } ?>><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td>
+            <?php if ($s_idx === 0) { ?>
+              <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;"><?php if (!empty($part['image_path'])) { ?><img style="max-width:<?php echo $css_img_w; ?>;max-height:<?php echo $css_img_h; ?>;" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>"><?php } ?></td>
+              <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td><td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td><td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
             <?php } ?>
+            <td style="font-weight:bold;"><?php if (count($shifts) === 1) { echo htmlspecialchars($part['pelaksanaan']); } elseif ($s_idx === 0) { echo htmlspecialchars($part['pelaksanaan']); ?><br><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } else { ?><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } ?></td>
+            <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
+              $schedule = $part['schedule_by_day'][$day] ?? null; $entries = $display_checks[$field][$day] ?? array();
+              $is_to = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
+              $is_deactive = isset($d['deactivated_days'][$day]); $cell_val = ''; $c = ''; $cell_style = '';
+              if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
+              elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
+              elseif (is_array($schedule) && !in_array((string)$curr_shift, $schedule, true)) { $cell_val = '&mdash;'; $c = 'mark-na'; }
+              else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { $c = $value === 'NOK' ? 'mark-nok' : 'mark-ok'; $cell_val = $value === 'NOK' ? '&times;' : '&radic;'; } }
+            ?><td class="day" style="<?php echo $cell_style; ?>"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td><?php } ?>
           </tr>
-          <?php
-        }
+        <?php }
       }
       ?>
       <tr>
@@ -425,7 +350,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span></td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>
