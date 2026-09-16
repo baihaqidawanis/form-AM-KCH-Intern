@@ -387,9 +387,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 	private function uploadedPhotoForField($field)
 	{
-		foreach (array('foto_camera_' . $field, 'foto_before_' . $field) as $name) {
-			if (isset($_FILES[$name]) && intval($_FILES[$name]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) { return $_FILES[$name]; }
-		}
+		$name = 'foto_before_' . $field;
+		if (isset($_FILES[$name]) && intval($_FILES[$name]['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) { return $_FILES[$name]; }
 		return null;
 	}
 
