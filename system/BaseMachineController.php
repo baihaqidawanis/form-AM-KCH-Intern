@@ -291,6 +291,19 @@ abstract class BaseMachineController extends SecureController
 		}
 		return $schedules;
 	}
+
+	/** Part yang boleh diedit harus sama dengan checklist pada shift record itu. */
+	protected function editablePartsForRecord(array $record)
+	{
+		$parts = $this->partsForRecord($record['operational_date'] ?? null, $record['created_at'] ?? null, $record[$this->idColumn()] ?? null);
+		if (!in_array('shift', $this->extraFields, true)) { return $parts; }
+		$shift = trim((string)($record['shift'] ?? '')) ?: '1';
+		$schedules = $this->partShiftSchedulesForRows(array($record), $record['operational_date'] ?? null);
+		$recordSchedules = $schedules[$record[$this->idColumn()] ?? 0] ?? array();
+		return array_filter($parts, function ($label, $field) use ($recordSchedules, $shift) {
+			return in_array($shift, $recordSchedules[$field] ?? array('1'), true);
+		}, ARRAY_FILTER_USE_BOTH);
+	}
 	protected function partsForAdd($formdata = null)
 	{
 		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
@@ -974,6 +987,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->set_page_error($db->getLastError() ?: 'Data form AM tidak ditemukan.');
 			return $this->redirect($table);
 		}
+		$parts_for_edit = $this->editablePartsForRecord($existing_record);
 		$existing_abnormalities = array();
 		foreach ($db->where('id_am', $rec_id)->get($this->kendalaTable()) as $detail) {
 			$existing_abnormalities[(string)$detail['nama_bagian']] = $detail;
@@ -1005,10 +1019,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($formdata) {
 			$formdata['mesin'] = $formdata['mesin'] ?? $existing_record['mesin'];
 			$postdata = $this->format_request_data($formdata);
-			$this->fields = array_merge(array('perubahan'), $this->part_fields(), $this->extraFields);
+			$this->fields = array_merge(array('perubahan'), array_keys($parts_for_edit), $this->extraFields);
 			$this->rules_array = array('perubahan' => 'required');
 			$this->sanitize_array = array('perubahan' => 'sanitize_string');
-			foreach (array_merge($this->part_fields(), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
+			foreach (array_merge(array_keys($parts_for_edit), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
 			// Edit Data tidak selalu menampilkan extra field (contohnya shift). Pertahankan nilai
 			// yang tersimpan agar validasi required tidak gagal dan kolom lama tidak tertimpa.
 			foreach ($this->extraFields as $ef) {
@@ -1035,8 +1049,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			} else {
 				$modeldata['approval'] = null; $modeldata['user_approve'] = null; $modeldata['tanggal_perubahan'] = null;
 			}
-			$valid_parts = $this->hasValidPartAndNokInput($formdata, $this->parts, $rec_id);
-			$valid_photos = $this->prepareNokPhotos($formdata, $this->parts, $existing_abnormalities);
+			$valid_parts = $this->hasValidPartAndNokInput($formdata, $parts_for_edit, $rec_id);
+			$valid_photos = $this->prepareNokPhotos($formdata, $parts_for_edit, $existing_abnormalities);
 			if ($this->validated() && $valid_parts && $valid_photos) {
 				try {
 					$db->startTransaction();
@@ -1052,7 +1066,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					if ($deleted === false && $db->getLastError()) {
 						throw new RuntimeException('Gagal menghapus detail kendala lama: ' . $db->getLastError());
 					}
-					foreach ($this->parts as $field => $label) {
+					foreach ($parts_for_edit as $field => $label) {
 						$kondisi_part = $formdata[$field] ?? ($modeldata[$field] ?? null);
 						if ($kondisi_part === 'NOK') {
 							if (!$db->insert($this->kendalaTable(), $this->nokDetailData($formdata, $field, $rec_id, $mesin_id))) { throw new RuntimeException('Gagal menyimpan detail kendala.'); }
@@ -1104,8 +1118,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		} else {
 			$this->set_page_error('Data form AM tidak ditemukan.'); $record = array();
 		}
-		$record['parts'] = !empty($record) ? $this->partsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : $this->parts;
-		$record['part_details'] = !empty($record) ? $this->partDetailsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null) : array();
+		$record['parts'] = !empty($record) ? $this->editablePartsForRecord($record) : $this->parts;
+		$record['part_details'] = !empty($record) ? array_values(array_filter($this->partDetailsForRecord($record['operational_date'] ?? $this->operationalDate($record['created_at'] ?? null), $record['created_at'] ?? null, $record[$idcol] ?? null), function ($part) use ($record) { return isset($record['parts'][$part['field_name'] ?? '']); })) : array();
 		$this->view->page_title = "Edit Data AM {$this->displayName}";
 		return $this->render_view("$table/edit_data.php", $record);
 	}

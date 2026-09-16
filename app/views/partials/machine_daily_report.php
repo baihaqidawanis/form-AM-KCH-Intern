@@ -31,7 +31,7 @@ $part_shift_schedules = $d['part_shift_schedules'] ?? array();
           </div>
           <div class="col-md-4 mb-2 mb-md-0">
             <span class="text-muted small text-uppercase font-weight-bold d-block">Tanggal Operasional</span>
-            <span class="h6 mb-0 font-weight-bold text-dark"><?php echo format_am_date($d['operational_date']); ?></span>
+            <span class="h6 mb-0 font-weight-bold text-dark"><?php echo date('d/m/Y', strtotime($d['operational_date'])); ?></span>
           </div>
           <div class="col-md-4 text-md-right">
             <span class="badge badge-light border px-2 py-1 text-muted" style="font-size: 0.8rem; font-weight: 600;">
@@ -71,7 +71,9 @@ $part_shift_schedules = $d['part_shift_schedules'] ?? array();
                     $scheduled_shifts = $part_shift_schedules[$row[$d['id_column']]][$field] ?? array('1');
                   ?>
                     <td class="text-center align-middle py-2">
-                      <?php if ($v === 'NOK') { ?>
+                      <?php if (!in_array($shift, $scheduled_shifts, true)) { ?>
+                        <span class="text-muted font-weight-bold">-</span>
+                      <?php } elseif ($v === 'NOK') { ?>
                         <span class="badge badge-danger px-2 py-1" style="font-size: 0.75rem;">NOK</span>
                       <?php } elseif ($v === 'ON_PROCESS_RED_TAG') { ?>
                         <span class="badge badge-info px-2 py-1" style="font-size: 0.75rem;">&bull; On Process Red Tag</span>
@@ -79,8 +81,6 @@ $part_shift_schedules = $d['part_shift_schedules'] ?? array();
                         <span class="badge badge-success px-2 py-1" style="font-size: 0.75rem;"><i class="fa fa-check mr-1"></i>OK</span>
                       <?php } elseif ($v === 'N/A') { ?>
                         <span class="badge badge-secondary px-2 py-1" style="font-size: 0.75rem;">N/A</span>
-                      <?php } elseif (!in_array($shift, $scheduled_shifts, true)) { ?>
-                        <span class="text-muted font-weight-bold">-</span>
                       <?php } else { ?>
                         <span class="text-muted font-weight-bold">-</span>
                       <?php } ?>

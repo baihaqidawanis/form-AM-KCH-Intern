@@ -215,19 +215,26 @@
 					$machine.on('change', updateOnProcess); updateOnProcess();
 
 					$form.on('change', '.nok-photo-input', function(){
+						var $input = $(this), $preview = $input.siblings('.nok-photo-preview-wrap');
 						if (this.files && this.files[0] && this.files[0].size > 5 * 1024 * 1024) {
-							alert('Foto Before maksimal 5 MB.'); $(this).val('');
+							alert('Foto Before maksimal 5 MB.'); $input.val('');
 						}
-						$(this).siblings('.nok-photo-cancel').toggleClass('d-none', !(this.files && this.files.length));
+						var file = this.files && this.files[0];
+						$input.siblings('.nok-photo-cancel').toggleClass('d-none', !file);
+						if (file) {
+							var reader = new FileReader();
+							reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.removeClass('d-none'); };
+							reader.readAsDataURL(file);
+						} else { $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none'); }
 					});
 					$form.on('click', '.nok-photo-cancel', function(){
-						$(this).siblings('.nok-photo-input').val('');
+						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
 						$(this).addClass('d-none');
 					});
 					function syncNokPhotoBox($card) {
 						var $box = $card.find('.nok-photo-box');
 						var isNok = $card.find('.part-kondisi[value="NOK"]').is(':checked');
-						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); }
+						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
 						$box.toggle(isNok);
 						var required = isNok && $box.attr('data-existing-photo') !== '1';
 						$box.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');
@@ -236,6 +243,22 @@
 						syncNokPhotoBox($(this).closest('.part-card'));
 					});
 					$form.find('.part-card').each(function(){ syncNokPhotoBox($(this)); });
+					function lockProductivityCategory($select) {
+						var field = ($select.attr('id') || '').replace(/^ctrl-ketidaksesuaian-/, '');
+						if (!field) { return; }
+						var $correlation = $('#korelasi-' + field), isProductivity = $.trim($correlation.find('option:selected').text()).toLowerCase() === 'productivity';
+						var $none = $select.find('option').filter(function(){ return $.trim($(this).text()).toLowerCase() === 'none'; }).first();
+						if (isProductivity && $none.length) {
+							$select.val($none.val()).css({'pointer-events':'none','background-color':'#e9ecef','background-image':'none','-webkit-appearance':'none','-moz-appearance':'none','appearance':'none'}).attr('tabindex', '-1');
+						} else {
+							$select.css({'pointer-events':'auto','background-color':'#ffffff','background-image':'','-webkit-appearance':'','-moz-appearance':'','appearance':''}).removeAttr('tabindex');
+						}
+					}
+					$(document).ajaxComplete(function(event, xhr, settings) {
+						if (settings.url && settings.url.indexOf('sig_kategori_ketidaksesuaian_option_list') !== -1) {
+							$form.find('[id^="ctrl-ketidaksesuaian-"]').each(function(){ lockProductivityCategory($(this)); });
+						}
+					});
 					$form.on('submit', function(e){
 						var missing = false;
 						$form.find('.part-card').each(function(){
