@@ -214,7 +214,7 @@ if (!function_exists('get_period_image_src')) {
                   <?php } ?>
                 <?php } else { ?>
                   <?php if (!$hide_interactive_actions && !empty($d['can_sign_operator'])) { ?>
-                    <button type="button" class="btn btn-xs btn-outline-primary d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="operator" style="font-size:8px;">
+                    <button type="button" class="btn btn-xs btn-outline-primary d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="operator" style="font-size:7px; padding:1px 4px; line-height:1.2;">
                       <i class="fa fa-pencil"></i> TTD Digital
                     </button>
                     <div class="d-none d-print-block text-muted font-italic" style="font-size:6px;">(Belum TTD)</div>
@@ -246,7 +246,7 @@ if (!function_exists('get_period_image_src')) {
                   <?php if (empty($sig['operator_token'])) { ?>
                     <div class="text-muted font-italic" style="font-size:6.2px;">(Menunggu TTD Operator)</div>
                   <?php } elseif (!$hide_interactive_actions && !empty($d['can_sign_spv'])) { ?>
-                    <button type="button" class="btn btn-xs btn-outline-success d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="spv" style="font-size:8px;">
+                    <button type="button" class="btn btn-xs btn-outline-success d-print-none px-1 py-0 my-1 btn-sign-digital" data-role="spv" style="font-size:7px; padding:1px 4px; line-height:1.2;">
                       <i class="fa fa-check"></i> TTD SPV
                     </button>
                     <div class="d-none d-print-block text-muted font-italic" style="font-size:6px;">(Belum TTD)</div>

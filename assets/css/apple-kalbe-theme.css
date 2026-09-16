@@ -294,11 +294,18 @@ h4 > b {
     #sidebar::-webkit-scrollbar-thumb:hover { background: #6e6e73; }
     #main #main-content {
         margin-left: 250px;
+        transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+    /* The hamburger hides the fixed sidebar, so return its horizontal space
+       to the working form/report area on desktop. */
+    #main #main-content.active {
+        margin-left: 0;
     }
 }
 
 @media (min-width: 992px) and (max-width: 1199.98px) {
     #main #main-content { margin-left: 220px; }
+    #main #main-content.active { margin-left: 0; }
 }
 
 /* ==========================================================================
