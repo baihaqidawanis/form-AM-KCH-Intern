@@ -30,12 +30,11 @@ class IndexController extends BaseController
 		$tablename = $this->tablename;
 		$user = $db->getOne($tablename);
 		if (!empty($user)) {
-			//Akun yang sudah diblokir (3x gagal login) ditolak duluan sebelum cek password,
-			//sesuai URS: "silakan menghubungi administrator" -- gak ada auto-unblock berbasis waktu,
-			//cuma Administrator/Supervisor yang bisa buka lewat halaman Users.
+			// Alasan pemblokiran tidak disimpan sebagai data terpisah, sehingga pesan harus
+			// netral: akun dapat diblokir oleh Administrator atau setelah kegagalan login.
 			$user_status = strtolower($user['account_status']);
 			if ($user_status == "blocked") {
-				return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi Administrator.");
+				return $this->login_fail("Akun Anda sedang diblokir. Silakan hubungi Administrator.");
 			}
 			//Verify User Password Text With DB Password Hash Value.
 			//Uses PHP password_verify() function with default options
@@ -74,7 +73,7 @@ class IndexController extends BaseController
 				$db->where("id_user", $user['id_user']);
 				$db->update($tablename, $update);
 				if ($attempts >= 3) {
-					return $this->login_fail("Akun Anda telah terkunci karena 3 kali salah memasukkan password. Silakan hubungi Administrator.");
+					return $this->login_fail("Akun Anda sedang diblokir. Silakan hubungi Administrator.");
 				}
 				return $this->login_fail("Username or password not correct");
 			}
