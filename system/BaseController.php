@@ -201,7 +201,7 @@ class BaseController{
 	function GetModel(){
 		//Reuse existing DB connection if already initialised
 		if($this->db === null){
-			$this->db = new PDODb(DB_TYPE, DB_HOST , DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+			$this->db = new PDODb(DB_TYPE, DB_HOST , DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET, DB_SSLMODE);
 		}
 		if($this->soft_delete){
 			$delete_field = $this->delete_field_name;

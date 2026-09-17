@@ -27,7 +27,8 @@ class PDODb
         'password' => null,
         'dbname' => null,
         'port' => null,
-        'charset' => null
+        'charset' => null,
+        'sslmode' => null
     );
 
     /**
@@ -217,7 +218,7 @@ class PDODb
      * @param int $port
      * @param string $charset
      */
-    public function __construct($type, $host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = null)
+    public function __construct($type, $host = null, $username = null, $password = null, $dbname = null, $port = null, $charset = null, $sslmode = null)
     {
         if (is_array($type)) { // if params were passed as array
             $this->connectionParams = $type;
@@ -292,6 +293,13 @@ class PDODb
 				}
 			}
 			$connectionString = rtrim($connectionString, ';');
+			if ($dbType === 'pgsql') {
+				$sslmode = strtolower(trim((string)($this->connectionParams['sslmode'] ?? '')));
+				$allowedSslModes = array('disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full');
+				if (in_array($sslmode, $allowedSslModes, true)) {
+					$connectionString .= ';sslmode=' . $sslmode;
+				}
+			}
 			$options = array(
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 				PDO::ATTR_PERSISTENT => false

@@ -162,7 +162,7 @@ class QrSignatureHelper
      */
     private static function getDb()
     {
-        return new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+        return new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET, DB_SSLMODE);
     }
 
     /**

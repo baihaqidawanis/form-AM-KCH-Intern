@@ -122,6 +122,9 @@ define("DB_NAME", env("DB_NAME", "form_am_plg"));
 define("DB_TYPE", env("DB_TYPE", "mysql"));
 define("DB_PORT", env("DB_PORT", "3306"));
 define("DB_CHARSET", env("DB_CHARSET", "utf8"));
+// PostgreSQL only. Kosong = perilaku driver bawaan; gunakan "disable" bila
+// server database internal tidak menyediakan SSL.
+define("DB_SSLMODE", env("DB_SSLMODE", ""));
 define("SIGNATURE_HMAC_KEY", (string)env("SIGNATURE_HMAC_KEY", ""));
 
 define("MAX_RECORD_COUNT", 20); //Default Max Records to Retrieve  per Page

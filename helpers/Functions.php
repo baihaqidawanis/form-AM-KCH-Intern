@@ -190,7 +190,7 @@ function user_login_status()
 	if (!$checked) {
 		$checked = true;
 		try {
-			$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+			$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET, DB_SSLMODE);
 			$current = $db->where('id_user', (int)$user['id_user'])->getOne('users', array('id_user', 'nama', 'email', 'username', 'area', 'mesin', 'account_status', 'user_role_id', 'paraf_image', 'user_initials'));
 			if (!$current || strtolower((string)($current['account_status'] ?? '')) !== 'active') {
 				clear_session('user_data');
@@ -532,7 +532,7 @@ function is_valid_nik_username($username)
 function is_super_admin_user($id_user)
 {
 	if (empty($id_user)) { return false; }
-	$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+	$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET, DB_SSLMODE);
 	$db->where('id_user', $id_user);
 	return (bool) $db->getValue('users', 'is_super_admin');
 }
