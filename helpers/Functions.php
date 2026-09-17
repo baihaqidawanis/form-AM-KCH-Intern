@@ -200,8 +200,9 @@ function user_login_status()
 			set_session('user_data', $current);
 		} catch (Throwable $e) {
 			error_log('Session authorization refresh failed: ' . $e->getMessage());
-			clear_session('user_data');
-			return false;
+			// Gangguan koneksi DB sesaat tidak boleh terlihat sebagai logout acak.
+			// Sesi hanya dicabut bila query sukses dan membuktikan akun tidak aktif.
+			return true;
 		}
 	}
 	return true;
