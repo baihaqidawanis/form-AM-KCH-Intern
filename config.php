@@ -1,7 +1,8 @@
 <?php
 
-// Load .env (kalau ada) ke environment variable. Nilai yang udah di-set duluan
-// di environment asli (misal lewat docker-compose `environment:`) gak ditimpa.
+// Load .env (kalau ada) ke environment variable. Untuk deployment Form AM,
+// .env adalah sumber konfigurasi utama supaya nilai lama dari Apache/Windows
+// tidak diam-diam mengalahkan konfigurasi aplikasi.
 $envFile = __DIR__ . '/.env';
 if (is_readable($envFile)) {
 	foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
@@ -12,9 +13,7 @@ if (is_readable($envFile)) {
 		list($envKey, $envValue) = explode('=', $line, 2);
 		$envKey = trim($envKey);
 		$envValue = trim($envValue);
-		if (getenv($envKey) === false) {
-			putenv("$envKey=$envValue");
-		}
+		putenv("$envKey=$envValue");
 	}
 }
 function env($key, $default = null)
