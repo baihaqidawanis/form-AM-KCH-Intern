@@ -292,6 +292,14 @@ abstract class BaseMachineController extends SecureController
 		return $schedules;
 	}
 
+	private function lockPeriodMutation($db, $mesinId, $operationalDate)
+	{
+		$date = new DateTime($operationalDate);
+		$period = intval($date->format('j')) <= 16 ? 1 : 2;
+		$key = 'form-am:' . $this->machineKey . ':' . intval($mesinId) . ':' . $date->format('Y-m') . ':p' . $period;
+		$db->rawQuery('SELECT pg_advisory_xact_lock(hashtext(?))', array($key));
+	}
+
 	/** Part yang boleh diedit harus sama dengan checklist pada shift record itu. */
 	protected function editablePartsForRecord(array $record)
 	{
@@ -383,7 +391,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if (!empty($request->date_from)) { $db->where("$sql.created_at", trim($request->date_from) . ' 00:00:00', '>='); }
 		if (!empty($request->date_to)) { $db->where("$sql.created_at", trim($request->date_to) . ' 23:59:59', '<='); }
 		if (!empty($request->mesin)) { $db->where("$sql.mesin", $request->mesin); }
-		if ($fieldname) { $db->where($fieldname, $fieldvalue); }
+		if ($fieldname) {
+			$allowed_filters = array($idcol => "$sql.$idcol", 'mesin' => "$sql.mesin", 'operational_date' => "$sql.operational_date", 'approval' => "$sql.approval", 'user_create' => "$sql.user_create", 'user_approve' => "$sql.user_approve");
+			if (!array_key_exists($fieldname, $allowed_filters)) {
+				http_response_code(404);
+				return $this->render_view('errors/notfound.php', null, 'info_layout.php');
+			}
+			$db->where($allowed_filters[$fieldname], $fieldvalue);
+		}
 		$db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->orderBy("$sql.$idcol", ORDER_TYPE);
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); $tc = $db->withTotalCount(); $records = $db->get($sql, $pagination, $fields);
 		$this->view->page_title = $this->displayName; $this->set_report_props($this->displayName, 'landscape');
@@ -446,6 +461,16 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		foreach ($this->newPhotoPaths as $path) { if (is_file($path)) { @unlink($path); } }
 		$this->newPhotoPaths = array();
+	}
+
+	private function cleanupDeletedPhotos(array $details)
+	{
+		foreach ($details as $detail) {
+			$relative = ltrim((string)($detail['foto_before'] ?? ''), '/\\');
+			if (!preg_match('#^uploads/photos/nok/[A-Za-z0-9/_-]+\.jpg$#', $relative)) { continue; }
+			$path = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relative);
+			if (is_file($path)) { @unlink($path); }
+		}
 	}
 
 	/** Validasi status part dan detail abnormalitas dilakukan di server untuk semua mesin. */
@@ -595,6 +620,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$modeldata['created_at'] = datetime_now();
 			$modeldata['operational_date'] = $this->operationalDate($modeldata['created_at']);
 			$modeldata['user_create'] = USER_NAME;
+			$modeldata['created_by_user_id'] = intval(USER_ID);
 			// Auto-approve kalau gak ada part yang NOK -- OK semua ATAU campuran
 			// OK/"Tidak Dilakukan" (N/A) tetap auto-approve, cuma NOK yang bikin
 			// masuk antrian review manual.
@@ -617,6 +643,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$snapshot_schema = $this->snapshotSchema();
 				try {
 					$db->startTransaction();
+					$this->lockPeriodMutation($db, $modeldata['mesin'], $modeldata['operational_date']);
+					$locked_signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($modeldata['mesin']), intval((new DateTime($modeldata['operational_date']))->format('n')), intval((new DateTime($modeldata['operational_date']))->format('Y')), intval((new DateTime($modeldata['operational_date']))->format('j')) <= 16 ? 1 : 2);
+					if ($locked_signature && (!empty($locked_signature['operator_token']) || !empty($locked_signature['spv_token']))) { throw new RuntimeException('Periode telah ditandatangani digital.'); }
 					$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
 					if (!$rec_id) { throw new RuntimeException('Gagal menyimpan form AM.'); }
 					foreach ($parts_for_add as $field => $label) {
@@ -712,7 +741,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		$db = $this->GetModel(); $this->rec_id = $rec_id;
-		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->historicalPartFields(), $this->extraFields)));
+		$fields = array_merge(array("$sql.$idcol", "$sql.mesin", 'mesin.nama_mesin AS nm_mesin', "$sql.created_at", "$sql.user_create", "$sql.created_by_user_id", "$sql.user_approve", "$sql.approval", "$sql.tanggal_perubahan", "$sql.user_perubah", "$sql.updated_at", "$sql.perubahan"), array_map(function ($p) use ($sql) { return "$sql.$p"; }, array_merge($this->historicalPartFields(), $this->extraFields)));
 		try {
 		if ($value) { $db->where($rec_id, urldecode($value)); } else { $db->where("$sql.$idcol", urldecode($rec_id)); }
 		$record = $db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->getOne($sql, $fields);
@@ -919,11 +948,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 	}
 
-	/** Approval manual hanya oleh SPV; row dikunci hingga status dan atribusi tersimpan atomik. */
+	/** Approval manual oleh Administrator, Manager, atau Supervisor sesuai URS. */
 	private function updateApprovalSafely($rec_id, $approval)
 	{
-		if (intval(get_active_user('user_role_id')) !== 3) {
-			return array('success' => false, 'status' => 403, 'message' => 'Hanya Supervisor yang dapat melakukan approval manual.');
+		if (!in_array(intval(get_active_user('user_role_id')), array(1, 2, 3), true)) {
+			return array('success' => false, 'status' => 403, 'message' => 'Hanya Administrator, Manager, atau Supervisor yang dapat melakukan approval manual.');
 		}
 		$approval = trim((string)$approval);
 		if (!in_array($approval, array('Approved', 'Not Approved'), true)) {
@@ -994,7 +1023,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 		//URS 3.1: Manager/Supervisor/Staff-Operator cuma boleh edit_data submission sendiri; Administrator bebas.
-		$is_owner = (($existing_record['user_create'] ?? null) === USER_NAME);
+		$is_owner = intval($existing_record['created_by_user_id'] ?? 0) === intval(USER_ID);
 		if (!$is_owner && intval(get_active_user('user_role_id')) !== 1) {
 			http_response_code(403);
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
@@ -1054,6 +1083,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if ($this->validated() && $valid_parts && $valid_photos) {
 				try {
 					$db->startTransaction();
+					$this->lockPeriodMutation($db, $existing_record['mesin'], $existing_record['operational_date']);
+					$locked_signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($existing_record['mesin']), intval((new DateTime($existing_record['operational_date']))->format('n')), intval((new DateTime($existing_record['operational_date']))->format('Y')), intval((new DateTime($existing_record['operational_date']))->format('j')) <= 16 ? 1 : 2);
+					if ($locked_signature && (!empty($locked_signature['operator_token']) || !empty($locked_signature['spv_token']))) { throw new RuntimeException('Periode telah ditandatangani digital.'); }
 					$db->where($idcol, $rec_id);
 					$bool = $db->update($sql, $modeldata);
 					if (!$bool) { throw new RuntimeException('Gagal memperbarui form AM.'); }
@@ -1153,6 +1185,21 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$this->set_flash_msg('Tidak ada laporan yang dipilih.', 'warning');
 			return $this->redirect($table);
 		}
+		$records = $db->where($idcol, $ids, 'in')->get($sql, null, array($idcol, 'mesin', 'operational_date'));
+		if (count($records) !== count($ids)) {
+			$this->set_flash_msg('Sebagian checklist tidak ditemukan.', 'warning');
+			return $this->redirect($table);
+		}
+		foreach ($records as $record) {
+			$op_date = new DateTime($record['operational_date']);
+			$period = intval($op_date->format('j')) <= 16 ? 1 : 2;
+			$signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($record['mesin']), intval($op_date->format('n')), intval($op_date->format('Y')), $period);
+			if ($signature && (!empty($signature['operator_token']) || !empty($signature['spv_token']))) {
+				$this->set_flash_msg('Checklist pada periode yang sudah ditandatangani tidak dapat dihapus. Batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
+				return $this->redirect($table);
+			}
+		}
+		$details_to_delete = $db->where('id_am', $ids, 'in')->get($this->kendalaTable(), null, array('foto_before'));
 		//Baris kendala (abnormalitas) anaknya WAJIB ikut dihapus -- gak ada FK
 		//ON DELETE CASCADE di skema ini, jadi kalau cuma hapus record induk,
 		//kendala-nya nyangkut jadi orphan selamanya (bikin DB numpuk & berisiko
@@ -1161,9 +1208,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$db->startTransaction();
 		$db->where('id_am', $ids, 'in');
 		$db->delete($this->kendalaTable());
+		$db->where('machine_key', $this->machineKey)->where('form_id', $ids, 'in');
+		$db->delete('form_part_snapshot');
 		$db->where($idcol, $ids, 'in');
 		if ($db->delete($sql)) {
 			$db->commit();
+			$this->cleanupDeletedPhotos($details_to_delete);
 			$this->write_to_log('delete', 'true');
 			$this->set_flash_msg('Record deleted successfully', 'success');
 		} else {
@@ -1191,6 +1241,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
 
 		$db = $this->GetModel();
+		$machine = $db->where('id', $mesin)->getOne('mesin', array('id'));
+		if (!$machine) {
+			throw new InvalidArgumentException('Mesin untuk tanda tangan tidak ditemukan.');
+		}
 		$sql = $this->sqlTable();
 		$idcol = $this->idColumn();
 		$rows = $db->where('mesin', $mesin)

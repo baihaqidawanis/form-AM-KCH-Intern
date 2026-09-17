@@ -98,7 +98,9 @@ class Audit_logController extends SecureController{
 			$db->orderBy("audit_log.log_id", ORDER_TYPE);
 		}
 		if($fieldname){
-			$db->where($fieldname , $fieldvalue); //filter by a single field name
+			$filters = array('log_id' => 'audit_log.log_id', 'Action' => 'audit_log."Action"', 'TableName' => 'audit_log."TableName"', 'UserID' => 'audit_log."UserID"');
+			if (!array_key_exists($fieldname, $filters)) { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
+			$db->where($filters[$fieldname], $fieldvalue);
 		}
 		$tc = $db->withTotalCount();
 		$records = $db->get($tablename, $pagination, $fields);

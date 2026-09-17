@@ -38,7 +38,7 @@ vendor/bin/phpunit tests/Feature/RbacTest.php   # 1 file saja
 
 npm install                         # sekali saja, install Playwright (dev)
 npx playwright install chromium     # sekali saja, download browser binary
-npm run test:e2e                    # jalankan test Playwright (session-timeout & draft auto-save)
+npm run test:e2e                    # jalankan test Playwright di environment QA terpisah
 ```
 
 > **Kalau `npm install`/`composer install` gagal network** (`registry.npmjs.org`/`codeload.github.com` timeout) — jaringan kantor kadang flap, coba ganti jaringan atau retry. Kalau `npm install` gagal spesifik tapi `github.com` sudah bisa diakses, coba `--registry https://registry.npmmirror.com` (mirror publik).
@@ -63,20 +63,16 @@ tests/
 │   ├── AuditTrailTest.php    — add ke-log, view TIDAK ke-log
 │   ├── RegistrationTest.php  — registrasi akun baru, status Pending
 │   └── LockoutTest.php       — lockout 3x salah password, pakai akun throwaway
-└── e2e/                               (Playwright, browser beneran)
-    ├── session-timeout.spec.js   — idle warning + auto-logout + draft auto-save/restore
-    └── run-with-short-timeout.js — wrapper: pendekin SESSION_TIMEOUT_SECONDS lewat .env
-                                     sementara, SELALU dibalikin lagi di finally
+└── e2e/                               (Playwright, browser beneran; spec QA ditambahkan bertahap)
 ```
 
 ### Kenapa Tidak Ada Test CRUD Penuh untuk Semua 17 Modul
 
 `MachineCrudTest` cuma mencakup 3 modul representatif (Chimei/Illapak 1-2/SIG), masing-masing mewakili 1 pola arsitektur berbeda (single-mesin, multi-mesin dropdown, extraFields). Karena semua 17 modul extend `BaseMachineController` yang sama, bug di logic CRUD akan ketahuan dari 3 modul ini juga. `SmokeTest` tetap loop ke semua 17 modul untuk menutup risiko config per-modul yang salah (`$parts`/`$machineKey` typo, dst).
 
-### Catatan Teknis Session-Timeout & Lockout (buat yang mau extend test-nya)
+### Catatan Teknis Lockout (buat yang mau extend test-nya)
 
 - **Lockout** aman diotomasi karena pakai akun throwaway sendiri, bukan salah satu dari 4 akun dummy utama.
-- **Session timeout**: `SESSION_TIMEOUT_SECONDS` (30 menit) dibikin overridable lewat `.env` khusus testing (`config.php`, fallback tetap 30 menit). `WARNING_MS` (modal peringatan, 5 menit sebelum timeout) itu **hardcode di JS**, tidak proporsional ke override — kalau di-override pendek (10 detik), modal peringatan nongol praktis instan dan terus reopen tiap direset, jadi interaksi form saat modal menutupi layar harus lewat `page.evaluate()` (manipulasi DOM + dispatch event langsung), bukan klik/fill normal Playwright.
 - **`baseURL` Playwright wajib trailing slash**, path navigasi (`page.goto(...)`) **jangan pakai leading slash** — app punya subpath (`/form-am`), leading slash membuat URL resolve balik ke root domain (standar WHATWG URL resolution, bukan bug Playwright).
 
 ### Menjaga Test Tetap "Bersih"

@@ -131,6 +131,7 @@ CREATE TABLE IF NOT EXISTS "users" (
   PRIMARY KEY ("id_user")
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_username" ON "users" ("username");
+CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_email_normalized" ON "users" (lower("email"));
 -- Cuma boleh ada 1 baris is_super_admin=true di seluruh tabel -- dijaga di
 -- level DB, bukan cuma diasumsikan lewat kode. Lihat
 -- database/migrations/2026-08-20_add_super_admin_protection.sql.
@@ -1215,3 +1216,18 @@ CREATE INDEX IF NOT EXISTS "idx_kendala_jinsung_1_4_id_am" ON "kendala_jinsung_1
 CREATE INDEX IF NOT EXISTS "idx_kendala_jinsung_5_id_am" ON "kendala_jinsung_5" ("id_am");
 CREATE INDEX IF NOT EXISTS "idx_kendala_joeya_id_am" ON "kendala_joeya" ("id_am");
 CREATE INDEX IF NOT EXISTS "idx_kendala_best_pack_id_am" ON "kendala_best_pack" ("id_am");
+
+-- Owner checklist memakai ID akun immutable; username tetap snapshot tampilan.
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'sig', 'joeya', 'illapak_1_2', 'illapak_3_12', 'unifill_b',
+    'chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5',
+    'best_pack', 'cosmec', 'fbd_jaw_chuan', 'fbd_glatt', 'supermixer',
+    'storage_tank', 'storage_tank_tetrapak', 'mixing_tank', 'granulator',
+    'check_weigher', 'conveyor_sig'
+  ] LOOP
+    EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS created_by_user_id integer REFERENCES users(id_user) ON DELETE SET NULL', 'tb_mesin_' || t);
+  END LOOP;
+END $$;

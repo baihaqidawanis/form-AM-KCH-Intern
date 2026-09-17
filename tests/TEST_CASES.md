@@ -76,15 +76,6 @@
 | 21-37 | `list2` & `add` tiap 17 modul mesin (SIG, Joeya, Illapak 1-2, Illapak 3-12, Unifill B, Chimei, Temach, Jihcheng, Jinsung 1-4, Jinsung 5, Best Pack, Cosmec, FBD Jaw Chuan, FBD Glatt, Supermixer, Storage Tank, Mixing Tank) — HTTP 200, nol error/warning/deprecated bocor ke halaman | ✅ (17/17) |
 | 38 | Halaman infra (Home, Approval, Users, Roles, Tag, Audit Trail, Panduan) — HTTP 200, nol error | ✅ |
 
-## E2E Browser — Session & Draft (`tests/e2e/session-timeout.spec.js`)
-
-| # | Case | Status |
-|---|---|---|
-| 39 | Idle timeout: modal peringatan muncul, form yang lagi diisi ke-draft otomatis ke `localStorage`, auto-logout beneran mengakhiri sesi (bukan cuma redirect kosmetik — regresi guard bug CSRF-token-hilang Round 37) | ✅ |
-| 40 | Login ulang setelah timeout → notice "draft ditemukan" muncul → klik restore → isian form balik persis seperti sebelum timeout | ✅ |
-
----
-
 ## Yang BELUM Ada Test Otomatis (sengaja, atau belum sempat)
 
 | Case | Kenapa belum otomatis | Ada di manual checklist? |

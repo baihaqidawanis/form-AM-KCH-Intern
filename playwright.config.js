@@ -4,7 +4,7 @@ const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
 	testDir: './tests/e2e',
 	timeout: 30 * 1000,
-	fullyParallel: false, // session-timeout test manipulasi .env global -- jangan paralel
+	fullyParallel: true,
 	retries: 0,
 	reporter: 'list',
 	use: {

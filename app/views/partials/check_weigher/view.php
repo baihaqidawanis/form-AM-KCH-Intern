@@ -45,7 +45,7 @@ $current_page = $this->set_current_page_link();
         $izinKhusus = [2];
         $admin_roles = [1, 3];
         $can_approve = (in_array($user_role, $izinKhusus) || in_array($user_role, $admin_roles));
-        $can_edit = ($current_user == $data['user_create'] || in_array($user_role, $admin_roles));
+		$can_edit = (intval($data['created_by_user_id'] ?? 0) === intval(USER_ID) || in_array($user_role, $admin_roles));
         $can_delete = in_array($user_role, $admin_roles);
         ?>
         <div class="mt-3 d-flex flex-wrap align-items-center">

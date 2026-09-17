@@ -182,7 +182,29 @@ function json_encode_quote($data)
  */
 function user_login_status()
 {
-	return (!empty(get_session('user_data')) ? true : false);
+	static $checked = false;
+	$user = get_session('user_data');
+	if (empty($user) || empty($user['id_user'])) {
+		return false;
+	}
+	if (!$checked) {
+		$checked = true;
+		try {
+			$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET);
+			$current = $db->where('id_user', (int)$user['id_user'])->getOne('users', array('id_user', 'nama', 'email', 'username', 'area', 'mesin', 'account_status', 'user_role_id', 'paraf_image', 'user_initials'));
+			if (!$current || strtolower((string)($current['account_status'] ?? '')) !== 'active') {
+				clear_session('user_data');
+				session_regenerate_id(true);
+				return false;
+			}
+			set_session('user_data', $current);
+		} catch (Throwable $e) {
+			error_log('Session authorization refresh failed: ' . $e->getMessage());
+			clear_session('user_data');
+			return false;
+		}
+	}
+	return true;
 }
 
 /**

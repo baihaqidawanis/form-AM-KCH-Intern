@@ -173,7 +173,7 @@ class ACL
 			$arr_path = explode("/", $path);
 			$page = strtolower($arr_path[0]);
 
-			$user_role = intval(USER_ROLE); // Get user defined role_id (int) from session value
+			$user_role = intval(get_active_user('user_role_id'));
 			if (!self::is_machine_allowed($page, $user_role, get_active_user('area'))) {
 				return FORBIDDEN;
 			}
@@ -187,6 +187,10 @@ class ACL
 				$action = (!empty($arr_path[1]) ? $arr_path[1] : "list");
 				if ($action == "index") {
 					$action = "list";
+				}
+				$machine_pages = array_merge(...array_values(self::$area_machines));
+				if ($user_role === 2 && in_array($page, $machine_pages, true) && in_array($action, array('edit', 'editfield'), true)) {
+					return AUTHORIZED;
 				}
 				//Check if user have access to all pages or user have access to all page actions
 				if ($rp[$user_role] == "*" || (!empty($rp[$user_role][$page]) && $rp[$user_role][$page] == "*")) {
@@ -220,7 +224,7 @@ class ACL
 	 */
 	public static function is_machine_allowed($page, $user_role = null, $user_area = null)
 	{
-		$role = $user_role === null ? intval(USER_ROLE) : intval($user_role);
+		$role = $user_role === null ? intval(get_active_user('user_role_id')) : intval($user_role);
 		if (!in_array($role, array(4, 5), true)) {
 			return true;
 		}

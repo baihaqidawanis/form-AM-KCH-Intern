@@ -28,7 +28,7 @@ Diagram sederhana: Operator isi form → (semua OK → auto-approve sistem) / (a
 
 ### Slide 5 — Kepatuhan terhadap URS
 - Semua requirement Rank I (Penting) di URS — **selesai**, dicek satu-per-satu ke kode & dites langsung (bukan asumsi).
-- Highlight fitur GMP-critical: auto-approve/manual-approve, audit trail, lockout akun, session timeout, format tanggal standar, "printed by" di laporan (prinsip ALCOA).
+- Highlight fitur GMP-critical: auto-approve/manual-approve, audit trail, lockout akun, validasi sesi aktif, format tanggal standar, "printed by" di laporan (prinsip ALCOA).
 - Rujuk ke `KEPATUHAN_URS.md` untuk detail tabel per-poin.
 
 ### Slide 6 — Keamanan & Kontrol Akses

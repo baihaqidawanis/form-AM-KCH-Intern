@@ -46,7 +46,8 @@ class RolesController extends SecureController{
 			$db->orderBy("roles.role_id", ORDER_TYPE);
 		}
 		if($fieldname){
-			$db->where($fieldname , $fieldvalue); //filter by a single field name
+			if (!in_array($fieldname, array('role_id', 'role_name'), true)) { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
+			$db->where('roles.' . $fieldname, $fieldvalue);
 		}
 		$tc = $db->withTotalCount();
 		$records = $db->get($tablename, $pagination, $fields);

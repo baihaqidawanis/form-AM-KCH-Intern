@@ -227,6 +227,8 @@ class QrSignatureHelper
             $signer = $db->getOne('users', array('id_user', 'nama', 'username', 'user_role_id'));
             if (!$signer) { throw new RuntimeException('Akun penandatangan tidak ditemukan.'); }
             $db->startTransaction();
+			$lockKey = 'form-am:' . $mesinSlug . ':' . intval($mesinId) . ':' . sprintf('%04d-%02d', intval($tahun), intval($bulan)) . ':p' . intval($periode);
+			$db->rawQuery('SELECT pg_advisory_xact_lock(hashtext(?))', array($lockKey));
             $db->rawQuery(
                 'INSERT INTO am_period_signatures (mesin_slug, mesin_id, bulan, tahun, periode, document_hash, document_payload, signature_version, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, 2, ?, ?) ON CONFLICT (mesin_slug, mesin_id, bulan, tahun, periode) DO NOTHING',
                 array($mesinSlug, (int)$mesinId, (int)$bulan, (int)$tahun, (int)$periode, $docHash, self::canonicalJson($documentPayload), 'draft', $now)

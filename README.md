@@ -4,10 +4,10 @@ Sistem digitalisasi Form Autonomous Maintenance (AM) — pencatatan pemeriksaan/
 
 ## Ringkasan
 
-- **17 modul mesin** di 3 kategori: Filling, Packaging, Compounding.
-- **4 role pengguna** (Administrator, Manager, Supervisor, Staff/Operator) dengan kewenangan sesuai matrix URS.
+- **21 modul mesin** di 3 kategori: Filling, Packaging, Compounding.
+- **5 role pengguna** (Administrator, Manager, Supervisor, Staff, Operator) dengan kewenangan sesuai matrix URS.
 - **Auto-approve** kalau semua part kondisi OK, **approval manual** kalau ada kendala (NOK).
-- Export laporan PDF/Word/CSV/Excel, Audit Trail otomatis, session timeout, lockout akun.
+- Export laporan PDF/Word/CSV/Excel, Audit Trail otomatis, dan lockout akun.
 - Status saat ini: **selesai & teruji di lingkungan development, belum di-deploy ke server production** — lihat [DOCS_MD/DEPLOYMENT.md](./DOCS_MD/DEPLOYMENT.md).
 
 ## Stack

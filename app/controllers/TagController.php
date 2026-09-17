@@ -46,7 +46,8 @@ class TagController extends SecureController{
 			$db->orderBy("tag.id", ORDER_TYPE);
 		}
 		if($fieldname){
-			$db->where($fieldname , $fieldvalue); //filter by a single field name
+			if (!in_array($fieldname, array('id', 'kategori_tag'), true)) { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
+			$db->where('tag.' . $fieldname, $fieldvalue);
 		}
 		$tc = $db->withTotalCount();
 		$records = $db->get($tablename, $pagination, $fields);

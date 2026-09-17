@@ -62,7 +62,9 @@ class UsersController extends SecureController{
 			$db->orderBy("users.id_user", ORDER_TYPE);
 		}
 		if($fieldname){
-			$db->where($fieldname , $fieldvalue); //filter by a single field name
+			$filters = array('id_user', 'username', 'email', 'area', 'mesin', 'account_status', 'user_role_id');
+			if (!in_array($fieldname, $filters, true)) { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
+			$db->where('users.' . $fieldname, $fieldvalue);
 		}
 		$tc = $db->withTotalCount();
 		$records = $db->get($tablename, $pagination, $fields);

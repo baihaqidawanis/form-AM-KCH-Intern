@@ -7,6 +7,7 @@ BEGIN;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "paraf_image" text NULL;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "user_initials" varchar(10) NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_username" ON "users" ("username");
+CREATE UNIQUE INDEX IF NOT EXISTS "uq_users_email_normalized" ON "users" (lower("email"));
 
 UPDATE "roles" SET "role_name" = 'Staff' WHERE "role_id" = 4;
 
@@ -94,6 +95,8 @@ BEGIN
     EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_sha256 char(64)', 'kendala_' || t);
     EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_mime varchar(50)', 'kendala_' || t);
     EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS foto_before_size integer', 'kendala_' || t);
+	EXECUTE format('ALTER TABLE public.%I ADD COLUMN IF NOT EXISTS created_by_user_id integer REFERENCES users(id_user) ON DELETE SET NULL', 'tb_mesin_' || t);
+	EXECUTE format('UPDATE public.%I f SET created_by_user_id = u.id_user FROM users u WHERE f.created_by_user_id IS NULL AND f.user_create = u.username', 'tb_mesin_' || t);
   END LOOP;
 END $$;
 

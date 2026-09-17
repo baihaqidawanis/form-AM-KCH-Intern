@@ -42,9 +42,7 @@
 | Requirement | Status | Bukti |
 |---|---|---|
 | Salah password 3× berturut-turut → akun terkunci (`Blocked`) | ✅ | Counter reset cuma pas login sukses. Diverifikasi otomatis (`tests/Feature/LockoutTest.php`, pakai akun throwaway biar gak ganggu akun lain) |
-| Sesi berakhir setelah 30 menit idle, notifikasi muncul | ✅ | Idle-timer JS (peringatan 5 menit sebelum habis) + server-side backstop. Draft form disimpan otomatis ke browser sebelum logout paksa. Diverifikasi Playwright (`tests/e2e/session-timeout.spec.js`) |
-
-**Bug ketahuan & difix pas nulis test Playwright**: JS auto-logout (`doTimeout()` di `main_layout.php`) manggil `index/logout` **tanpa CSRF token** — request-nya ditolak (`Csrf::cross_check()` → 403) SEBELUM `session_destroy()` sempet jalan. Artinya timeout **kelihatan** jalan (browser redirect) tapi session **beneran tetap aktif** di background — pelanggaran langsung ke requirement "sesi berakhir setelah 30 menit". Fixed: token disisipkan ke URL logout sama kayak link Logout manual. Ini bug yang cukup lama gak ketahuan karena testing manual sebelumnya cuma verifikasi "modal muncul + draft ke-save", bukan "session-nya beneran mati".
+| Tidak ada idle session timeout | ✅ | Keputusan bisnis: sesi tidak diakhiri otomatis karena tab atau device ditinggal. Status dan role akun diverifikasi ulang pada request terlindungi. |
 
 ---
 

@@ -44,7 +44,8 @@ class ApprovalController extends SecureController{
 			$db->orderBy("approval.id", ORDER_TYPE);
 		}
 		if($fieldname){
-			$db->where($fieldname , $fieldvalue); //filter by a single field name
+			if ($fieldname !== 'id') { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
+			$db->where('approval.id', $fieldvalue);
 		}
 		$tc = $db->withTotalCount();
 		$records = $db->get($tablename, $pagination, $fields);

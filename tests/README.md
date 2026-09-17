@@ -35,7 +35,7 @@ vendor/bin/phpunit --testdox
 # 1 file test PHPUnit saja
 vendor/bin/phpunit tests/Feature/RbacTest.php
 
-# Test Playwright (browser beneran — session timeout & draft auto-save)
+# Test Playwright (browser beneran; hanya untuk environment QA terpisah)
 npm run test:e2e
 ```
 
