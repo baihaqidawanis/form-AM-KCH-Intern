@@ -117,7 +117,7 @@ class Router
 	function run($url)
 	{
 		self::$page_url = $url;
-		$url_segment = array_map('urldecode', explode("/", rtrim($url, "/")));
+		$url_segment = array_map('urldecode', explode("/", rtrim((string)$url, "/")));
 		$page = strtolower(!empty($url_segment[0]) ? $url_segment[0] : DEFAULT_PAGE);
 		
 		// all action name should be in lower case

@@ -2,8 +2,10 @@
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $file = __DIR__ . '/../' . ltrim($path, '/');
+$uploadDir = trim((string)(getenv('APP_UPLOAD_DIR') ?: 'uploads/'), '/');
+$uploadPrefix = '/' . $uploadDir . '/';
 if ($path !== '/' && is_file($file)) {
-    if (strpos($path, '/uploads/') === 0 || strpos($path, 'uploads/') === 0) {
+    if (strpos($path, $uploadPrefix) === 0) {
         header('X-Content-Type-Options: nosniff');
         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
         $mimes = [

@@ -4,6 +4,7 @@
 // .env adalah sumber konfigurasi utama supaya nilai lama dari Apache/Windows
 // tidak diam-diam mengalahkan konfigurasi aplikasi.
 $envFile = __DIR__ . '/.env';
+$isTestingEnvironment = in_array(strtolower(trim((string)getenv('APP_ENV'))), array('test', 'testing'), true);
 if (is_readable($envFile)) {
 	foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
 		$line = trim($line);
@@ -13,7 +14,11 @@ if (is_readable($envFile)) {
 		list($envKey, $envValue) = explode('=', $line, 2);
 		$envKey = trim($envKey);
 		$envValue = trim($envValue);
-		putenv("$envKey=$envValue");
+		// Test runner wajib bisa mengganti DB/upload melalui environment agar
+		// tidak pernah memakai data lokal atau server manual QA.
+		if (!$isTestingEnvironment || getenv($envKey) === false) {
+			putenv("$envKey=$envValue");
+		}
 	}
 }
 function env($key, $default = null)
@@ -78,7 +83,7 @@ define("PAGES_DIR", VIEWS_DIR . "partials/");
 define("AUDIT_LOGS_DIR", "logs/");
 
 // File Upload Directories 
-define("UPLOAD_DIR", "uploads/");
+define("UPLOAD_DIR", rtrim((string)env("APP_UPLOAD_DIR", "uploads/"), "/\\") . "/");
 define("UPLOAD_FILE_DIR", UPLOAD_DIR . "files/");
 define("UPLOAD_IMG_DIR", UPLOAD_DIR . "photos/");
 define("MAX_UPLOAD_FILESIZE", trim(ini_get("upload_max_filesize")));

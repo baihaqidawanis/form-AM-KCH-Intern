@@ -173,6 +173,7 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
                                             $time_val = $ts ? date('H:i:s', $ts) : '-';
                                             $ip_val = !empty($data['ServerIP']) ? htmlspecialchars($data['ServerIP']) : '-';
                                             $name_val = !empty($data['user_nama']) ? htmlspecialchars($data['user_nama']) : (!empty($data['user_username']) ? htmlspecialchars($data['user_username']) : htmlspecialchars($data['UserID'] ?? '-'));
+											$audit_user_id = trim((string)($data['UserID'] ?? ''));
                                             $area_val = !empty($data['user_area']) ? htmlspecialchars($data['user_area']) : '-';
 
                                             $table_label = htmlspecialchars($data['TableName'] ?? '');
@@ -198,9 +199,13 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
                                                 <td class="td-Time font-monospace-apple text-muted"><?php echo $time_val; ?></td>
                                                 <td class="td-IP font-monospace-apple"><span class="badge badge-light border"><?php echo $ip_val; ?></span></td>
                                                 <td class="td-Name font-weight-medium">
+											<?php if ($audit_user_id !== '') { ?>
                                                     <a size="sm" class="audit-user-link page-modal" href="<?php print_link("masterdetail/index/audit_log/users/nama/" . urlencode($data['UserID'])) ?>">
                                                         <span class="audit-user-icon"><i class="fa fa-user"></i></span> <?php echo $name_val; ?>
                                                     </a>
+											<?php } else { ?>
+												<span class="audit-user-icon"><i class="fa fa-user"></i></span> <?php echo $name_val; ?>
+											<?php } ?>
                                                 </td>
                                                 <td class="td-Area"><span class="badge badge-pill badge-light border px-2 py-1"><?php echo $area_val; ?></span></td>
                                                 <td class="td-Activity">
