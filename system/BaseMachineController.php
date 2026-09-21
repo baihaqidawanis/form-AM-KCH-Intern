@@ -838,15 +838,17 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 
-		// Kumpulkan paraf penanggung jawab terakhir: revisi mengalihkan atribusi
-		// dari pembuat awal kepada user_perubah.
+		// Paraf pelaksana harian selalu milik pengisi Shift 1. Perubahan pada
+		// Shift 2/3 maupun revisi record tidak boleh mengganti paraf tersebut.
+		// Record lama tanpa nilai shift diperlakukan sebagai Shift 1.
 		$daily_paraf = array();
 		$daily_operators = array();
 		$operator_names = array();
 		foreach ($rows as $row) {
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
-			$active_user = !empty($row['user_perubah']) ? $row['user_perubah'] : ($row['user_create'] ?? '');
-			if ($active_user !== '') {
+			$shift = trim((string)($row['shift'] ?? '1'));
+			$active_user = trim((string)($row['user_create'] ?? ''));
+			if ($shift === '1' && $active_user !== '' && !isset($daily_operators[$day])) {
 				$daily_operators[$day] = $active_user;
 				$operator_names[] = $active_user;
 			}
