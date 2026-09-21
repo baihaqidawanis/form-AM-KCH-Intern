@@ -32,9 +32,25 @@ $report_machine_labels = array(
 if (isset($report_machine_labels[$machine_key])) {
     $machine_options = array_values(array_filter($machine_options, function ($option) use ($report_machine_labels, $machine_key) {
         $canonical_label = str_replace('illapak', 'ilapak', strtolower(trim($option['label'])));
-        return in_array($canonical_label, $report_machine_labels[$machine_key], true);
+        $expected_labels = $report_machine_labels[$machine_key];
+        if (in_array($canonical_label, $expected_labels, true)) { return true; }
+
+        // Nama unit tunggal di server kadang memiliki suffix nomor/seri.
+        // Cocokkan hanya dari awal label agar unit Best Pack yang kebetulan
+        // mengandung nama mesin tidak ikut masuk.
+        if (count($expected_labels) === 1) {
+            return preg_match('/^' . preg_quote($expected_labels[0], '/') . '(?:\s|$)/', $canonical_label) === 1;
+        }
+        return false;
     }));
 }
+
+// Form JOYEA lama menyimpan unit dengan ID tetap 3. Pertahankan jalur export
+// saat row option master tidak terbaca, tanpa membuka pilihan unit lain.
+if ($machine_key === 'joeya' && empty($machine_options)) {
+    $machine_options = array(array('value' => '3', 'label' => 'JOYEA'));
+}
+$single_machine_option = count($machine_options) === 1 ? $machine_options[0] : null;
 $area_name = 'FILLING';
 if (in_array($machine_key, array('chimei', 'temach', 'jihcheng', 'jinsung_1_4', 'jinsung_5', 'best_pack', 'check_weigher', 'conveyor_sig'), true)) {
     $area_name = 'PACKAGING 1';
@@ -59,11 +75,20 @@ if (!function_exists('get_period_image_src')) {
   <h4>Cetak Check Sheet Periode — <?php echo htmlspecialchars($d['display_name']); ?></h4>
   <p class="text-muted">Periode 1: tanggal 1–16. Periode 2: tanggal 17 sampai akhir bulan.</p>
   <form class="form-row" method="get" action="<?php print_link($d['machine_key'] . '/period_report'); ?>">
-    <div class="col-md-3 form-group"><label>Mesin</label><select required class="custom-select" name="mesin"><option value="">Pilih mesin</option><?php foreach ($machine_options as $o) { ?><option value="<?php echo $o['value']; ?>"><?php echo htmlspecialchars($o['label']); ?></option><?php } ?></select></div>
+    <div class="col-md-3 form-group"><label>Mesin</label>
+      <?php if ($single_machine_option) { ?>
+        <input type="hidden" name="mesin" value="<?php echo htmlspecialchars($single_machine_option['value'], ENT_QUOTES, 'UTF-8'); ?>">
+        <input class="form-control" value="<?php echo htmlspecialchars($single_machine_option['label'], ENT_QUOTES, 'UTF-8'); ?>" disabled readonly>
+      <?php } elseif (!empty($machine_options)) { ?>
+        <select required class="custom-select" name="mesin"><option value="">Pilih mesin</option><?php foreach ($machine_options as $o) { ?><option value="<?php echo htmlspecialchars($o['value'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($o['label']); ?></option><?php } ?></select>
+      <?php } else { ?>
+        <div class="alert alert-danger py-2 mb-0">Unit mesin untuk modul ini tidak ditemukan.</div>
+      <?php } ?>
+    </div>
     <div class="col-md-2 form-group"><label>Bulan</label><select class="custom-select" name="month"><?php foreach ($month_names as $n => $name) { ?><option value="<?php echo $n; ?>" <?php echo $n === intval(date('n')) ? 'selected' : ''; ?>><?php echo $name; ?></option><?php } ?></select></div>
     <div class="col-md-2 form-group"><label>Tahun</label><input class="form-control" type="number" name="year" value="<?php echo date('Y'); ?>" min="2020" max="2100"></div>
     <div class="col-md-2 form-group"><label>Periode</label><select class="custom-select" name="period"><option value="1">1 (1–16)</option><option value="2">2 (17–akhir bulan)</option></select></div>
-    <div class="col-md-2 form-group align-self-end"><button class="btn btn-primary">Tampilkan Check Sheet</button></div>
+    <div class="col-md-2 form-group align-self-end"><button class="btn btn-primary" <?php echo empty($machine_options) ? 'disabled' : ''; ?>>Tampilkan Check Sheet</button></div>
   </form>
 <?php } else { 
   $part_count = count($d['parts'] ?? array());
