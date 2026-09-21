@@ -56,9 +56,31 @@ $page_element_id = 'sig-add-' . random_str();
       <div class="col-md-9">
         <div class="bg-light p-3 animated fadeIn page-content">
           <?php $this::display_page_errors(); ?>
-<?php $is_shift_form = !empty($this->uses_shift); $selected_shift = $this->selected_shift ?? ''; if ($is_shift_form && !$selected_shift) { ?>
-<div class="alert alert-info"><strong>Pilih Shift Pemeriksaan</strong><div class="form-inline mt-2"><select id="shift-selector" class="custom-select mr-2"><option value="">Pilih shift ...</option><?php foreach (($this->configured_shifts ?? array('1')) as $shift_option) { ?><option value="<?php echo $shift_option; ?>">Shift <?php echo $shift_option; ?></option><?php } ?></select><button type="button" class="btn btn-primary" onclick="var s=document.getElementById('shift-selector').value;if(s){window.location.href=window.location.pathname+'?shift='+s;}">Tampilkan Checklist</button></div></div>
-<?php } ?>
+          <?php $is_shift_form = !empty($this->uses_shift); $selected_shift = $this->selected_shift ?? ''; ?>
+          <?php if ($is_shift_form && !$selected_shift) { ?>
+            <div class="card mb-3 shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="font-weight-bold mb-1">Pilih Shift Pemeriksaan</h5>
+                <p class="text-muted mb-3">Checklist akan disusun sesuai part yang berlaku pada shift tersebut.</p>
+                <form method="get" action="<?php print_link('sig/add'); ?>">
+                  <div class="form-group mb-3">
+                    <label class="font-weight-bold mb-1" for="ctrl-shift-selector">Shift <span class="text-danger">*</span></label>
+                    <select required id="ctrl-shift-selector" name="shift" class="custom-select d-block" style="max-width: 360px;">
+                      <option value="" selected>Pilih shift ...</option>
+                      <?php foreach (($this->configured_shifts ?? array('1')) as $shift_option) { ?><option value="<?php echo $shift_option; ?>">Shift <?php echo $shift_option; ?></option><?php } ?>
+                    </select>
+                  </div>
+                  <button class="btn btn-primary px-4" type="submit">Tampilkan Checklist</button>
+                </form>
+              </div>
+            </div>
+          <?php } else { ?>
+          <?php if ($is_shift_form) { ?>
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+              <span><strong>Shift <?php echo htmlspecialchars($selected_shift); ?></strong> &mdash; hanya part yang berlaku pada shift ini yang ditampilkan.</span>
+              <a class="btn btn-sm btn-outline-primary" href="<?php print_link('sig/add'); ?>">Ganti shift</a>
+            </div>
+          <?php } ?>
           <form id="sig-add-form" class="form page-form needs-validation" novalidate
             action="<?php print_link("sig/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select
@@ -186,6 +208,7 @@ $page_element_id = 'sig-add-' . random_str();
             <div class="text-center mt-4 mb-4 pt-2 pb-2"><a class="btn btn-secondary mr-3" href="<?php print_link('sig') ?>">Batal</a><button
                 class="btn btn-primary" type="submit">Simpan AM <i class="fa fa-send"></i></button></div>
           </form>
+          <?php } ?>
         </div>
       </div>
     </div>
