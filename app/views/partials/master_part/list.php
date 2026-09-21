@@ -17,7 +17,10 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
           <h4 class="record-title m-0 font-weight-bold" style="color: #1D1D1F;">Master Data Part Mesin</h4>
           <small class="text-muted">Detail per part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) yang tampil di form Add AM.</small>
         </div>
-        <?php if ($selected_machine) { ?><div class="col-sm-3 text-right">
+        <?php if ($selected_machine) { ?><div class="col-sm-5 text-right">
+          <a class="btn btn-outline-secondary my-1 px-3 mr-1" style="border-radius: 8px; font-weight: 600;" href="<?php print_link('master_part'); ?>">
+            <i class="fa fa-arrow-left mr-1"></i> Daftar Mesin
+          </a>
           <a class="btn btn-success my-1 px-3" style="background: #009639; border-color: #009639; border-radius: 8px; font-weight: 600;" href="<?php print_link('master_part/add/' . $selected_machine) ?>">
             <i class="fa fa-plus mr-1"></i> Tambah Part
           </a>
@@ -28,7 +31,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
 
   <div class="container-fluid">
     <?php $this::display_page_errors(); ?>
-    <div class="card mb-4 master-part-filter-card">
+    <?php if (!$selected_machine) { ?><div class="card mb-4 master-part-filter-card">
       <div class="card-body p-4">
         <form method="get" action="<?php print_link('master_part'); ?>" class="row align-items-end">
           <input type="hidden" name="search_submit" value="1">
@@ -52,6 +55,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
         </div>
       </div>
     </div>
+    <?php } ?>
 
     <?php if ($selected_machine) { ?><div class="card mb-4" style="border-radius: 14px; background: #FFFFFF;">
       <div class="card-body p-3">
