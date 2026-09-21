@@ -1,40 +1,60 @@
 <?php
 $data = $this->view_data;
-$records = $data['records'];
+$records = $data['records'] ?? array();
+$machine_results = $data['machine_results'] ?? array();
+$search = $data['search'] ?? '';
+$area = $data['area'] ?? '';
 $csrf_token = Csrf::$token;
 $selected_machine = $this->selected_machine;
 $machine_keys = Master_partController::$machine_keys;
-$selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selected_machine] : $selected_machine;
+$selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selected_machine] : '';
 ?>
 <section class="page">
-  <div class="card border-0 shadow-sm mb-3" style="border-radius: 14px; background: #FFFFFF;">
+  <div class="card mb-4" style="margin-left:15px; margin-right:15px; border-radius: 14px; background: #FFFFFF;">
     <div class="card-body p-3">
       <div class="row align-items-center">
         <div class="col">
           <h4 class="record-title m-0 font-weight-bold" style="color: #1D1D1F;">Master Data Part Mesin</h4>
           <small class="text-muted">Detail per part (foto, Metode, Alat, Standard, Durasi, Pelaksanaan) yang tampil di form Add AM.</small>
         </div>
-        <div class="col-sm-3 text-right">
+        <?php if ($selected_machine) { ?><div class="col-sm-3 text-right">
           <a class="btn btn-success my-1 px-3" style="background: #009639; border-color: #009639; border-radius: 8px; font-weight: 600;" href="<?php print_link('master_part/add/' . $selected_machine) ?>">
             <i class="fa fa-plus mr-1"></i> Tambah Part
           </a>
-        </div>
+        </div><?php } ?>
       </div>
     </div>
   </div>
 
-  <div class="container-fluid p-0">
+  <div class="container-fluid">
     <?php $this::display_page_errors(); ?>
-    <div class="card border-0 shadow-sm" style="border-radius: 14px; background: #FFFFFF;">
-      <div class="card-body p-3">
-        <div class="mb-3 d-flex flex-wrap align-items-center" style="gap: 8px 6px;">
-          <label class="mb-1 mr-2 font-weight-bold" style="color: #48484A; font-size: 0.88rem;">Filter mesin:</label>
-          <div class="d-flex flex-wrap align-items-center" style="gap: 8px 6px;">
-            <?php foreach ($machine_keys as $key => $label) { ?>
-              <a class="btn btn-sm mb-1 am-filter-pill <?php echo ($selected_machine === $key) ? 'active' : ''; ?>" href="<?php print_link('master_part/index/' . $key) ?>"><?php echo $label; ?></a>
-            <?php } ?>
-          </div>
+    <div class="card mb-4 master-part-filter-card">
+      <div class="card-body p-4">
+        <form method="get" action="<?php print_link('master_part'); ?>" class="row align-items-end">
+          <input type="hidden" name="search_submit" value="1">
+          <div class="col-md-4 mb-2"><label class="font-weight-bold mb-1">Area</label><select name="area" class="custom-select"><option value="">Semua Area</option><?php foreach (array('compounding' => 'Compounding', 'filling' => 'Filling', 'kemas' => 'Kemas', 'wrapping dan pack cartoning' => 'Wrapping dan Pack Cartoning') as $value => $label) { ?><option value="<?php echo $value; ?>" <?php echo $area === $value ? 'selected' : ''; ?>><?php echo $label; ?></option><?php } ?></select></div>
+          <div class="col-md-5 mb-2"><label class="font-weight-bold mb-1">Cari template mesin</label><input type="search" name="search" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Contoh: SIG, Ilapak, FBD"></div>
+          <div class="col-md-3 mb-2"><button class="btn btn-primary btn-block" type="submit"><i class="fa fa-search mr-1"></i> Search</button></div>
+        </form>
+        <div class="d-flex align-items-center justify-content-between mt-4 mb-3"><div><h5 class="mb-1 font-weight-bold" style="color:#1D1D1F;">Template Mesin</h5><small class="text-muted">Pilih mesin untuk mengelola detail part checklist.</small></div><span class="badge badge-light border px-3 py-2"><?php echo count($machine_results); ?> mesin</span></div>
+        <div class="row">
+          <?php if (empty($machine_results)) { ?><div class="col-12"><div class="text-center py-4 text-muted border rounded">Tidak ada template mesin yang sesuai.</div></div><?php } ?>
+          <?php foreach ($machine_results as $machine) { ?>
+            <div class="col-md-6 col-xl-4 mb-3">
+              <a class="master-part-machine-card d-block h-100" href="<?php print_link('master_part/index/' . $machine['key']); ?>">
+                <div class="d-flex align-items-center justify-content-between mb-3"><span class="master-part-machine-icon"><i class="fa fa-cogs"></i></span><span class="badge badge-light border"><?php echo htmlspecialchars(ucwords($machine['area'])); ?></span></div>
+                <strong class="d-block mb-1"><?php echo htmlspecialchars($machine['label']); ?></strong>
+                <small class="text-muted">Kelola part, urutan, foto, dan jadwal shift</small>
+                <span class="master-part-machine-action mt-3">Kelola Part <i class="fa fa-arrow-right ml-1"></i></span>
+              </a>
+            </div>
+          <?php } ?>
         </div>
+      </div>
+    </div>
+
+    <?php if ($selected_machine) { ?><div class="card mb-4" style="border-radius: 14px; background: #FFFFFF;">
+      <div class="card-body p-3">
 
         <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
           <div class="d-flex align-items-center">
@@ -93,31 +113,15 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
         </div>
       </div>
     </div>
+    <?php } ?>
   </div>
 </section>
 <style>
-  .am-filter-pill {
-    background: #FFFFFF !important;
-    border: 1px solid #D2D2D7 !important;
-    color: #48484A !important;
-    font-weight: 500;
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-size: 0.8rem;
-    transition: all 0.16s ease;
-  }
-  .am-filter-pill:hover {
-    background: #F0F8EC !important;
-    border-color: #86BD40 !important;
-    color: #009639 !important;
-  }
-  .am-filter-pill.active {
-    background: #009639 !important;
-    border-color: #009639 !important;
-    color: #FFFFFF !important;
-    font-weight: 600;
-    box-shadow: 0 2px 6px rgba(0, 150, 57, 0.28);
-  }
+  .master-part-filter-card { border-radius: 16px; background: linear-gradient(135deg, #FFFFFF 0%, #F7FBF7 100%); }
+  .master-part-machine-card { padding: 20px; border: 1px solid #E2E8E3; border-radius: 14px; background: #FFFFFF; color: #1D1D1F; text-decoration: none !important; box-shadow: 0 2px 7px rgba(0,0,0,.035); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease; }
+  .master-part-machine-card:hover { transform: translateY(-2px); border-color: #86BD40; box-shadow: 0 10px 24px rgba(0, 150, 57, .12); color: #1D1D1F; }
+  .master-part-machine-icon { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; background: #EAF6E8; color: #009639; }
+  .master-part-machine-action { display: block; color: #008435; font-size: .85rem; font-weight: 700; }
   .master-part-row.dragging { opacity: .4; background: #F0F8EC; }
   .master-part-row.drop-target-above { box-shadow: inset 0 3px 0 0 #009639; }
   .master-part-row.drop-target-below { box-shadow: inset 0 -3px 0 0 #009639; }

@@ -18,4 +18,14 @@ class SigController extends BaseMachineController
 		'modul_pisau' => 'Modul Pisau',
 		'inkjet' => 'Inkjet',
 	);
+
+	/** BAR hanya bagian dari checklist jika Tekanan Angin Suplai aktif di shift tersebut. */
+	protected function extraFieldsForParts(array $parts)
+	{
+		$fields = parent::extraFieldsForParts($parts);
+		if (!isset($parts['tekanan_angin_suplai'])) {
+			$fields = array_values(array_diff($fields, array('value_tekanan_angin')));
+		}
+		return $fields;
+	}
 }

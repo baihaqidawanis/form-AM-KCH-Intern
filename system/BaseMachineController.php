@@ -328,6 +328,16 @@ abstract class BaseMachineController extends SecureController
 		return $parts;
 	}
 
+	/**
+	 * Field tambahan yang relevan untuk checklist yang sedang ditampilkan.
+	 * Default mempertahankan perilaku semua mesin; SIG meng-override hook ini
+	 * supaya BAR hanya ikut Shift yang memuat part tekanan angin.
+	 */
+	protected function extraFieldsForParts(array $parts)
+	{
+		return $this->extraFields;
+	}
+
 	/** Return pesan error bila konteks Add tidak sah, atau null bila valid. */
 	protected function addContextError($formdata)
 	{
@@ -432,7 +442,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$newWidth = max(1, (int)round($width * $scale)); $newHeight = max(1, (int)round($height * $scale));
 		$dst = imagecreatetruecolor($newWidth, $newHeight);
 		imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height); imagedestroy($src);
-		$relativeDir = 'uploads/photos/nok/' . date('Y/m'); $absoluteDir = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativeDir);
+		$relativeDir = rtrim(UPLOAD_IMG_DIR, '/\\') . '/nok/' . date('Y/m'); $absoluteDir = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativeDir);
 		if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0775, true) && !is_dir($absoluteDir)) { imagedestroy($dst); throw new RuntimeException('Folder Foto Before tidak dapat dibuat.'); }
 		$relative = $relativeDir . '/' . bin2hex(random_bytes(16)) . '.jpg'; $absolute = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relative);
 		if (!imagejpeg($dst, $absolute, 85)) { imagedestroy($dst); throw new RuntimeException('Foto Before tidak dapat disimpan.'); }
@@ -467,7 +477,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		foreach ($details as $detail) {
 			$relative = ltrim((string)($detail['foto_before'] ?? ''), '/\\');
-			if (!preg_match('#^uploads/photos/nok/[A-Za-z0-9/_-]+\.jpg$#', $relative)) { continue; }
+			$allowedPrefix = preg_quote(rtrim(UPLOAD_IMG_DIR, '/\\') . '/nok/', '#');
+			if (!preg_match('#^' . $allowedPrefix . '[A-Za-z0-9/_-]+\.jpg$#', $relative)) { continue; }
 			$path = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relative);
 			if (is_file($path)) { @unlink($path); }
 		}
@@ -603,7 +614,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 			$db = $this->GetModel();
 			$parts_for_add = $this->partsForAdd($formdata);
-			$fields = array_merge(array('mesin'), array_keys($parts_for_add), $this->extraFields);
+			$extra_fields_for_add = $this->extraFieldsForParts($parts_for_add);
+			$fields = array_merge(array('mesin'), array_keys($parts_for_add), $extra_fields_for_add);
 			$this->fields = $fields;
 			$postdata = $this->format_request_data($formdata); $this->rules_array = array(); $this->sanitize_array = array();
 			foreach ($fields as $field) { $this->rules_array[$field] = 'required'; $this->sanitize_array[$field] = 'sanitize_string'; }
@@ -612,7 +624,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			// PDOException mentah (Error 500 generik) alih-alih pesan validasi yang jelas.
 			// Koma diterima juga (kebiasaan penulisan desimal Indonesia, "1,5") lalu
 			// dinormalisasi ke titik sebelum divalidasi/disimpan.
-			foreach ($this->extraFields as $ef) {
+			foreach ($extra_fields_for_add as $ef) {
 				if (isset($postdata[$ef]) && is_string($postdata[$ef])) { $postdata[$ef] = str_replace(',', '.', trim($postdata[$ef])); }
 				$this->rules_array[$ef] = 'required|numeric';
 			}
@@ -1048,18 +1060,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($formdata) {
 			$formdata['mesin'] = $formdata['mesin'] ?? $existing_record['mesin'];
 			$postdata = $this->format_request_data($formdata);
-			$this->fields = array_merge(array('perubahan'), array_keys($parts_for_edit), $this->extraFields);
+			$extra_fields_for_edit = $this->extraFieldsForParts($parts_for_edit);
+			$this->fields = array_merge(array('perubahan'), array_keys($parts_for_edit), $extra_fields_for_edit);
 			$this->rules_array = array('perubahan' => 'required');
 			$this->sanitize_array = array('perubahan' => 'sanitize_string');
-			foreach (array_merge(array_keys($parts_for_edit), $this->extraFields) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
+			foreach (array_merge(array_keys($parts_for_edit), $extra_fields_for_edit) as $field) { $this->sanitize_array[$field] = 'sanitize_string'; }
 			// Edit Data tidak selalu menampilkan extra field (contohnya shift). Pertahankan nilai
 			// yang tersimpan agar validasi required tidak gagal dan kolom lama tidak tertimpa.
-			foreach ($this->extraFields as $ef) {
+			foreach ($extra_fields_for_edit as $ef) {
 				if (!isset($postdata[$ef]) && isset($existing_record[$ef])) { $postdata[$ef] = $existing_record[$ef]; }
 			}
 			// Lihat catatan sama di add(): extraFields kolomnya numeric di DB, jadi
 			// perlu divalidasi + koma dinormalisasi ke titik di sini juga.
-			foreach ($this->extraFields as $ef) {
+			foreach ($extra_fields_for_edit as $ef) {
 				if (isset($postdata[$ef]) && is_string($postdata[$ef])) { $postdata[$ef] = str_replace(',', '.', trim($postdata[$ef])); }
 				$this->rules_array[$ef] = 'required|numeric';
 			}

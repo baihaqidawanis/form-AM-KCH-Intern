@@ -21,8 +21,9 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
     <?php
     if( $show_header == true ){
     ?>
-    <div class="bg-white p-3 mb-3 border-bottom shadow-sm rounded">
-        <div class="container-fluid">
+    <div class="container-fluid">
+        <div class="card mb-4 border shadow-sm" style="border-radius: 14px; overflow: hidden;">
+            <div class="card-body p-3">
             <div class="row align-items-center mb-3">
                 <div class="col">
                     <h3 class="record-title font-weight-bold text-dark mb-0">Audit Trail</h3>
@@ -122,6 +123,7 @@ $action_options = array('add', 'edit', 'edit_data', 'delete');
                 </div>
             </div>
         </div>
+    </div>
         <?php
         }
         ?>

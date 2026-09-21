@@ -1,9 +1,11 @@
 <?php
 $records = $this->view_data['records'] ?? array();
+$search = $this->view_data['search'] ?? '';
+$area = $this->view_data['area'] ?? '';
 $csrf_token = Csrf::$token;
 ?>
 <section class="page" id="master-mesin-page">
-    <div class="card border-0 shadow-sm mb-3" style="border-radius: 14px; background: #FFFFFF;">
+    <div class="card mb-4" style="margin-left:15px; margin-right:15px; border-radius: 14px; background: #FFFFFF;">
         <div class="card-body p-3">
             <div class="row align-items-center">
                 <div class="col-md-6">
@@ -14,12 +16,19 @@ $csrf_token = Csrf::$token;
         </div>
     </div>
 
-    <div class="container-fluid p-0">
+    <div class="container-fluid">
         <?php $this::display_page_errors(); ?>
 
-        <div class="card shadow-sm border-0" style="border-radius: 14px; overflow: hidden; background: #FFFFFF;">
-            <div class="card-body p-0">
-                <div class="table-responsive">
+        <div class="card mb-4" style="border-radius: 14px; overflow: hidden; background: #FFFFFF;">
+            <div class="card-body p-3">
+                <form method="get" action="<?php print_link('master_mesin'); ?>" class="row align-items-end">
+                    <input type="hidden" name="search_submit" value="1">
+                    <div class="col-md-4 mb-2"><label class="font-weight-bold mb-1">Area</label><select name="area" class="custom-select"><option value="">Semua Area</option><?php foreach (array('Compounding', 'Filling', 'Kemas', 'Wrapping dan Pack Cartoning') as $option) { ?><option value="<?php echo $option; ?>" <?php echo $area === $option ? 'selected' : ''; ?>><?php echo $option; ?></option><?php } ?></select></div>
+                    <div class="col-md-5 mb-2"><label class="font-weight-bold mb-1">Cari mesin atau nomor seri</label><input type="search" name="search" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Contoh: SIG 5 atau nomor seri"></div>
+                    <div class="col-md-3 mb-2"><button type="submit" class="btn btn-primary btn-block"><i class="fa fa-search mr-1"></i> Search</button></div>
+                </form>
+            </div>
+            <div class="table-responsive border-top">
                     <table class="table table-hover table-striped mb-0">
                         <thead class="thead-light">
                             <tr>
@@ -94,7 +103,6 @@ $csrf_token = Csrf::$token;
                             <?php } } ?>
                         </tbody>
                     </table>
-                </div>
             </div>
         </div>
     </div>

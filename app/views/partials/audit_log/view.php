@@ -30,19 +30,19 @@ $show_export_btn = $this->show_export_btn;
     }
     ?>
     <div  class="">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row ">
                 <div class="col-md-12 comp-grid">
                     <?php $this :: display_page_errors(); ?>
-                    <div  class="card animated fadeIn page-content">
+                    <div class="card mb-4 animated fadeIn page-content">
                         <?php
                         $counter = 0;
                         if(!empty($data)){
                         $rec_id = (!empty($data['log_id']) ? urlencode($data['log_id']) : null);
                         $counter++;
                         ?>
-                        <div id="page-report-body" class="">
-                            <table class="table table-hover table-borderless table-striped">
+                        <div id="page-report-body" class="audit-log-detail-table">
+                            <table class="table table-hover table-borderless table-striped mb-0">
                                 <!-- Table Body Start -->
                                 <tbody class="page-data" id="page-data-<?php echo $page_element_id; ?>">
                                     <tr  class="td-log_id">
@@ -75,7 +75,7 @@ $show_export_btn = $this->show_export_btn;
                                     </tr>
                                     <tr  class="td-SQLQuery">
                                         <th class="title"> Sqlquery: </th>
-                                        <td class="value"> <?php echo $data['SQLQuery']; ?></td>
+                                        <td class="value"><div class="audit-log-code-scroll"><pre><?php echo htmlspecialchars((string)($data['SQLQuery'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></pre></div></td>
                                     </tr>
                                     <tr  class="td-ServerIP">
                                         <th class="title"> Serverip: </th>
@@ -87,7 +87,7 @@ $show_export_btn = $this->show_export_btn;
                                     </tr>
                                     <tr  class="td-RequestData">
                                         <th class="title"> Requestdata: </th>
-                                        <td class="value"> <?php echo $data['RequestData']; ?></td>
+                                        <td class="value"><div class="audit-log-code-scroll"><pre><?php echo htmlspecialchars((string)($data['RequestData'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></pre></div></td>
                                     </tr>
                                     <tr  class="td-RequestCompleted">
                                         <th class="title"> Requestcompleted: </th>
@@ -146,4 +146,13 @@ $show_export_btn = $this->show_export_btn;
                                 </div>
                             </div>
                         </div>
-                    </section>
+</section>
+<style>
+  .audit-log-detail-table { overflow: hidden; }
+  .audit-log-detail-table table { table-layout: fixed; width: 100%; }
+  .audit-log-detail-table th.title { width: 175px; vertical-align: top; }
+  .audit-log-detail-table td.value { min-width: 0; vertical-align: top; }
+  .audit-log-code-scroll { max-width: 100%; overflow-x: auto; border: 1px solid #E2E8E3; border-radius: 8px; background: #F7FAF7; }
+  .audit-log-code-scroll pre { margin: 0; padding: 12px; min-width: max-content; white-space: pre; font: 12px/1.5 SFMono-Regular, Consolas, "Liberation Mono", monospace; color: #334155; }
+  @media (max-width: 767px) { .audit-log-detail-table th.title { width: 118px; font-size: .78rem; } }
+</style>

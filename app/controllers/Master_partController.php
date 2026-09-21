@@ -77,23 +77,48 @@ class Master_partController extends SecureController
 	}
 
 	/**
-	 * List part SELALU per 1 mesin -- gak ada mode "semua mesin dicampur"
-	 * (bikin bingung: part antar mesin keliatan nyampur padahal gak ada
-	 * hubungannya, dan urutan drag-drop cuma masuk akal dalam 1 mesin).
-	 * Kalau machine_key kosong/gak dikenal, default ke mesin pertama.
+	 * Part tetap SELALU per 1 template mesin. Halaman awal menampilkan semua
+	 * template agar admin dapat langsung memilihnya; Area/Search hanya menyaring.
 	 */
 	function index($machine_key = null)
 	{
-		if (empty($machine_key) || !array_key_exists($machine_key, self::$machine_keys)) {
-			$machine_key = $this->default_machine_key();
+		$request = $this->request;
+		$search = trim((string)($request->search ?? ''));
+		$area = trim((string)($request->area ?? ''));
+		$records = array();
+		$machine_results = array();
+
+		if (!empty($machine_key) && array_key_exists($machine_key, self::$machine_keys)) {
+			$db = $this->GetModel();
+			$db->where('machine_key', $machine_key);
+			$db->orderBy('urutan', 'ASC')->orderBy('id', 'ASC');
+			$records = $db->get($this->tablename);
+		} else {
+			$machine_key = null;
+			foreach (self::$machine_keys as $key => $label) {
+				$machine_area = $this->machine_area($key);
+				if ($area !== '' && $machine_area !== $area) { continue; }
+				if ($search !== '' && stripos($label, $search) === false && stripos($key, $search) === false) { continue; }
+				$machine_results[] = array('key' => $key, 'label' => $label, 'area' => $machine_area);
+			}
 		}
-		$db = $this->GetModel();
-		$db->where('machine_key', $machine_key);
-		$db->orderBy('urutan', 'ASC')->orderBy('id', 'ASC');
-		$records = $db->get($this->tablename);
 		$this->view->page_title = 'Master Data Part Mesin';
 		$this->view->selected_machine = $machine_key;
-		return $this->render_view('master_part/list.php', array('records' => $records));
+		return $this->render_view('master_part/list.php', array(
+			'records' => $records,
+			'machine_results' => $machine_results,
+			'search' => $search,
+			'area' => $area,
+		));
+	}
+
+	/** Area template mengikuti satu-satunya mapping resmi ACL. */
+	private function machine_area($machine_key)
+	{
+		foreach (ACL::$area_machines as $area => $machines) {
+			if (in_array($machine_key, $machines, true)) { return $area; }
+		}
+		return '';
 	}
 
 	/**
