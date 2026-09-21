@@ -1358,16 +1358,29 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 		}
 
-		// TO adalah status part, berbeda dari deaktivasi unit mesin.
-		$taken_out = $this->GetModel()->where('machine_key', $this->machineKey)
-			->where('taken_out_at', $end . ' 23:59:59', '<=')->where('taken_out_at', null, 'IS NOT')
-			->get('master_part', null, array('field_name', 'taken_out_at'));
+		// TO adalah interval status part, berbeda dari deaktivasi unit mesin.
+		try {
+			$taken_out = $this->GetModel()->rawQuery('SELECT mp."field_name", h."started_at", h."ended_at" FROM "master_part_status_history" h JOIN "master_part" mp ON mp."id" = h."master_part_id" WHERE mp."machine_key" = ? AND h."status" = \'TO\' AND h."started_at" <= ? AND (h."ended_at" IS NULL OR h."ended_at" > ?) ORDER BY h."started_at" ASC', array($this->machineKey, $end . ' 23:59:59', $start . ' 00:00:00'));
+		} catch (Throwable $e) {
+			// Backward-compatible fallback sampai update.sql dijalankan.
+			$taken_out = $this->GetModel()->where('machine_key', $this->machineKey)->where('taken_out_at', $end . ' 23:59:59', '<=')->where('taken_out_at', null, 'IS NOT')->get('master_part', null, array('field_name', 'taken_out_at'));
+			foreach ($taken_out as &$legacy_row) { $legacy_row['started_at'] = $legacy_row['taken_out_at']; $legacy_row['ended_at'] = null; }
+			unset($legacy_row);
+		}
+		if ($taken_out === false) { $taken_out = array(); }
 		foreach ($taken_out as $row) {
 			$field = (string)($row['field_name'] ?? '');
-			$to_date = (new DateTime($row['taken_out_at']))->format('Y-m-d');
-			$to_day = $to_date <= $start ? intval((new DateTime($start))->format('j')) : intval((new DateTime($row['taken_out_at']))->format('j'));
+			$to_date = (new DateTime($row['started_at']))->format('Y-m-d');
+			$to_day = $to_date <= $start ? intval((new DateTime($start))->format('j')) : intval((new DateTime($row['started_at']))->format('j'));
+			$until_day = null;
+			if (!empty($row['ended_at'])) {
+				$until_date = (new DateTime($row['ended_at']))->format('Y-m-d');
+				$until_day = $until_date <= $start ? intval((new DateTime($start))->format('j')) : intval((new DateTime($row['ended_at']))->format('j'));
+			}
 			$key = $latest_version[$field]['key'] ?? null;
-			if ($key !== null && isset($parts[$key])) { $parts[$key]['taken_out_from_day'] = $to_day; }
+			if ($key !== null && isset($parts[$key])) {
+				$parts[$key]['taken_out_intervals'][] = array('from' => $to_day, 'until' => $until_day);
+			}
 		}
 		foreach ($parts as &$part) { $part['shifts'] = array_keys($part['shifts']); sort($part['shifts'], SORT_NUMERIC); }
 		unset($part);

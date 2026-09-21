@@ -366,6 +366,22 @@ class Master_partController extends SecureController
 	}
 
 	/** Aktifkan kembali part takeout tanpa menghapus definisi atau riwayat AM. */
+	private function write_part_status_history($part_id, $status, $started_at, $ended_at = null, $reason = null)
+	{
+		try {
+			$db = $this->GetModel();
+			if ($status === 'TO') {
+				$db->rawQuery('UPDATE "master_part_status_history" SET "ended_at" = ? WHERE "master_part_id" = ? AND "status" = \'ACTIVE\' AND "ended_at" IS NULL', array($started_at, (int)$part_id));
+			}
+			if ($status === 'ACTIVE') {
+				$db->rawQuery('UPDATE "master_part_status_history" SET "ended_at" = ? WHERE "master_part_id" = ? AND "status" = \'TO\' AND "ended_at" IS NULL', array($started_at, (int)$part_id));
+			}
+			$db->rawQuery('INSERT INTO "master_part_status_history" ("master_part_id", "status", "started_at", "ended_at", "reason", "changed_by_user_id", "changed_by_username") VALUES (?, ?, ?, ?, ?, ?, ?)', array((int)$part_id, $status, $started_at, $ended_at, $reason, USER_ID ? (int)USER_ID : null, USER_NAME));
+		} catch (Throwable $e) {
+			error_log('Part status history unavailable: ' . $e->getMessage());
+		}
+	}
+
 	function reactivate($rec_id = null)
 	{
 		Csrf::cross_check();
@@ -384,6 +400,7 @@ class Master_partController extends SecureController
 		$db->where('id', $rec_id)->where('taken_out_at', null, 'IS NOT');
 		$update_data = array('taken_out_at' => null, 'taken_out_by' => null, 'takeout_reason' => null, 'active_from' => date('Y-m-d'), 'updated_at' => datetime_now());
 		if ($db->update($this->tablename, $update_data)) {
+			$this->write_part_status_history($rec_id, 'ACTIVE', datetime_now());
 			$this->write_to_log('reactivate', 'true');
 			$this->set_flash_msg('Part berhasil diaktifkan kembali dan kini aktif di form AM.', 'success');
 			return $this->redirect($back_url);
@@ -408,7 +425,9 @@ class Master_partController extends SecureController
 			if ($reason === '') { $this->view->page_error[] = 'Alasan takeout wajib diisi.'; }
 			else {
 				$db->where('id', $rec_id);
-				if ($db->update($this->tablename, array('taken_out_at' => datetime_now(), 'taken_out_by' => USER_NAME, 'takeout_reason' => $reason))) {
+				$taken_out_at = datetime_now();
+				if ($db->update($this->tablename, array('taken_out_at' => $taken_out_at, 'taken_out_by' => USER_NAME, 'takeout_reason' => $reason))) {
+					$this->write_part_status_history($rec_id, 'TO', $taken_out_at, null, $reason);
 					$this->write_to_log('takeout', 'true');
 					$this->set_flash_msg('Part ditakeout. Report historis tetap mempertahankan part ini.', 'success');
 					return $this->redirect('master_part/index/' . $part['machine_key']);

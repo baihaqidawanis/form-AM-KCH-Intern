@@ -344,7 +344,10 @@ if (!function_exists('get_period_image_src')) {
             <td style="font-weight:bold;"><?php if (count($shifts) === 1) { echo htmlspecialchars($part['pelaksanaan']); } elseif ($s_idx === 0) { echo htmlspecialchars($part['pelaksanaan']); ?><br><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } else { ?><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } ?></td>
             <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
               $schedule = $part['schedule_by_day'][$day] ?? null; $entries = $display_checks[$field][$day] ?? array();
-              $is_to = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
+              $is_to = false;
+              foreach (($part['taken_out_intervals'] ?? array()) as $to_interval) {
+                if ($day >= intval($to_interval['from']) && (empty($to_interval['until']) || $day < intval($to_interval['until']))) { $is_to = true; break; }
+              }
               $is_deactive = isset($d['deactivated_days'][$day]); $cell_val = ''; $c = ''; $cell_style = '';
               if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
               elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
