@@ -227,6 +227,18 @@
 							reader.readAsDataURL(file);
 						} else { $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none'); }
 					});
+					$form.on('change', '.nok-camera-input', function(){
+						var cameraInput = this, file = cameraInput.files && cameraInput.files[0];
+						var uploadInput = $(cameraInput).closest('.nok-photo-box').find('.nok-photo-input').first()[0];
+						if (!file || !uploadInput) { return; }
+						try {
+							var transfer = new DataTransfer(); transfer.items.add(file); uploadInput.files = transfer.files;
+							cameraInput.value = ''; $(uploadInput).trigger('change');
+						} catch (err) {
+							cameraInput.value = '';
+							alert('Browser ini tidak dapat meneruskan hasil kamera ke form. Gunakan Upload dari perangkat.');
+						}
+					});
 					$form.on('click', '.nok-photo-cancel', function(){
 						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
 						$(this).addClass('d-none');
