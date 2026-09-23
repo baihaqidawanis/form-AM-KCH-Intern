@@ -252,7 +252,8 @@ class UsersController extends SecureController{
 		//Super Admin cuma boleh diedit diri sendiri -- Administrator lain (termasuk
 		//sesama role_id=1) ditolak ubah apapun ke akun ini (URS-adjacent, disetujui
 		//mentor: satu Super Admin gak bisa "dijatuhkan" admin lain).
-		if (is_super_admin_user($rec_id) && intval($rec_id) !== intval(USER_ID)) {
+		$is_super_admin = is_super_admin_user($rec_id);
+		if ($is_super_admin && intval($rec_id) !== intval(USER_ID)) {
 			http_response_code(403);
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
 		}
@@ -260,6 +261,12 @@ class UsersController extends SecureController{
 		$fields = $this->fields = array("id_user","nama","username","area","account_status","user_role_id");
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
+			if ($is_super_admin && (
+				strtolower(trim((string)($postdata['account_status'] ?? ''))) !== 'active' ||
+				intval($postdata['user_role_id'] ?? 0) !== 1
+			)) {
+				$this->view->page_error[] = 'Status dan role akun Super Admin tidak dapat diubah.';
+			}
 			$this->rules_array = array(
 				'nama' => 'required',
 				'username' => 'required',
@@ -328,7 +335,8 @@ class UsersController extends SecureController{
 		$this->rec_id = $rec_id;
 		$tablename = $this->tablename;
 		//Sama kayak edit() -- Super Admin cuma boleh diedit diri sendiri.
-		if (is_super_admin_user($rec_id) && intval($rec_id) !== intval(USER_ID)) {
+		$is_super_admin = is_super_admin_user($rec_id);
+		if ($is_super_admin && intval($rec_id) !== intval(USER_ID)) {
 			render_error('Akun ini dilindungi -- cuma Super Admin sendiri yang boleh mengubahnya.');
 			return null;
 		}
@@ -339,6 +347,10 @@ class UsersController extends SecureController{
 			$postdata = array();
 			$fieldname = $formdata['name'];
 			$fieldvalue = $formdata['value'];
+			if ($is_super_admin && in_array($fieldname, array('account_status', 'user_role_id', 'is_super_admin'), true)) {
+				render_error('Status dan role akun Super Admin tidak dapat diubah.');
+				return null;
+			}
 			$postdata[$fieldname] = $fieldvalue;
 			$postdata = $this->format_request_data($postdata);
 			$this->rules_array = array(

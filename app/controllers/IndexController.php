@@ -67,12 +67,15 @@ class IndexController extends BaseController
 				//password salah -- naikkan counter, blokir akun kalau udah 3x
 				$attempts = intval($user['failed_login_attempts']) + 1;
 				$update = array("failed_login_attempts" => $attempts);
-				if ($attempts >= 3) {
+				// Root account tidak boleh mengalami lockout otomatis. Jika akun ini
+				// terblokir, tidak ada Administrator lain yang dapat memulihkannya.
+				$is_super_admin = !empty($user['is_super_admin']);
+				if ($attempts >= 3 && !$is_super_admin) {
 					$update["account_status"] = "Blocked";
 				}
 				$db->where("id_user", $user['id_user']);
 				$db->update($tablename, $update);
-				if ($attempts >= 3) {
+				if ($attempts >= 3 && !$is_super_admin) {
 					return $this->login_fail("Akun Anda sedang diblokir. Silakan hubungi Administrator.");
 				}
 				return $this->login_fail("Username or password not correct");
