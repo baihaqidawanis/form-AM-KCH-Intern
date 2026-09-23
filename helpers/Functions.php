@@ -191,7 +191,7 @@ function user_login_status()
 		$checked = true;
 		try {
 			$db = new PDODb(DB_TYPE, DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT, DB_CHARSET, DB_SSLMODE);
-			$current = $db->where('id_user', (int)$user['id_user'])->getOne('users', array('id_user', 'nama', 'email', 'username', 'area', 'mesin', 'account_status', 'user_role_id', 'paraf_image', 'user_initials'));
+			$current = $db->where('id_user', (int)$user['id_user'])->getOne('users', array('id_user', 'nama', 'email', 'username', 'area', 'account_status', 'user_role_id', 'paraf_image', 'user_initials'));
 			if (!$current || strtolower((string)($current['account_status'] ?? '')) !== 'active') {
 				clear_session('user_data');
 				session_regenerate_id(true);

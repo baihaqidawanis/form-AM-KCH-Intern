@@ -35,14 +35,13 @@ $printed_at = $data['printed_at'] ?? datetime_now();
 				<th style="width:16%; border:1px solid #222; padding:5px;">Nama Lengkap</th>
 				<th style="width:10%; border:1px solid #222; padding:5px;">Role</th>
 				<th style="width:12%; border:1px solid #222; padding:5px;">Area Penugasan</th>
-				<th style="width:17%; border:1px solid #222; padding:5px;">Mesin Penugasan</th>
 				<th style="width:15%; border:1px solid #222; padding:5px;">Spesimen Paraf</th>
 				<th style="width:10%; border:1px solid #222; padding:5px;">Status Akun</th>
 			</tr>
 		</thead>
 		<tbody>
 		<?php if (!$records) { ?>
-			<tr><td colspan="9" style="border:1px solid #222; padding:12px; text-align:center;">Tidak ada data pengguna.</td></tr>
+			<tr><td colspan="8" style="border:1px solid #222; padding:12px; text-align:center;">Tidak ada data pengguna.</td></tr>
 		<?php } else { foreach ($records as $index => $record) {
 			$paraf = $record['paraf_image'] ?? null;
 			$has_paraf = is_valid_base64_png_data_uri($paraf);
@@ -54,7 +53,6 @@ $printed_at = $data['printed_at'] ?? datetime_now();
 				<td style="border:1px solid #222; padding:4px;"><?php echo htmlspecialchars($record['nama'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></td>
 				<td style="border:1px solid #222; padding:4px;"><?php echo htmlspecialchars($role_labels[intval($record['user_role_id'] ?? 0)] ?? 'Tidak Dikenal', ENT_QUOTES, 'UTF-8'); ?></td>
 				<td style="border:1px solid #222; padding:4px;"><?php echo htmlspecialchars($record['area'] ?: '-', ENT_QUOTES, 'UTF-8'); ?></td>
-				<td style="border:1px solid #222; padding:4px; overflow-wrap:anywhere;"><?php echo htmlspecialchars($record['mesin'] ?: '-', ENT_QUOTES, 'UTF-8'); ?></td>
 				<td style="border:1px solid #222; padding:3px; height:36px; text-align:center;">
 					<?php if ($has_paraf) { ?>
 						<img src="<?php echo htmlspecialchars($paraf, ENT_QUOTES, 'UTF-8'); ?>" alt="Paraf <?php echo htmlspecialchars($record['nama'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" style="max-width:90px; max-height:32px; object-fit:contain;">

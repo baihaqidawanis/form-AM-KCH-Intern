@@ -1,5 +1,4 @@
 <?php
-$comp_model = new SharedController;
 $page_element_id = "add-page-" . random_str();
 $current_page = $this->set_current_page_link();
 $csrf_token = Csrf::$token;
@@ -97,49 +96,6 @@ $redirect_to = $this->redirect_to;
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="form-group ">
-                                                    <div class="row">
-                                                        <div class="col-sm-4">
-                                                            <label class="control-label" for="mesin">Mesin <span class="text-danger">*</span></label>
-                                                        </div>
-                                                        <div class="col-sm-8">
-                                                            <div class="">
-                                                                <?php
-                                                                $mesin_options = $comp_model->sig_Line_option_list();
-                                                                // Area mesin dicek berdasar awalan nama mesin (bukan substring bebas)
-                                                                // agar unit seperti "Chimei 6A (Ilapak 1)" atau "Best Pack - Ilapak 11" tidak salah masuk ke Filling.
-                                                                $mesin_area_of = function ($label) {
-                                                                  $lbl = strtolower(trim($label));
-                                                                  if (preg_match('/^(chimei|temach|check weigher|conveyor sig|best pack|kemas best pack|cartoning|pack|wrapping)/i', $lbl)) {
-                                                                    return 'Wrapping dan Pack Cartoning';
-                                                                  }
-                                                                  if (preg_match('/^(cosmec|fbd jaw chuan|fbd glatt|supermixer|granulator|storage tank|st liq|mixing tank|mt )/i', $lbl)) {
-                                                                    return 'Compounding';
-                                                                  }
-                                                                  if (preg_match('/^(jihcheng|jinsung)/i', $lbl)) {
-                                                                    return 'Kemas';
-                                                                  }
-                                                                  if (preg_match('/^(joeya|sig|ilapak|illapak|unifill)/i', $lbl)) {
-                                                                    return 'Filling';
-                                                                  }
-                                                                  return '';
-                                                                };
-                                                                ?>
-                                                                <select required id="ctrl-mesin" name="mesin" class="custom-select">
-                                                                    <option value="" disabled selected>Pilih nama mesin ...</option>
-                                                                    <?php foreach ($mesin_options as $option) {
-                                                                      $selected = $this->set_field_selected('mesin', $option['label'], "");
-                                                                    ?>
-                                                                    <option data-area="<?php echo $mesin_area_of($option['label']); ?>" <?php echo $selected; ?> value="<?php echo $option['label']; ?>"><?php echo $option['label']; ?></option>
-                                                                    <?php }
-                                                                    $selected_all = $this->set_field_selected('mesin', 'Semua Mesin', "");
-                                                                    ?>
-                                                                    <option data-area="" <?php echo $selected_all; ?> value="Semua Mesin">Semua Mesin</option>
-                                                                </select>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                     <div class="form-group ">
                                                         <div class="row">
                                                             <div class="col-sm-4">

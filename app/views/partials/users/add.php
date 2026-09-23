@@ -83,18 +83,6 @@ $redirect_to = $this->redirect_to;
                                                     </div>
                                                 </div>
                                                 <div class="form-group ">
-                                                    <div class="row">
-                                                        <div class="col-sm-4">
-                                                            <label class="control-label" for="mesin">Mesin <span class="text-danger">*</span></label>
-                                                        </div>
-                                                        <div class="col-sm-8">
-                                                            <div class="">
-                                                                <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select"><option value="" disabled <?php echo ($this->set_field_value('mesin', '') == '') ? 'selected' : ''; ?>>Pilih Mesin ...</option><?php foreach (Master_partController::$machine_keys as $mkey => $mlabel) { $sel = ($this->set_field_value('mesin', '') === $mlabel) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $mlabel; ?>"><?php echo $mlabel; ?></option><?php } ?></select>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="form-group ">
                                                         <div class="row">
                                                             <div class="col-sm-4">
                                                                 <label class="control-label" for="password">Password <span class="text-danger">*</span></label>

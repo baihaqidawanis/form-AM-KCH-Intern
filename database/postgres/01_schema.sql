@@ -116,7 +116,6 @@ CREATE TABLE IF NOT EXISTS "users" (
   "email" varchar(255) NOT NULL,
   "username" varchar(255) NOT NULL,
   "area" varchar(255) DEFAULT NULL,
-  "mesin" varchar(255) DEFAULT NULL,
   "password" varchar(255) DEFAULT NULL,
   "email_status" varchar(255) DEFAULT NULL,
   "password_expire_date" date DEFAULT NULL,

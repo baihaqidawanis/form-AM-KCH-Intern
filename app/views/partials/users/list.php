@@ -120,7 +120,6 @@ $show_pagination = $this->show_pagination;
                                                 <th  class="td-email"> Email</th>
                                                 <th  class="td-username"> NIK</th>
                                                 <th  class="td-area"> Area</th>
-                                                <th  class="td-mesin"> Mesin</th>
                                                 <th  class="td-account_status"> Account Status</th>
                                                 <th  class="td-user_role_id"> User Role Id</th>
                                                 <th class="td-btn"></th>
@@ -190,21 +189,6 @@ $show_pagination = $this->show_pagination;
                                                             data-showbuttons="left" 
                                                             class="is-editable" >
                                                             <?php echo $data['area']; ?> 
-                                                        </span>
-                                                    </td>
-                                                    <td class="td-mesin">
-                                                        <span  data-value="<?php echo $data['mesin']; ?>" 
-                                                            data-pk="<?php echo $data['id_user'] ?>" 
-                                                            data-url="<?php print_link("users/editfield/" . urlencode($data['id_user'])); ?>" 
-                                                            data-name="mesin" 
-                                                            data-title="Enter Mesin" 
-                                                            data-placement="left" 
-                                                            data-toggle="click" 
-                                                            data-type="text" 
-                                                            data-mode="popover" 
-                                                            data-showbuttons="left" 
-                                                            class="is-editable" >
-                                                            <?php echo $data['mesin']; ?> 
                                                         </span>
                                                     </td>
                                                     <td class="td-account_status">

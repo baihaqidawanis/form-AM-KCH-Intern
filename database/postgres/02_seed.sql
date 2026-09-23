@@ -172,8 +172,8 @@ SELECT setval(pg_get_serial_sequence('"korelasi"', 'id'), COALESCE((SELECT MAX("
 -- klasifikasi (3 baris)
 INSERT INTO "klasifikasi" ("id", "nama") OVERRIDING SYSTEM VALUE VALUES
   ('1', 'Abnormal'),
-  ('2', 'SOC'),
-  ('3', 'HTR')
+  ('2', 'SOC - Source of Contaminant'),
+  ('3', 'HTR - Hard to Reach')
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"klasifikasi"', 'id'), COALESCE((SELECT MAX("id") FROM "klasifikasi"), 1));
 

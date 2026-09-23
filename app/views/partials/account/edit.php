@@ -76,19 +76,7 @@ $redirect_to = $this->redirect_to;
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="form-group ">
-                                                <div class="row">
-                                                    <div class="col-sm-4">
-                                                        <label class="control-label" for="mesin">Mesin <span class="text-danger">*</span></label>
-                                                    </div>
-                                                    <div class="col-sm-8">
-                                                        <div class="">
-                                                            <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select"><option value="" disabled <?php echo empty($data['mesin']) ? 'selected' : ''; ?>>Pilih Mesin ...</option><?php foreach (Master_partController::$machine_keys as $mkey => $mlabel) { $sel = ($data['mesin'] === $mlabel) ? 'selected' : ''; ?><option <?php echo $sel; ?> value="<?php echo $mlabel; ?>"><?php echo $mlabel; ?></option><?php } ?></select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <!-- Account Status & User Role Id SENGAJA read-only di sini -- itu wewenang
+                                            <!-- Account Status & User Role Id SENGAJA read-only di sini -- itu wewenang
                                                      Administrator lewat menu Users, bukan sesuatu yang user boleh ubah
                                                      sendiri (kalau bisa, itu privilege escalation: user tinggal ganti
                                                      dropdown ini jadi Administrator/Active tanpa approval siapapun). -->

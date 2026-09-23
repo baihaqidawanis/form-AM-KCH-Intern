@@ -23,7 +23,6 @@ class UsersController extends SecureController{
 			"email", 
 			"username", 
 			"area", 
-			"mesin", 
 			"account_status", 
 			"user_role_id", 
 			"pict");
@@ -40,13 +39,12 @@ class UsersController extends SecureController{
 				users.email ILIKE ? OR
 				users.username ILIKE ? OR
 				users.area ILIKE ? OR
-				users.mesin ILIKE ? OR
 				users.account_status ILIKE ? OR
 				CAST(users.user_role_id AS VARCHAR) ILIKE ? OR
 				users.pict ILIKE ?
 			)";
 			$search_params = array(
-				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"
+				"%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%","%$text%"
 			);
 			//setting search conditions
 			$db->where($search_condition, $search_params);
@@ -62,7 +60,7 @@ class UsersController extends SecureController{
 			$db->orderBy("users.id_user", ORDER_TYPE);
 		}
 		if($fieldname){
-			$filters = array('id_user', 'username', 'email', 'area', 'mesin', 'account_status', 'user_role_id');
+			$filters = array('id_user', 'username', 'email', 'area', 'account_status', 'user_role_id');
 			if (!in_array($fieldname, $filters, true)) { http_response_code(404); return $this->render_view('errors/notfound.php', null, 'info_layout.php'); }
 			$db->where('users.' . $fieldname, $fieldvalue);
 		}
@@ -94,7 +92,7 @@ class UsersController extends SecureController{
 		$db = $this->GetModel();
 		$db->orderBy('users.id_user', 'ASC');
 		$records = $db->get($this->tablename, null, array(
-			'id_user', 'username', 'nama', 'user_role_id', 'area', 'mesin',
+			'id_user', 'username', 'nama', 'user_role_id', 'area',
 			'paraf_image', 'account_status'
 		));
 		if ($db->getLastError()) {
@@ -132,7 +130,6 @@ class UsersController extends SecureController{
 			"email", 
 			"username", 
 			"area", 
-			"mesin", 
 			"account_status", 
 			"user_role_id", 
 			"pict");
@@ -176,7 +173,7 @@ class UsersController extends SecureController{
 			$tablename = $this->tablename;
 			$request = $this->request;
 			//fillable fields
-			$fields = $this->fields = array("nama","email","username","area","mesin","password","account_status","user_role_id");
+			$fields = $this->fields = array("nama","email","username","area","password","account_status","user_role_id");
 			$postdata = $this->format_request_data($formdata);
 			$cpassword = $postdata['confirm_password'];
 			$password = $postdata['password'];
@@ -188,7 +185,6 @@ class UsersController extends SecureController{
 				'email' => 'required|valid_email',
 				'username' => 'required',
 				'area' => 'required',
-				'mesin' => 'required',
 				'password' => 'required',
 			);
 			$this->sanitize_array = array(
@@ -196,7 +192,6 @@ class UsersController extends SecureController{
 				'email' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
-				'mesin' => 'sanitize_string',
 			);
 			$this->filter_vals = true; //set whether to remove empty fields
 			$modeldata = $this->modeldata = $this->validate_form($postdata);
@@ -262,14 +257,13 @@ class UsersController extends SecureController{
 			return $this->render_view('errors/forbidden.php', null, 'info_layout.php');
 		}
 		 //editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin","account_status","user_role_id");
+		$fields = $this->fields = array("id_user","nama","username","area","account_status","user_role_id");
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
 				'nama' => 'required',
 				'username' => 'required',
 				'area' => 'required',
-				'mesin' => 'required',
 				'account_status' => 'required',
 				'user_role_id' => 'required',
 			);
@@ -277,7 +271,6 @@ class UsersController extends SecureController{
 				'nama' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
-				'mesin' => 'sanitize_string',
 				'account_status' => 'sanitize_string',
 				'user_role_id' => 'sanitize_string',
 			);
@@ -340,7 +333,7 @@ class UsersController extends SecureController{
 			return null;
 		}
 		//editable fields
-		$fields = $this->fields = array("id_user","nama","username","area","mesin");
+		$fields = $this->fields = array("id_user","nama","username","area");
 		$page_error = null;
 		if($formdata){
 			$postdata = array();
@@ -352,7 +345,6 @@ class UsersController extends SecureController{
 				'nama' => 'required',
 				'username' => 'required',
 				'area' => 'required',
-				'mesin' => 'required',
 				'account_status' => 'required',
 				'user_role_id' => 'required',
 			);
@@ -360,7 +352,6 @@ class UsersController extends SecureController{
 				'nama' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
-				'mesin' => 'sanitize_string',
 				'account_status' => 'sanitize_string',
 				'user_role_id' => 'sanitize_string',
 			);

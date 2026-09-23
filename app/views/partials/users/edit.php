@@ -83,49 +83,6 @@ $redirect_to = $this->redirect_to;
                                                 </div>
                                             </div>
                                             <div class="form-group ">
-                                                <div class="row">
-                                                    <div class="col-sm-4">
-                                                        <label class="control-label" for="mesin">Mesin <span class="text-danger">*</span></label>
-                                                    </div>
-                                                    <div class="col-sm-8">
-                                                        <div class="">
-                                                            <?php
-                                                            $mesin_options_edit = $comp_model->sig_Line_option_list();
-                                                            $mesin_area_of = function ($label) {
-                                                                $lbl = strtolower(trim($label));
-                                                                if (preg_match('/^(chimei|temach|check weigher|conveyor sig|best pack|kemas best pack|cartoning|pack|wrapping)/i', $lbl)) {
-                                                                    return 'Wrapping & Pack Cartoning';
-                                                                }
-                                                                if (preg_match('/^(cosmec|fbd jaw chuan|fbd glatt|supermixer|granulator|storage tank|st liq|mixing tank|mt )/i', $lbl)) {
-                                                                    return 'Compounding';
-                                                                }
-                                                                if (preg_match('/^(jihcheng|jinsung)/i', $lbl)) {
-                                                                    return 'Kemas';
-                                                                }
-                                                                if (preg_match('/^(joeya|sig|ilapak|illapak|unifill)/i', $lbl)) {
-                                                                    return 'Filling';
-                                                                }
-                                                                return '';
-                                                            };
-                                                            $current_mesin = (string)($data['mesin'] ?? '');
-                                                            $selected_all_mesin = (strcasecmp($current_mesin, 'Semua Mesin') === 0) ? 'selected' : '';
-                                                            ?>
-                                                            <select id="ctrl-mesin" required="" name="mesin" placeholder="Pilih Mesin ..." class="custom-select">
-                                                                <option value="" disabled <?php echo empty($current_mesin) ? 'selected' : ''; ?>>Pilih Mesin ...</option>
-                                                                <?php foreach ($mesin_options_edit as $option) {
-                                                                    $opt_label = $option['label'];
-                                                                    $opt_area = $mesin_area_of($opt_label);
-                                                                    $sel = (strcasecmp($current_mesin, $opt_label) === 0) ? 'selected' : ''; 
-                                                                ?>
-                                                                <option data-area="<?php echo $opt_area; ?>" <?php echo $sel; ?> value="<?php echo htmlspecialchars($opt_label); ?>"><?php echo htmlspecialchars($opt_label); ?></option>
-                                                                <?php } ?>
-                                                                <option data-area="" <?php echo $selected_all_mesin; ?> value="Semua Mesin">Semua Mesin</option>
-                                                            </select>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="form-group ">
                                                     <div class="row">
                                                         <div class="col-sm-4">
                                                             <label class="control-label" for="account_status">Account Status <span class="text-danger">*</span></label>
@@ -200,14 +157,3 @@ $redirect_to = $this->redirect_to;
                             </div>
                         </div>
                     </section>
-                    <script>
-                    $(function(){
-                        var initialMesin = <?php echo json_encode($data['mesin'] ?? ''); ?>;
-                        if (initialMesin) {
-                            var $m = $('#ctrl-mesin');
-                            if ($m.val() !== initialMesin && $m.find('option[value="' + initialMesin.replace(/"/g, '\\"') + '"]').length) {
-                                $m.val(initialMesin);
-                            }
-                        }
-                    });
-                    </script>

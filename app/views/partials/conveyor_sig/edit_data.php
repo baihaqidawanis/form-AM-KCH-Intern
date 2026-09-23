@@ -47,9 +47,6 @@ $rec_id = !empty($data['id_conveyor_sig']) ? $data['id_conveyor_sig'] : null;
           <div class="section-block mb-4">
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3 border-bottom pb-2">
               <h4 class="text-primary m-0"><?php echo $section_title; ?></h4>
-              <button type="button" class="btn btn-outline-success btn-sm btn-check-section-ok">
-                <i class="fa fa-check"></i> Semua Kondisi Baik
-              </button>
             </div>
             <?php foreach ($section_fields as $field) {
               if (!isset($parts[$field])) continue;

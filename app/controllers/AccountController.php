@@ -22,7 +22,6 @@ class AccountController extends SecureController{
 			"email", 
 			"username", 
 			"area", 
-			"mesin", 
 			"account_status", 
 			"user_role_id", 
 			"pict",
@@ -63,22 +62,20 @@ class AccountController extends SecureController{
 		 //editable fields -- account_status & user_role_id SENGAJA tidak termasuk:
 		 //user gak boleh naikkan role/aktivasi akun sendiri, itu wewenang
 		 //Administrator lewat menu Users (UsersController::edit()).
-		$fields = $this->fields = array("id_user","nama","username","area","mesin");
+		$fields = $this->fields = array("id_user","nama","username","area");
 		if ($area_assignment_locked) {
-			$this->fields = array("id_user", "nama", "username", "mesin");
+			$this->fields = array("id_user", "nama", "username");
 		}
 		if($formdata){
 			$postdata = $this->format_request_data($formdata);
 			$this->rules_array = array(
 				'nama' => 'required',
 				'username' => 'required',
-				'mesin' => 'required',
 			);
 			if (!$area_assignment_locked) { $this->rules_array['area'] = 'required'; }
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
 				'username' => 'sanitize_string',
-				'mesin' => 'sanitize_string',
 			);
 			if (!$area_assignment_locked) { $this->sanitize_array['area'] = 'sanitize_string'; }
 			$modeldata = $this->modeldata = $this->validate_form($postdata);

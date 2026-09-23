@@ -128,6 +128,7 @@ BEGIN
 END $$;
 
 ALTER TABLE "users" DROP COLUMN IF EXISTS "login_session_key";
+ALTER TABLE "users" DROP COLUMN IF EXISTS "mesin";
 
 CREATE INDEX IF NOT EXISTS "idx_kendala_sig_id_am" ON "kendala_sig" ("id_am");
 CREATE INDEX IF NOT EXISTS "idx_kendala_storage_tank_id_am" ON "kendala_storage_tank" ("id_am");
@@ -150,5 +151,9 @@ CREATE INDEX IF NOT EXISTS "idx_kendala_jinsung_1_4_id_am" ON "kendala_jinsung_1
 CREATE INDEX IF NOT EXISTS "idx_kendala_jinsung_5_id_am" ON "kendala_jinsung_5" ("id_am");
 CREATE INDEX IF NOT EXISTS "idx_kendala_joeya_id_am" ON "kendala_joeya" ("id_am");
 CREATE INDEX IF NOT EXISTS "idx_kendala_best_pack_id_am" ON "kendala_best_pack" ("id_am");
+
+-- Kepanjangan klasifikasi agar terbaca jelas pada form NOK dan laporan.
+UPDATE "klasifikasi" SET "nama" = 'SOC - Source of Contaminant' WHERE "id" = 2;
+UPDATE "klasifikasi" SET "nama" = 'HTR - Hard to Reach' WHERE "id" = 3;
 
 COMMIT;
