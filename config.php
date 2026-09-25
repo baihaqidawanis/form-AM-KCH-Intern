@@ -126,6 +126,9 @@ define("DB_NAME", env("DB_NAME", "form_am_plg"));
 define("DB_TYPE", env("DB_TYPE", "mysql"));
 define("DB_PORT", env("DB_PORT", "3306"));
 define("DB_CHARSET", env("DB_CHARSET", "utf8"));
+define("RTWT_API_MODE", strtolower(trim((string)env("RTWT_API_MODE", "legacy"))));
+define("RTWT_API_URL", rtrim((string)env("RTWT_API_URL", RTWT_API_MODE === "modular" ? "http://127.0.0.1:8081/api/v1/integrations/form-am/tickets" : "http://localhost/breakdown_management1/rtwt_mesin/api_sync"), "/"));
+define("RTWT_API_TOKEN", (string)env("RTWT_API_TOKEN", ""));
 // PostgreSQL only. Kosong = perilaku driver bawaan; gunakan "disable" bila
 // server database internal tidak menyediakan SSL.
 define("DB_SSLMODE", env("DB_SSLMODE", ""));

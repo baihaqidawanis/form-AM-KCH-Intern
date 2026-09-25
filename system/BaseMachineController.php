@@ -1616,14 +1616,25 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	protected function syncRedTagToRtwt(array $formdata, array $parts, array $modeldata, $rec_id)
 	{
 		try {
+			$detailRows = $this->GetModel()->where('id_am', $rec_id)->get($this->kendalaTable(), null, array('nama_bagian', 'foto_before'));
+			$photoByPart = array();
+			foreach ($detailRows as $detailRow) {
+				$photoByPart[(string)($detailRow['nama_bagian'] ?? '')] = (string)($detailRow['foto_before'] ?? '');
+			}
 			$machine = $this->GetModel()->where('id', intval($modeldata['mesin'] ?? 0))->getOne('mesin', array('nama_mesin'));
 			$machine_name = trim((string)($machine['nama_mesin'] ?? ''));
 			if ($machine_name === '') {
 				throw new RuntimeException('Nama unit mesin Form AM tidak ditemukan.');
 			}
+			$reporter = $this->GetModel()->where('id_user', intval(USER_ID))->getOne('users', array('username', 'nama'));
+			$reporter_nik = trim((string)($reporter['username'] ?? ''));
+			$reporter_name = trim((string)($reporter['nama'] ?? USER_NAME));
 			$compounding = array('cosmec','fbd_jaw_chuan','fbd_glatt','supermixer','storage_tank','storage_tank_tetrapak','mixing_tank','granulator');
-			$packing = array('chimei','temach','jihcheng','jinsung_1_4','jinsung_5','best_pack','check_weigher','conveyor_sig');
-			$area_name = in_array($this->machineKey, $compounding, true) ? 'Compounding' : (in_array($this->machineKey, $packing, true) ? 'Kemas' : 'Filling');
+			$kemas = array('jihcheng','jinsung_1_4','jinsung_5');
+			$wrapping = array('chimei','temach','best_pack','check_weigher','conveyor_sig');
+			$area_name = in_array($this->machineKey, $compounding, true) ? 'Compounding'
+				: (in_array($this->machineKey, $wrapping, true) ? 'Wrapping & Pack Cartoning'
+					: (in_array($this->machineKey, $kemas, true) ? 'Kemas' : 'Filling'));
 			$line_name = $area_name === 'Compounding' ? 'Compounding' : 'Line A';
 
 			foreach ($parts as $field => $label) {
@@ -1641,7 +1652,21 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						$correlation = 'MESIN';
 					}
 					$no_wr = $this->noWrForField($formdata, $field);
+					$relativePhoto = ltrim((string)($photoByPart[$field] ?? ''), '/\\');
+					$absolutePhoto = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativePhoto);
+					if ($relativePhoto === '' || !is_file($absolutePhoto)) {
+						throw new RuntimeException('Foto Before untuk sinkronisasi RTWT tidak ditemukan: ' . $field);
+					}
 					$payload = array(
+						'source_system' => 'FORM_AM',
+						'source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field,
+						'reporter_nik' => $reporter_nik,
+						'reporter_name' => $reporter_name,
+						'occurred_at' => datetime_now(),
+						'area_name' => $area_name,
+						'line_name' => $line_name,
+						'machine_name' => $machine_name,
+						'machine_part_name' => $label ?: $field,
 						'area_id' => $area_name,
 						'line_id' => $line_name,
 						'mesin_id' => $machine_name,
@@ -1653,11 +1678,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						'kategori_masalah' => 'Abnormalitas Mesin',
 					);
 
-					$ch = curl_init('http://localhost/breakdown_management1/rtwt_mesin/api_sync');
+					// Native RTWT dan API modular sama-sama membutuhkan Foto Before fisik.
+					// Kirim multipart pada kedua mode agar sinkronisasi tidak kehilangan bukti foto.
+					$isModularRtwt = defined('RTWT_API_MODE') && RTWT_API_MODE === 'modular';
+					$payload['foto_before'] = new CURLFile($absolutePhoto, mime_content_type($absolutePhoto) ?: 'image/jpeg', basename($absolutePhoto));
+					$headers = array();
+					if ($isModularRtwt && defined('RTWT_API_TOKEN') && RTWT_API_TOKEN !== '') {
+						$headers[] = 'Authorization: Bearer ' . RTWT_API_TOKEN;
+					}
+					$ch = curl_init(defined('RTWT_API_URL') ? RTWT_API_URL : 'http://127.0.0.1:8081/api/v1/integrations/form-am/tickets');
 					curl_setopt_array($ch, array(
 						CURLOPT_POST => true,
-						CURLOPT_POSTFIELDS => json_encode($payload),
-						CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
+						CURLOPT_POSTFIELDS => $payload,
+						CURLOPT_HTTPHEADER => $headers,
 						CURLOPT_RETURNTRANSFER => true,
 						CURLOPT_TIMEOUT => 2,
 						CURLOPT_CONNECTTIMEOUT => 1,
