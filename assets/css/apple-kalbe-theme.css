@@ -2,7 +2,7 @@
    Combines Kalbe High-Contrast Leaf Green (#009639) for buttons & typography
    with Kalbe Vibrant Lime Spring (#86BD40) for highlights, navbar accent, and gradients. */
 :root {
-    --ak-canvas: #F5F5F7;
+    --ak-canvas: #F3F8F2;
     --ak-surface: #FFFFFF;
     --ak-text: #1D1D1F;
     --ak-muted: #6E6E73;
