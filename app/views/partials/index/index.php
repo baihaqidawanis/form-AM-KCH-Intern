@@ -481,8 +481,7 @@ $comp_model = new SharedController;
         }
 
         .am-login-visual-side {
-            min-height: 280px;
-            padding: 24px;
+            display: none;
         }
 
         .am-motivation-quote {

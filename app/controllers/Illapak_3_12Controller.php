@@ -30,12 +30,12 @@ class Illapak_3_12Controller extends BaseMachineController
 	protected function selectedShift($formdata = null)
 	{
 		$value = is_array($formdata) && isset($formdata['shift']) ? $formdata['shift'] : (isset($this->request->shift) ? $this->request->shift : null);
-		return in_array((string) $value, array('1', '2', '3'), true) ? (string) $value : null;
+		return in_array((string) $value, $this->getConfiguredShifts(), true) ? (string) $value : null;
 	}
 
 	protected function addContextError($formdata)
 	{
-		return $this->selectedShift($formdata) ? null : 'Shift wajib dipilih (1, 2, atau 3).';
+		return $this->selectedShift($formdata) ? null : 'Shift yang dipilih tidak tersedia untuk mesin ini.';
 	}
 
 	/**

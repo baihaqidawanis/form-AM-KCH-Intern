@@ -468,3 +468,54 @@ WHERE "machine_key" = 'illapak_1_2'
 -- Default mesin biasa tetap Shift 1. Shift 2/3 diaktifkan melalui Master Data Part.
 UPDATE "master_part" SET "shift_schedule" = '1' WHERE "shift_schedule" IS NULL OR "shift_schedule" = '';
 UPDATE "master_part" SET "shift_schedule" = '1,2,3' WHERE "machine_key" = 'illapak_3_12' AND "field_name" IN ('position_indicator_sealing_vertical','vacum_sliter','alarm_temperature');
+
+-- Hubungkan seluruh unit fisik yang dapat dipilih ke template Form AM-nya.
+INSERT INTO "machine_module_units" ("machine_key", "mesin_id")
+SELECT mapping."machine_key", mapping."mesin_id"
+FROM (
+  SELECT 'joeya'::varchar AS "machine_key", "id" AS "mesin_id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'joyea'
+  UNION ALL SELECT 'sig', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) ~ '^sig [56]$'
+  UNION ALL SELECT 'illapak_1_2', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) ~ '^il{1,2}apak [12]$'
+  UNION ALL SELECT 'illapak_3_12', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) ~ '^il{1,2}apak ([3-9]|1[0-2])$'
+  UNION ALL SELECT 'unifill_b', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) IN ('unifill a', 'unifill b')
+  UNION ALL SELECT 'chimei', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'chimei %'
+  UNION ALL SELECT 'temach', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'temach'
+  UNION ALL SELECT 'check_weigher', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'check weigher %'
+  UNION ALL SELECT 'conveyor_sig', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'conveyor sig %'
+  UNION ALL SELECT 'jihcheng', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'jihcheng'
+  UNION ALL SELECT 'jinsung_1_4', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) ~ '^jinsung [1-4]$'
+  UNION ALL SELECT 'jinsung_5', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'jinsung 5'
+  UNION ALL SELECT 'best_pack', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'kemas best pack - %' OR lower(trim("nama_mesin")) LIKE 'best pack (non inkjet) - %'
+  UNION ALL SELECT 'cosmec', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'cosmec'
+  UNION ALL SELECT 'fbd_jaw_chuan', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'fbd jaw chuan'
+  UNION ALL SELECT 'fbd_glatt', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'fbd glatt'
+  UNION ALL SELECT 'supermixer', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'supermixer'
+  UNION ALL SELECT 'granulator', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) = 'granulator'
+  UNION ALL SELECT 'storage_tank', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'st liq no %'
+  UNION ALL SELECT 'storage_tank_tetrapak', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'st liq 2 no %'
+  UNION ALL SELECT 'mixing_tank', "id" FROM "mesin" WHERE lower(trim("nama_mesin")) LIKE 'mt %'
+) mapping
+ON CONFLICT ("machine_key", "mesin_id") DO NOTHING;
+
+-- Baseline override Ilapak dari catatan proses 26 Januari 2026.
+-- Pressure Blow hanya berlaku pada Ilapak 3 dan 4; unit lain tercatat N/A.
+INSERT INTO "master_part_machine_override" ("master_part_id", "mesin_id", "is_applicable", "durasi", "updated_at")
+SELECT mp."id", m."id", false, NULL, CURRENT_TIMESTAMP
+FROM "master_part" mp
+JOIN "mesin" m ON (
+  (mp."machine_key" = 'illapak_1_2' AND lower(m."nama_mesin") IN ('ilapak 1', 'ilapak 2', 'illapak 1', 'illapak 2')) OR
+  (mp."machine_key" = 'illapak_3_12' AND lower(m."nama_mesin") IN ('ilapak 5', 'ilapak 6', 'ilapak 7', 'ilapak 8', 'ilapak 9', 'ilapak 10', 'ilapak 11', 'ilapak 12', 'illapak 5', 'illapak 6', 'illapak 7', 'illapak 8', 'illapak 9', 'illapak 10', 'illapak 11', 'illapak 12'))
+)
+WHERE mp."field_name" = 'pressure_blow_sealing_vertical'
+ON CONFLICT ("master_part_id", "mesin_id") DO NOTHING;
+
+-- Body Mesin dan Conveyor berdurasi 2 menit pada Ilapak 1, 5, dan 8.
+INSERT INTO "master_part_machine_override" ("master_part_id", "mesin_id", "is_applicable", "durasi", "updated_at")
+SELECT mp."id", m."id", true, '2''', CURRENT_TIMESTAMP
+FROM "master_part" mp
+JOIN "mesin" m ON (
+  (mp."machine_key" = 'illapak_1_2' AND lower(m."nama_mesin") IN ('ilapak 1', 'illapak 1')) OR
+  (mp."machine_key" = 'illapak_3_12' AND lower(m."nama_mesin") IN ('ilapak 5', 'ilapak 8', 'illapak 5', 'illapak 8'))
+)
+WHERE mp."field_name" = 'body_mesin'
+ON CONFLICT ("master_part_id", "mesin_id") DO NOTHING;

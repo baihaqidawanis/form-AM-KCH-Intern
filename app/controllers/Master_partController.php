@@ -121,6 +121,22 @@ class Master_partController extends SecureController
 		return '';
 	}
 
+	/** Unit override hanya tersedia saat satu template dipakai lebih dari satu unit fisik. */
+	private function override_units($machine_key)
+	{
+		if (!array_key_exists($machine_key, self::$machine_keys)) { return array(); }
+		try {
+			$units = $this->GetModel()->rawQuery(
+				'SELECT m.id, m.nama_mesin FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY m.nama_mesin ASC',
+				array($machine_key)
+			) ?: array();
+			return count($units) > 1 ? $units : array();
+		} catch (Throwable $e) {
+			// Edit Master Part tetap dapat dibuka sebelum update.sql dijalankan.
+			return array();
+		}
+	}
+
 	/**
 	 * Mesin default kalau URL gak nyebut mesin: mesin PERTAMA (urutan whitelist)
 	 * yang sudah punya data master_part -- biar admin gak mendarat di halaman
@@ -306,6 +322,11 @@ class Master_partController extends SecureController
 		$back_url = 'master_part/index/' . (!empty($owner_row['machine_key']) ? $owner_row['machine_key'] : '');
 		$this->view->back_url = $back_url;
 		$this->view->sections_by_machine = $this->sections_by_machine();
+		$this->view->override_units = $this->override_units($owner_row['machine_key'] ?? '');
+		$this->view->part_overrides = array();
+		try {
+			$this->view->part_overrides = $db->rawQuery('SELECT o.*, m.nama_mesin FROM master_part_machine_override o JOIN mesin m ON m.id = o.mesin_id WHERE o.master_part_id = ? ORDER BY m.id ASC', array((int)$rec_id)) ?: array();
+		} catch (Throwable $e) { /* update.sql belum dijalankan */ }
 		if ($formdata) {
 			//Urutan gak ikut diedit di sini -- cuma diatur lewat drag-and-drop di
 			//list (lihat reorder()). Field deskriptif juga gak di-sanitize_string,
@@ -342,6 +363,50 @@ class Master_partController extends SecureController
 		if (!$data) { $this->set_page_error('No record found'); $data = array(); }
 		$this->view->page_title = 'Edit Part';
 		return $this->render_view('master_part/edit.php', $data);
+	}
+
+	function save_override($rec_id = null, $formdata = null)
+	{
+		if (!is_post_request()) { http_response_code(405); return $this->redirect('master_part/edit/' . intval($rec_id)); }
+		if (!$formdata) { return $this->redirect('master_part/edit/' . intval($rec_id)); }
+		Csrf::cross_check();
+		$db = $this->GetModel();
+		$part = $db->where('id', intval($rec_id))->getOne($this->tablename, array('id', 'machine_key'));
+		$mesin_id = intval($formdata['mesin_id'] ?? 0);
+		$allowed_ids = array_map('intval', array_column($this->override_units($part['machine_key'] ?? ''), 'id'));
+		$is_applicable = (string)($formdata['is_applicable'] ?? '1') === '1';
+		$durasi = trim((string)($formdata['durasi'] ?? ''));
+		if (strlen($durasi) > 50) { $this->set_page_error('Durasi khusus maksimal 50 karakter.'); return $this->redirect('master_part/edit/' . intval($rec_id)); }
+		if (!$part || !$mesin_id || !in_array($mesin_id, $allowed_ids, true)) {
+			$this->set_page_error('Unit mesin tidak valid untuk template part ini.');
+			return $this->redirect('master_part/edit/' . intval($rec_id));
+		}
+		try {
+			$this->modeldata = array('master_part_id' => (int)$rec_id, 'mesin_id' => $mesin_id, 'is_applicable' => $is_applicable, 'durasi' => $durasi === '' ? null : $durasi);
+			$saved = $db->rawQuery('INSERT INTO master_part_machine_override (master_part_id, mesin_id, is_applicable, durasi, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (master_part_id, mesin_id) DO UPDATE SET is_applicable = EXCLUDED.is_applicable, durasi = EXCLUDED.durasi, updated_at = CURRENT_TIMESTAMP RETURNING id', array((int)$rec_id, $mesin_id, $is_applicable, $durasi === '' ? null : $durasi));
+			if (empty($saved[0]['id'])) { throw new RuntimeException('Override tidak tersimpan.'); }
+			$this->rec_id = intval($saved[0]['id']); $this->tablename = 'master_part_machine_override';
+			$this->write_to_log('save_override', 'true');
+			$this->set_flash_msg('Override unit berhasil disimpan.', 'success');
+		} catch (Throwable $e) { $this->set_page_error('Override gagal disimpan. Pastikan update.sql sudah dijalankan.'); }
+		return $this->redirect('master_part/edit/' . intval($rec_id));
+	}
+
+	function delete_override($rec_id = null, $formdata = null)
+	{
+		if (!is_post_request()) { http_response_code(405); return $this->redirect('master_part/edit/' . intval($rec_id)); }
+		Csrf::cross_check();
+		$db = $this->GetModel();
+		try {
+			$override_id = intval($formdata['override_id'] ?? 0);
+			$override = $db->where('id', $override_id)->where('master_part_id', intval($rec_id))->getOne('master_part_machine_override');
+			if (!$override) { $this->set_flash_msg('Override unit tidak ditemukan.', 'warning'); return $this->redirect('master_part/edit/' . intval($rec_id)); }
+			$this->rec_id = $override_id; $this->modeldata = $override; $this->tablename = 'master_part_machine_override';
+			if (!$db->where('id', $override_id)->where('master_part_id', intval($rec_id))->delete('master_part_machine_override')) { throw new RuntimeException('Delete gagal.'); }
+			$this->write_to_log('delete_override', 'true');
+			$this->set_flash_msg('Override unit dihapus; part kembali memakai nilai default.', 'success');
+		} catch (Throwable $e) { $this->set_page_error('Override tidak dapat dihapus.'); }
+		return $this->redirect('master_part/edit/' . intval($rec_id));
 	}
 
 	/** Canonical form: "1", "1,2", atau "1,2,3". */

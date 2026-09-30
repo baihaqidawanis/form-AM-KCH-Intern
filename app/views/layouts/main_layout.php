@@ -179,23 +179,113 @@
 				$(function(){
 					var $form = $('form.page-form').first();
 					if (!$form.length) { return; }
+					var operationalDayFlag = <?php echo !empty($this->operational_day_flag) ? json_encode($this->operational_day_flag, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) : 'null'; ?>;
+					if (operationalDayFlag) {
+						var flagLabel = $('<div>').text(operationalDayFlag.label || 'Holiday/Off').html();
+						var flagNotes = operationalDayFlag.notes ? '<div class="small mt-1">' + $('<div>').text(operationalDayFlag.notes).html() + '</div>' : '';
+						$form.prepend('<div class="alert alert-secondary border-secondary shadow-sm mb-3"><strong><i class="fa fa-calendar"></i> ' + flagLabel + '</strong><div>Hari ini ditandai sebagai hari libur/off. Pengisian AM tetap diperbolehkan dan akan diberi shading pada report.</div>' + flagNotes + '</div>');
+					}
 					var $machine = $form.find('[name="mesin"]').first();
 					var action = $form.attr('action') || '';
 					var recIdMatch = action.match(/\/edit_data\/(\d+)/i);
 					var recId = recIdMatch ? recIdMatch[1] : '';
+					var isAddForm = /\/add(?:\?|$)/i.test(action);
+					var preselectedMachineId = <?php echo !empty($this->preselected_machine_id) ? intval($this->preselected_machine_id) : 0; ?>;
+					var preselectedMachineName = <?php echo !empty($this->preselected_machine_name) ? json_encode($this->preselected_machine_name, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) : 'null'; ?>;
+					if (isAddForm && preselectedMachineId) {
+						if ($machine.is('select')) {
+							$machine.val(String(preselectedMachineId)).prop('disabled', true);
+							$('<input>', {type: 'hidden', name: 'mesin', value: preselectedMachineId}).insertAfter($machine);
+							$machine.closest('.form-group').hide();
+						}
+						// Ringkasan shift bawaan tiap modul digabung dengan unit agar tidak
+						// muncul dua tombol penggantian konteks yang melakukan hal sama.
+						$form.prev('.alert.alert-info').remove();
+						var selectedShift = $form.find('[name="shift"]').first().val();
+						var $context = $('<div class="alert alert-info mb-3"></div>');
+						$context.append($('<strong></strong>').text('Shift ' + selectedShift + ' - Unit: ' + (preselectedMachineName || preselectedMachineId)));
+						$context.append(' - kombinasi telah diperiksa. ');
+						$context.append($('<a class="btn btn-sm btn-outline-primary ml-2"></a>').attr('href', window.location.pathname).text('Ganti Shift / Mesin'));
+						$form.prepend($context);
+					}
 					var endpoint = action.replace(/\/(add|edit_data)(?:\/[^?]*)?(?:\?.*)?$/i, '/on_process_options');
+					var statusRequest = null;
+					function updateDuplicateGuard(data){
+						if (!isAddForm) { return; }
+						var duplicate = data && data.duplicate;
+						var $banner = $form.find('#am-duplicate-warning');
+						var $submitBtns = $form.find('button[type="submit"], input[type="submit"]');
+						$form.data('duplicateLocked', !!duplicate);
+						if (duplicate) {
+							if (!$banner.length) {
+								$banner = $('<div id="am-duplicate-warning" class="alert alert-warning border-warning shadow-sm mb-3"></div>');
+								$form.prepend($banner);
+							}
+							var shift = $form.find('[name="shift"]').val();
+							var shiftText = shift ? ' Shift ' + $('<div>').text(shift).html() + ',' : '';
+							var creator = duplicate.user_create ? ' oleh <strong>' + $('<div>').text(duplicate.user_create).html() + '</strong>' : '';
+							var createdAt = duplicate.created_at ? ' pada ' + $('<div>').text(duplicate.created_at).html() : '';
+							$banner.html('<strong><i class="fa fa-exclamation-triangle"></i> AM sudah diisi.</strong><div class="mt-1">Mesin ini untuk' + shiftText + ' tanggal operasional <strong>' + $('<div>').text(data.operational_date || '').html() + '</strong> sudah tersimpan' + creator + createdAt + '. Pilih mesin atau shift lain.</div>').show();
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'AM untuk mesin dan shift ini sudah diisi');
+						} else {
+							if ($banner.length) { $banner.hide(); }
+							if (!$('#machine-deactivation-banner:visible, #period-signature-lock-banner:visible').length && !$form.data('partConfigLoading') && !$form.data('partConfigError')) {
+								$submitBtns.prop('disabled', false).removeClass('disabled').removeAttr('title');
+							}
+						}
+					}
+					function applyPartOverrides(overrides){
+						overrides = overrides || {};
+						$form.find('.part-card[data-part]').each(function(){
+							var $card = $(this), field = String($card.data('part') || ''), override = overrides[field];
+							var $durationCell = $card.find('th').filter(function(){ return $.trim($(this).text()).toLowerCase() === 'durasi'; }).first().next('td');
+							if ($durationCell.length && $durationCell.data('defaultDuration') === undefined) { $durationCell.data('defaultDuration', $durationCell.text()); }
+							if ($durationCell.length) { $durationCell.text(override && override.durasi !== null ? override.durasi : $durationCell.data('defaultDuration')); }
+							$card.find('.part-na-note, input.part-na-value').remove();
+							var applicable = !override || override.is_applicable;
+							$card.toggleClass('part-not-applicable', !applicable);
+							if (!applicable) {
+								$card.find('.part-kondisi').prop('checked', false).prop('disabled', true).removeAttr('required').trigger('change');
+								$card.find('.part-kondisi').first().closest('.col-md-4').prepend('<div class="part-na-note alert alert-secondary py-2"><strong>N/A</strong> - Tidak berlaku untuk unit mesin ini.</div>');
+								$card.append($('<input>', {type:'hidden', name:field, value:'N/A', class:'part-na-value'}));
+							} else {
+								$card.find('.part-kondisi').prop('disabled', false).attr('required', 'required');
+							}
+						});
+					}
 					function updateOnProcess(){
 						var machineId = $machine.val();
 						var $options = $form.find('input.part-kondisi[value="ON_PROCESS_RED_TAG"]');
 						$options.prop('disabled', true).closest('.custom-control').addClass('d-none').hide();
-						if ((!machineId && !recId) || endpoint === action) { return; }
+						if (statusRequest) { statusRequest.abort(); statusRequest = null; }
+						$form.data('partConfigLoading', false).data('partConfigError', false);
+						$form.find('#part-config-load-error').remove();
+						// Jangan mempertahankan peringatan duplikasi milik unit sebelumnya
+						// ketika operator mengganti pilihan mesin.
+						$form.data('duplicateLocked', false);
+						$form.find('#am-duplicate-warning').hide();
+						if ((!machineId && !recId) || endpoint === action) { applyPartOverrides({}); updateDuplicateGuard(null); return; }
+						$form.data('partConfigLoading', true);
+						$form.find('button[type="submit"], input[type="submit"]').prop('disabled', true).addClass('disabled').attr('title', 'Konfigurasi part sedang dimuat');
 						var params = {};
 						if (machineId) { params.mesin = machineId; }
 						if (recId) { params.rec_id = recId; }
-						$.getJSON(endpoint, params).done(function(data){
+						var selectedShift = $form.find('[name="shift"]').val();
+						if (selectedShift) { params.shift = selectedShift; }
+						var request = $.getJSON(endpoint, params);
+						statusRequest = request;
+						request.done(function(data){
+							if (String($machine.val() || '') !== String(machineId || '')) { return; }
+							if (!data || !data.success) {
+								$form.data('partConfigLoading', false).data('partConfigError', true);
+								$form.prepend('<div id="part-config-load-error" class="alert alert-danger"><strong>Konfigurasi part gagal dimuat.</strong> Pilih ulang mesin atau muat ulang halaman sebelum mengisi.</div>');
+								return;
+							}
+							$form.data('partConfigLoading', false).data('partConfigError', false);
+							applyPartOverrides(data && data.success ? data.part_overrides : {});
 							var allowed = data && data.success ? data.fields : [];
 							$options.each(function(){
-								var enabled = allowed.indexOf(this.name) !== -1;
+								var enabled = !$(this).closest('.part-card').hasClass('part-not-applicable') && allowed.indexOf(this.name) !== -1;
 								var $ctrl = $(this).prop('disabled', !enabled).closest('.custom-control');
 								$ctrl.toggleClass('d-none', !enabled);
 								if (enabled) {
@@ -208,11 +298,27 @@
 									}
 								}
 							});
-						}).fail(function(){
+							updateDuplicateGuard(data);
+							// updateDuplicateGuard hanya mengatur form tambah. Pada form edit,
+							// tombol sebelumnya dinonaktifkan saat konfigurasi dimuat dan harus
+							// dibuka lagi setelah respons berhasil diterima.
+							if (!isAddForm && !$('#machine-deactivation-banner:visible, #period-signature-lock-banner:visible').length) {
+								$form.find('button[type="submit"], input[type="submit"]').prop('disabled', false).removeClass('disabled').removeAttr('title');
+							}
+						}).fail(function(xhr, status){
+							if (status === 'abort') { return; }
+							$form.data('partConfigLoading', false).data('partConfigError', true);
 							$options.prop('disabled', true).closest('.custom-control').addClass('d-none').hide();
+							$form.find('#part-config-load-error').remove();
+							$form.prepend('<div id="part-config-load-error" class="alert alert-danger"><strong>Konfigurasi part gagal dimuat.</strong> Pilih ulang mesin atau muat ulang halaman sebelum mengisi.</div>');
+						}).always(function(){
+							if (statusRequest === request) { statusRequest = null; }
 						});
 					}
 					$machine.on('change', updateOnProcess); updateOnProcess();
+					$form.on('click', '.btn-check-section-ok', function(){
+						setTimeout(function(){ $form.find('.part-not-applicable .part-kondisi').prop('checked', false); }, 0);
+					});
 
 					$form.on('change', '.nok-photo-input', function(){
 						var $input = $(this), $preview = $input.siblings('.nok-photo-preview-wrap');
@@ -354,6 +460,10 @@
 							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Unit mesin sedang deaktif');
 						} else if (sigInfo) {
 							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'Periode AM telah ditandatangani digital');
+						} else if ($form.data('duplicateLocked')) {
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', 'AM untuk mesin dan shift ini sudah diisi');
+						} else if ($form.data('partConfigLoading') || $form.data('partConfigError')) {
+							$submitBtns.prop('disabled', true).addClass('disabled').attr('title', $form.data('partConfigError') ? 'Konfigurasi part gagal dimuat' : 'Konfigurasi part sedang dimuat');
 						} else {
 							$submitBtns.prop('disabled', false).removeClass('disabled').removeAttr('title');
 						}

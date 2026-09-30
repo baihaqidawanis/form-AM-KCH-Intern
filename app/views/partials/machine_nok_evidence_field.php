@@ -10,10 +10,10 @@
     <input type="file" name="foto_before_<?php echo $field; ?>" class="form-control-file nok-photo-input" accept="image/jpeg,image/png,image/webp">
     <label class="small d-block mt-3 mb-1">Ambil Foto Kamera</label>
     <span class="d-inline-block position-relative mb-1">
-      <span class="btn btn-sm btn-outline-primary" aria-hidden="true"><i class="fa fa-camera"></i> Buka Kamera</span>
-      <input type="file" class="nok-camera-input" accept="image/*" capture="environment" aria-label="Buka Kamera" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;">
+      <span class="btn btn-sm btn-outline-primary" aria-hidden="true"><i class="fa fa-camera"></i> Ambil Foto Kamera</span>
+      <input type="file" class="nok-camera-input" accept="image/*" aria-label="Ambil Foto Kamera" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;">
     </span>
-    <div class="small text-muted">Pada perangkat yang mendukung, kamera belakang akan terbuka. Jika tidak, gunakan Upload dari perangkat.</div>
+    <div class="small text-muted">Perangkat menentukan pilihan kamera depan/belakang. Jika kamera tidak terbuka, gunakan Upload dari perangkat.</div>
     <button type="button" class="btn btn-sm btn-outline-secondary mt-2 nok-photo-cancel d-none">Batalkan pilihan foto</button>
     <div class="nok-photo-preview-wrap d-none mt-2"><div class="small text-muted mb-1">Preview foto baru</div><img class="nok-photo-preview" alt="Preview Foto Before" style="max-width:160px;max-height:120px;border-radius:8px;border:1px solid #ddd"></div>
   </div>

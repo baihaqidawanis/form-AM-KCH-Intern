@@ -172,9 +172,21 @@ class Menu
 		),
 
 		array(
+			'path' => 'part_override',
+			'label' => 'Override Part per Unit',
+			'icon' => '<i class="fa fa-sliders"></i>'
+		),
+
+		array(
 			'path' => 'master_mesin',
 			'label' => 'Status Operasional Mesin',
 			'icon' => '<i class="fa fa-power-off"></i>'
+		),
+
+		array(
+			'path' => 'operational_calendar',
+			'label' => 'Kalender Operasional',
+			'icon' => '<i class="fa fa-calendar"></i>'
 		),
 
 		array(

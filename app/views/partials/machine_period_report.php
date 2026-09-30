@@ -167,7 +167,8 @@ if (!function_exists('get_period_image_src')) {
         html, body { margin: 0; padding: <?php echo $css_page_margin; ?>; font-family: "DejaVu Sans", Arial, sans-serif; }
         body { padding: 0 !important; }
       }
-      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; }
+      .check-sheet { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; font-size: <?php echo $css_sheet_fs; ?>; background: #fff; }
+      .check-sheet table, .check-sheet th, .check-sheet td { background-color: #fff; }
       table, .check-sheet table { width: 100%; margin: 0 auto; border-collapse: collapse; margin-bottom: 0px; box-sizing: border-box; }
       .check-sheet-grid { table-layout: fixed; width: 100%; }
       th, td, .check-sheet th, .check-sheet td { border: 1px solid #000; padding: <?php echo $css_pad; ?>; vertical-align: middle; }
@@ -185,6 +186,7 @@ if (!function_exists('get_period_image_src')) {
       .mark-to { color: #495057; font-weight: bold; font-size: 7px; }
       .mark-na { color: #6c757d; font-weight: bold; font-size: 8px; }
       .cell-deactive { background: #fff3cd !important; }
+	  .cell-holiday { background: #e2e3e5 !important; }
       .signature { height: <?php echo $css_sig_h; ?>; }
       @media print { .btn-cancel-signature { display:none !important; } }
     </style>
@@ -308,8 +310,8 @@ if (!function_exists('get_period_image_src')) {
           <th style="width: <?php echo $col_standar; ?>;">Standar</th>
           <th style="width: 2.8%; white-space: nowrap; text-align: center;">Durasi</th>
           <th style="width: 8.2%;">Pelaksanaan</th>
-          <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { ?>
-            <th class="day" style="width: <?php echo $col_day; ?>;"><?php echo $day; ?></th>
+          <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) { $holiday = $d['holiday_days'][$day] ?? null; ?>
+            <th class="day<?php echo $holiday ? ' cell-holiday' : ''; ?>" style="width: <?php echo $col_day; ?>;" title="<?php echo $holiday ? htmlspecialchars($holiday['label'] ?? 'Holiday/Off') : ''; ?>"><?php echo $day; ?><?php if ($holiday) { ?><br><small>OFF</small><?php } ?></th>
           <?php } ?>
         </tr>
       </thead>
@@ -348,11 +350,11 @@ if (!function_exists('get_period_image_src')) {
               foreach (($part['taken_out_intervals'] ?? array()) as $to_interval) {
                 if ($day >= intval($to_interval['from']) && (empty($to_interval['until']) || $day < intval($to_interval['until']))) { $is_to = true; break; }
               }
-              $is_deactive = isset($d['deactivated_days'][$day]); $cell_val = ''; $c = ''; $cell_style = '';
+              $is_deactive = isset($d['deactivated_days'][$day]); $is_holiday = isset($d['holiday_days'][$day]); $cell_val = ''; $c = ''; $cell_style = $is_holiday ? 'background:#e2e3e5 !important; text-align:center;' : '';
               if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
               elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
               elseif (is_array($schedule) && !in_array((string)$curr_shift, $schedule, true)) { $cell_val = '&mdash;'; $c = 'mark-na'; }
-              else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { if ($value === 'NOK') { $c = 'mark-nok'; $cell_val = '&times;'; } elseif ($value === 'ON_PROCESS_RED_TAG') { $c = 'mark-process'; $cell_val = '&bull;'; } else { $c = 'mark-ok'; $cell_val = '&radic;'; } } }
+              else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { if ($value === 'NOK') { $c = 'mark-nok'; $cell_val = '&times;'; } elseif ($value === 'ON_PROCESS_RED_TAG') { $c = 'mark-process'; $cell_val = '&bull;'; } elseif ($value === 'N/A') { $c = 'mark-na'; $cell_val = 'N/A'; } else { $c = 'mark-ok'; $cell_val = '&radic;'; } } }
             ?><td class="day" style="<?php echo $cell_style; ?>"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td><?php } ?>
           </tr>
         <?php }
@@ -362,9 +364,10 @@ if (!function_exists('get_period_image_src')) {
         <td class="signature" colspan="8" style="font-weight:bold; text-align:center;">Paraf Pelaksana</td>
         <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
           $is_deactive = isset($d['deactivated_days'][$day]);
+		  $is_holiday = isset($d['holiday_days'][$day]);
           $pinfo = $d['daily_paraf'][$day] ?? null;
         ?>
-          <td class="day" style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : 'text-align:center; vertical-align:middle; padding:0;'; ?>">
+          <td class="day" style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : ($is_holiday ? 'background:#e2e3e5 !important; text-align:center; vertical-align:middle; padding:0;' : 'text-align:center; vertical-align:middle; padding:0;'); ?>">
             <?php if ($is_deactive) { ?>
               DEAKTIF
             <?php } elseif ($pinfo && is_valid_base64_png_data_uri($pinfo['paraf_image'] ?? null)) { ?>
@@ -379,7 +382,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process Red Tag &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process Red Tag &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
     </table>

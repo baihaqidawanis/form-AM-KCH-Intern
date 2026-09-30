@@ -76,6 +76,76 @@ abstract class BaseMachineController extends SecureController
 		return $shifts;
 	}
 
+	/** Unit fisik yang sah untuk modul ini. NULL berarti migrasi mapping belum tersedia. */
+	private function mappedMachineUnits()
+	{
+		try {
+			return $this->GetModel()->rawQuery(
+				'SELECT m.id, m.nama_mesin, m.nomor_seri FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY m.nama_mesin ASC',
+				array($this->machineKey)
+			) ?: array();
+		} catch (Throwable $e) {
+			// Kode tetap dapat dipakai sementara update.sql belum dijalankan.
+			return null;
+		}
+	}
+
+	/** Record yang sudah memakai kombinasi unit, tanggal operasional, dan shift. */
+	private function existingShiftRecord($mesin_id, $shift)
+	{
+		return $this->GetModel()->rawQueryOne(
+			'SELECT created_at, user_create FROM ' . $this->sqlTable() . ' WHERE mesin = ? AND operational_date = ? AND shift = ? ORDER BY created_at DESC LIMIT 1',
+			array(intval($mesin_id), $this->operationalDate(), (string)$shift)
+		);
+	}
+
+	/**
+	 * Untuk modul shift, shift dan unit dipilih sebelum checklist dirender.
+	 * Single-unit cukup meminta shift; unit ditentukan otomatis.
+	 */
+	private function renderAddPreflightIfNeeded()
+	{
+		if (!in_array('shift', $this->extraFields, true)) { return null; }
+		$units = $this->mappedMachineUnits();
+		if ($units === null || empty($units)) { return null; }
+
+		$shifts = $this->getConfiguredShifts();
+		$shift = trim((string)($this->request->shift ?? ''));
+		$mesin_id = intval($this->request->mesin ?? 0);
+		$single_unit = count($units) === 1;
+		if ($single_unit) { $mesin_id = intval($units[0]['id']); }
+
+		$valid_shift = in_array($shift, $shifts, true);
+		$selected_unit = null;
+		foreach ($units as $unit) {
+			if (intval($unit['id']) === $mesin_id) { $selected_unit = $unit; break; }
+		}
+
+		$duplicate = null;
+		if ($valid_shift && $selected_unit) {
+			$duplicate = $this->existingShiftRecord($mesin_id, $shift);
+			if (!$duplicate) {
+				$this->view->preselected_machine_id = $mesin_id;
+				$this->view->preselected_machine_name = $selected_unit['nama_mesin'];
+				return null;
+			}
+		}
+
+		$this->view->page_title = 'Pilih Pemeriksaan AM ' . $this->displayName;
+		$this->render_view('machine_add_preflight.php', array(
+			'machine_key' => $this->machineKey,
+			'display_name' => $this->displayName,
+			'shifts' => $shifts,
+			'selected_shift' => $valid_shift ? $shift : '',
+			'units' => $units,
+			'selected_machine_id' => $selected_unit ? $mesin_id : 0,
+			'single_unit' => $single_unit,
+			'duplicate' => $duplicate,
+			'operational_date' => $this->operationalDate(),
+		));
+		return true;
+	}
+
 	private function loadDynamicParts()
 	{
 		$db = $this->GetModel();
@@ -104,7 +174,7 @@ abstract class BaseMachineController extends SecureController
 		return array_values(array_unique(array_map(function ($row) { return $row['field_name']; }, $rows)));
 	}
 
-	/** Tanggal operasional dimulai 06:45 dan selesai 05:45 esok harinya. */
+	/** Tanggal operasional dimulai 06:45 dan berganti pada 06:45 esok harinya. */
 	protected function operationalDate($at = null)
 	{
 		$time = $at ? new DateTime($at, new DateTimeZone('Asia/Jakarta')) : new DateTime('now', new DateTimeZone('Asia/Jakarta'));
@@ -175,16 +245,17 @@ abstract class BaseMachineController extends SecureController
 	{
 		if ($this->snapshotSchema !== null) { return $this->snapshotSchema; }
 		try {
-			$rows = $this->GetModel()->rawQuery("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot') AS has_snapshot_table, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot' AND column_name = 'shift_schedule') AS has_shift_schedule");
+			$rows = $this->GetModel()->rawQuery("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot') AS has_snapshot_table, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot' AND column_name = 'shift_schedule') AS has_shift_schedule, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'form_part_snapshot' AND column_name = 'is_applicable') AS has_is_applicable");
 			$row = $rows[0] ?? array();
 			$truthy = array(true, 1, '1', 't', 'true');
 			$this->snapshotSchema = array(
 				'table' => in_array($row['has_snapshot_table'] ?? null, $truthy, true),
-				'shift_schedule' => in_array($row['has_shift_schedule'] ?? null, $truthy, true)
+				'shift_schedule' => in_array($row['has_shift_schedule'] ?? null, $truthy, true),
+				'is_applicable' => in_array($row['has_is_applicable'] ?? null, $truthy, true)
 			);
 		} catch (\Throwable $e) {
 			error_log('Snapshot schema preflight skipped: ' . $e->getMessage());
-			$this->snapshotSchema = array('table' => false, 'shift_schedule' => false);
+			$this->snapshotSchema = array('table' => false, 'shift_schedule' => false, 'is_applicable' => false);
 		}
 		return $this->snapshotSchema;
 	}
@@ -196,7 +267,42 @@ abstract class BaseMachineController extends SecureController
 	 * @param int   $form_id   ID record baru yang baru saja di-INSERT
 	 * @param array $parts_meta Hasil partsForRecord() pada saat submit (field_name => label)
 	 */
-	protected function savePartSnapshot($form_id, $parts_meta, $snapshot_schema = null)
+	private function partMachineOverrides($mesin_id)
+	{
+		if (!$mesin_id) { return array(); }
+		try {
+			$rows = $this->GetModel()->rawQuery('SELECT mp."field_name", o."is_applicable", o."durasi" FROM "master_part_machine_override" o JOIN "master_part" mp ON mp."id" = o."master_part_id" WHERE mp."machine_key" = ? AND o."mesin_id" = ? AND (SELECT COUNT(*) FROM "machine_module_units" u WHERE u."machine_key" = mp."machine_key") > 1', array($this->machineKey, intval($mesin_id)));
+			$result = array();
+			foreach (($rows ?: array()) as $row) {
+				$result[$row['field_name']] = array(
+					'is_applicable' => in_array($row['is_applicable'] ?? null, array(true, 1, '1', 't', 'true'), true),
+					'durasi' => $row['durasi'] !== null ? (string)$row['durasi'] : null,
+				);
+			}
+			return $result;
+		} catch (Throwable $e) {
+			// Tetap kompatibel saat kode di-pull sebelum update.sql dijalankan.
+			return array();
+		}
+	}
+
+	private function snapshotOverrides($form_id)
+	{
+		if (!$form_id || empty($this->snapshotSchema()['is_applicable'])) { return array(); }
+		try {
+			$rows = $this->GetModel()->where('machine_key', $this->machineKey)->where('form_id', intval($form_id))->get('form_part_snapshot', null, array('field_name', 'is_applicable', 'durasi'));
+			$result = array();
+			foreach (($rows ?: array()) as $row) {
+				$result[$row['field_name']] = array(
+					'is_applicable' => in_array($row['is_applicable'] ?? null, array(true, 1, '1', 't', 'true'), true),
+					'durasi' => $row['durasi'] !== null ? (string)$row['durasi'] : null,
+				);
+			}
+			return $result;
+		} catch (Throwable $e) { return array(); }
+	}
+
+	protected function savePartSnapshot($form_id, $parts_meta, $snapshot_schema = null, $mesin_id = null)
 	{
 		if (empty($parts_meta) || !$form_id) { return; }
 		$schema = $snapshot_schema ?: $this->snapshotSchema();
@@ -206,7 +312,11 @@ abstract class BaseMachineController extends SecureController
 		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in');
 		$master_rows = $db->get('master_part');
 		if (empty($master_rows)) { return; }
+		$overrides = $this->partMachineOverrides($mesin_id);
 		foreach ($master_rows as $row) {
+			$override = $overrides[$row['field_name']] ?? null;
+			$is_applicable = $override === null ? true : !empty($override['is_applicable']);
+			if ($override !== null && $override['durasi'] !== null) { $row['durasi'] = $override['durasi']; }
 			$columns = 'machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan';
 			$values = '?,?,?,?,?,?,?,?,?,?,?,?,?';
 			$params = array($this->machineKey, $form_id, $row['field_name'], $row['label'], $row['section'] ?? null, $row['metode'] ?? null, $row['alat'] ?? null, $row['standard'] ?? null, $row['durasi'] ?? null, $row['pelaksanaan'] ?? null, $row['highlight'] ?? null, $row['image_path'] ?? null, $row['urutan'] ?? null);
@@ -214,6 +324,11 @@ abstract class BaseMachineController extends SecureController
 				$columns .= ', shift_schedule';
 				$values .= ',?';
 				$params[] = trim((string) ($row['shift_schedule'] ?? '')) ?: '1';
+			}
+			if (!empty($schema['is_applicable'])) {
+				$columns .= ', is_applicable';
+				$values .= ',?';
+				$params[] = $is_applicable;
 			}
 			$query = 'INSERT INTO "form_part_snapshot" (' . $columns . ', snapshot_at) VALUES (' . $values . ',CURRENT_TIMESTAMP) ON CONFLICT (machine_key, form_id, field_name) DO NOTHING';
 			if ($db->rawQuery($query, $params) === false) {
@@ -543,6 +658,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		$mesinId = intval($this->request->mesin ?? 0);
 		$recId = intval($this->request->rec_id ?? 0);
+		$shift = trim((string)($this->request->shift ?? ''));
 		if (!$mesinId && $recId) {
 			$db = $this->GetModel();
 			$row = $db->where($this->idColumn(), $recId)->getOne($this->sqlTable(), array('mesin'));
@@ -555,7 +671,39 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		$fields = array();
 		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field, $recId)) { $fields[] = $field; } }
-		return render_json(array('success' => true, 'fields' => $fields));
+		$part_overrides = $recId ? $this->snapshotOverrides($recId) : $this->partMachineOverrides($mesinId);
+
+		// Form add memakai request yang sama untuk memberi peringatan duplikasi
+		// sebelum operator mengisi seluruh checklist. Validasi add() dan unique
+		// index tetap menjadi pengaman utama terhadap submit bersamaan.
+		$duplicate = null;
+		if (!$recId) {
+			$opDate = $this->operationalDate();
+			if (in_array('shift', $this->extraFields, true)) {
+				if (!in_array($shift, $this->getConfiguredShifts(), true)) {
+					return render_json(array('success' => true, 'fields' => $fields, 'part_overrides' => $part_overrides, 'duplicate' => false, 'operational_date' => $opDate));
+				}
+			}
+			// Ambil builder sesudah getConfiguredShifts(); PDODb memakai instance
+			// bersama, sehingga kondisi query duplikasi tidak boleh bocor ke query
+			// master_part yang dipakai untuk membaca konfigurasi shift.
+			$db = $this->GetModel();
+			$db->where('mesin', $mesinId)->where('operational_date', $opDate);
+			if (in_array('shift', $this->extraFields, true)) { $db->where('shift', $shift); }
+			$existing = $db->getOne($this->sqlTable(), array('created_at', 'user_create'));
+			$duplicate = !empty($existing) ? array(
+				'created_at' => (string)($existing['created_at'] ?? ''),
+				'user_create' => (string)($existing['user_create'] ?? ''),
+			) : false;
+		}
+
+		return render_json(array(
+			'success' => true,
+			'fields' => $fields,
+			'part_overrides' => $part_overrides,
+			'duplicate' => $duplicate,
+			'operational_date' => $this->operationalDate(),
+		));
 	}
 
 	private function nokDetailData(array $formdata, $field, $rec_id, $mesin_id)
@@ -586,6 +734,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	{
 		$table = $this->machineKey; $sql = $this->sqlTable(); $idcol = $this->idColumn();
 		if ($formdata) {
+			$mapped_units = $this->mappedMachineUnits();
+			if ($mapped_units !== null) {
+				$allowed_machine_ids = array_map('intval', array_column($mapped_units, 'id'));
+				if (!in_array(intval($formdata['mesin'] ?? 0), $allowed_machine_ids, true)) {
+					$this->set_page_error('Unit mesin tidak valid untuk modul Form AM ini.');
+					return $this->redirect($table . '/add');
+				}
+			}
 			$deactivated_unit = isset($formdata['mesin']) && $this->isUnitDeactivated(intval($formdata['mesin']), $this->operationalDate());
 			if ($deactivated_unit) { $this->set_page_error('Unit mesin sedang DEAKTIVASI. Pemeriksaan AM tidak dapat disimpan.'); return $this->redirect($table . '/add'); }
 			if (isset($formdata['mesin'])) {
@@ -614,6 +770,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 			$db = $this->GetModel();
 			$parts_for_add = $this->partsForAdd($formdata);
+			$part_overrides = $this->partMachineOverrides(intval($formdata['mesin'] ?? 0));
+			foreach ($part_overrides as $field => $override) {
+				if (isset($parts_for_add[$field]) && empty($override['is_applicable'])) { $formdata[$field] = 'N/A'; }
+			}
 			$extra_fields_for_add = $this->extraFieldsForParts($parts_for_add);
 			$fields = array_merge(array('mesin'), array_keys($parts_for_add), $extra_fields_for_add);
 			$this->fields = $fields;
@@ -669,7 +829,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
 					// label/section/metode/standard master_part di kemudian hari mengubah
 					// tampilan laporan lama. Dipanggil di dalam transaction yang sama.
-					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema);
+					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema, $modeldata['mesin']);
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
 					// Sync every NOK Red/White Tag to RTWT Mesin (fail-safe, non-blocking).
@@ -692,6 +852,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		// Tidak ada transaksi berhasil (validasi/duplikat gagal): jangan sisakan file orphan.
 		if (!empty($this->newPhotoPaths)) { $this->cleanupNewPhotos(); }
+		if (!$formdata) {
+			if ($this->renderAddPreflightIfNeeded()) { return; }
+		}
 		$today = $this->operationalDate();
 		$deactive_units = $this->GetModel()->rawQuery("
 			SELECT r.mesin_id, m.nama_mesin, r.reason, r.started_at, r.notes, r.action_by_username
@@ -745,6 +908,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		$this->view->signed_units = $signed_units;
 		$this->view->deactivated_units = $deactive_map;
+		try {
+			$this->view->operational_day_flag = $this->GetModel()->where('operational_date', $today)->getOne('operational_calendar');
+		} catch (Throwable $e) { $this->view->operational_day_flag = null; }
 		$this->view->page_title = "Add New AM {$this->displayName}";
 		return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd(), 'deactivated_units' => $deactive_map, 'signed_units' => $signed_units));
 	}
@@ -826,7 +992,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				//   atau HARI INI. Hari besok/future tetap putih karena belum pasti masih down.
 				//   Besoknya, jika masih deaktif, baru otomatis kuning.
 				// - ended_at ada: kuning jika deaktivasi melewati tengah malam hari itu
-				//   (artinya masih down di akhir hari). Jika mulai & selesai hari yang sama → putih.
+				//   (artinya masih down di akhir hari). Jika mulai dan selesai hari yang sama, tetap putih.
 				$still_active_at_end_of_day = empty($dr['ended_at'])
 					? ($day_str >= $s_date && $day_str <= $today_str) // sudah lewat/hari ini & masih aktif
 					: ($day_str >= $s_date && substr($dr['ended_at'], 0, 10) > $day_str); // berakhir setelah hari ini
@@ -853,6 +1019,13 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$operator_names[] = $active_user;
 			}
 		}
+		$holiday_days = array();
+		try {
+			$holiday_rows = $db->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->get('operational_calendar');
+			foreach (($holiday_rows ?: array()) as $holiday) {
+				$holiday_days[intval((new DateTime($holiday['operational_date']))->format('j'))] = $holiday;
+			}
+		} catch (Throwable $e) { $holiday_days = array(); }
 
 		$operator_profiles = array();
 		if (!empty($operator_names)) {
@@ -920,6 +1093,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'report_parts' => $report_parts,
 			'display_checks' => $display_checks,
 			'deactivated_days' => $deactivated_days,
+			'holiday_days' => $holiday_days,
 			'deactivation_records' => $deactivation_rows,
 			'daily_paraf' => $daily_paraf,
 			'doc_hash' => $doc_hash,
@@ -1061,6 +1235,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 		if ($formdata) {
 			$formdata['mesin'] = $formdata['mesin'] ?? $existing_record['mesin'];
+			$part_overrides = $this->snapshotOverrides($rec_id);
+			foreach ($part_overrides as $field => $override) {
+				if (isset($parts_for_edit[$field]) && empty($override['is_applicable'])) { $formdata[$field] = 'N/A'; }
+			}
 			$postdata = $this->format_request_data($formdata);
 			$extra_fields_for_edit = $this->extraFieldsForParts($parts_for_edit);
 			$this->fields = array_merge(array('perubahan'), array_keys($parts_for_edit), $extra_fields_for_edit);
@@ -1120,6 +1298,23 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						}
 					}
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
+					// Rekonsiliasi part yang tidak lagi NOK, lalu kirim snapshot NOK terbaru.
+                    $activeNokFields = array();
+                    foreach ($parts_for_edit as $field => $label) {
+                        if (($formdata[$field] ?? ($modeldata[$field] ?? null)) === 'NOK') {
+                            $activeNokFields[] = $field;
+                        }
+                    }
+                    $revisionNote = trim((string) ($formdata['perubahan'] ?? ''));
+                    $cancelReason = $revisionNote !== ''
+                        ? 'Part tidak lagi NOK setelah revisi Form AM. Catatan revisi: ' . $revisionNote
+                        : 'Part tidak lagi NOK setelah revisi Form AM.';
+                    foreach (array_keys($existing_abnormalities) as $previousNokField) {
+                        if (!in_array($previousNokField, $activeNokFields, true)) {
+                            $this->cancelRtwtFormAmPart($rec_id, $previousNokField, $cancelReason);
+                        }
+                    }
+                    $this->syncRedTagToRtwt($formdata, $parts_for_edit, $modeldata, $rec_id);
 					$this->write_to_log('edit_data', 'true');
 					$this->set_flash_msg('Data berhasil diperbarui', 'success');
 					return $this->redirect("$table/view/$rec_id");
@@ -1214,7 +1409,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				return $this->redirect($table);
 			}
 		}
-		$details_to_delete = $db->where('id_am', $ids, 'in')->get($this->kendalaTable(), null, array('foto_before'));
+		$details_to_delete = $db->where('id_am', $ids, 'in')->get($this->kendalaTable(), null, array('id_am', 'nama_bagian', 'foto_before'));
 		//Baris kendala (abnormalitas) anaknya WAJIB ikut dihapus -- gak ada FK
 		//ON DELETE CASCADE di skema ini, jadi kalau cuma hapus record induk,
 		//kendala-nya nyangkut jadi orphan selamanya (bikin DB numpuk & berisiko
@@ -1229,7 +1424,13 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($db->delete($sql)) {
 			$db->commit();
 			$this->cleanupDeletedPhotos($details_to_delete);
-			$this->write_to_log('delete', 'true');
+            foreach ($details_to_delete as $detail) {
+                $field = trim((string) ($detail['nama_bagian'] ?? ''));
+                if ($field !== '') {
+                    $this->cancelRtwtFormAmPart((int) ($detail['id_am'] ?? 0), $field, 'Form AM dihapus oleh Super Admin.');
+                }
+            }
+            $this->write_to_log('delete', 'true');
 			$this->set_flash_msg('Record deleted successfully', 'success');
 		} else {
 			$db->rollback();
@@ -1289,7 +1490,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			foreach ($part_details as $part) {
 				$field = (string)($part['field_name'] ?? '');
 				if ($field === '') { continue; }
-				$canonical_parts[] = array(
+				$canonical_part = array(
 					'field_name' => $field, 'label' => $part['label'] ?? '', 'section' => $part['section'] ?? '',
 					'metode' => $part['metode'] ?? '', 'alat' => $part['alat'] ?? '', 'standard' => $part['standard'] ?? '',
 					'durasi' => $part['durasi'] ?? '', 'pelaksanaan' => $part['pelaksanaan'] ?? '',
@@ -1297,6 +1498,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					'shift_schedule' => $part['shift_schedule'] ?? '1', 'status' => $row[$field] ?? null,
 					'abnormality' => $abnormality_map[$field] ?? null,
 				);
+				$is_applicable = in_array($part['is_applicable'] ?? true, array(true, 1, '1', 't', 'true'), true);
+				if (!$is_applicable) { $canonical_part['is_applicable'] = false; }
+				$canonical_parts[] = $canonical_part;
 			}
 			foreach ($this->partsForRecord($row['operational_date'], $row['created_at'] ?? null, $form_id) as $field => $label) {
 				if (!empty($row[$field])) {
@@ -1315,6 +1519,20 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		$deactivations = $db->rawQuery('SELECT started_at, ended_at, reason, notes, action_by_username, reactivated_by_username FROM riwayat_status_mesin WHERE mesin_id = ? AND started_at <= ? AND (ended_at IS NULL OR ended_at >= ?) ORDER BY started_at ASC', array($mesin, $end . ' 23:59:59', $start . ' 00:00:00'));
 		$document_payload = array('records' => $document_rows, 'deactivations' => $deactivations);
+		// Kalender mengubah tampilan report, sehingga flag yang ada pada periode
+		// harus ikut terikat ke hash TTD. Key hanya ditambahkan bila ada data agar
+		// signature lama pada periode tanpa flag tetap kompatibel.
+		try {
+			$calendar_flags = $db->rawQuery(
+				'SELECT operational_date, label, notes FROM operational_calendar WHERE operational_date >= ? AND operational_date <= ? ORDER BY operational_date ASC',
+				array($start, $end)
+			);
+			if (!empty($calendar_flags)) {
+				$document_payload['operational_calendar'] = $calendar_flags;
+			}
+		} catch (Throwable $e) {
+			// Menjaga kompatibilitas sementara update.sql belum dijalankan.
+		}
 
 		return array(
 			'rows' => $rows,
@@ -1339,7 +1557,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$field = (string)($part['field_name'] ?? '');
 				if ($field === '') { continue; }
 				// Shift adalah konfigurasi form, bukan bagian dari teks/deskripsi part.
-				$identity = array($field, $part['label'] ?? '', $part['section'] ?? '', $part['metode'] ?? '', $part['alat'] ?? '', $part['standard'] ?? '', $part['durasi'] ?? '', $part['pelaksanaan'] ?? '', $part['highlight'] ?? '', $part['image_path'] ?? '');
+				$identity = array($field, $part['label'] ?? '', $part['section'] ?? '', $part['metode'] ?? '', $part['alat'] ?? '', $part['standard'] ?? '', $part['durasi'] ?? '', $part['pelaksanaan'] ?? '', $part['highlight'] ?? '', $part['image_path'] ?? '', $part['is_applicable'] ?? true);
 				$key = $field . '-' . substr(sha1(json_encode($identity)), 0, 12);
 				if (!isset($parts[$key])) {
 					$part['display_id'] = $key; $part['active_days'] = array();
@@ -1655,8 +1873,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$relativePhoto = ltrim((string)($photoByPart[$field] ?? ''), '/\\');
 					$absolutePhoto = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativePhoto);
 					if ($relativePhoto === '' || !is_file($absolutePhoto)) {
-						throw new RuntimeException('Foto Before untuk sinkronisasi RTWT tidak ditemukan: ' . $field);
-					}
+                        error_log('RTWT NOK Tag Sync dilewati: Foto Before tidak ditemukan untuk ' . $machine_name . '/' . $field);
+                        continue;
+                    }
 					$payload = array(
 						'source_system' => 'FORM_AM',
 						'source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field,
@@ -1709,4 +1928,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 	}
 
-}
+
+	/** Non-blocking cancellation for a Form AM part that is no longer NOK. */
+	protected function cancelRtwtFormAmPart($rec_id, $field, $reason)
+	{
+		try {
+			if (!defined('RTWT_API_MODE') || RTWT_API_MODE !== 'modular' || !defined('RTWT_API_TOKEN') || RTWT_API_TOKEN === '') { return; }
+			$syncUrl = defined('RTWT_API_URL') ? RTWT_API_URL : '';
+			$cancelUrl = preg_replace('#/sync/?$#', '/sync/cancel', $syncUrl);
+			if (!$cancelUrl || $cancelUrl === $syncUrl) { return; }
+			$payload = array('source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field, 'reason' => (string) $reason);
+			$ch = curl_init($cancelUrl);
+			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . RTWT_API_TOKEN), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
+			$response = curl_exec($ch); $status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+			if ($response === false || $status < 200 || $status >= 300) { error_log('RTWT Form AM cancel ditolak untuk ' . $field . ' (HTTP ' . $status . '): ' . ($response ?: curl_error($ch))); }
+			curl_close($ch);
+		} catch (Throwable $e) {
+			error_log('RTWT Form AM cancel error untuk ' . $field . ': ' . $e->getMessage());
+		}
+	}}

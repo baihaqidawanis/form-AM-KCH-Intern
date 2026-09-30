@@ -22,7 +22,7 @@ $part_shift_schedules = $d['part_shift_schedules'] ?? array();
     </div>
 
     <!-- Banner Informasi Report Harian -->
-    <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #F0F8EC 0%, #FFFFFF 100%); border-left: 4px solid var(--ak-green, #009639) !important;">
+    <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; background: #FFFFFF; border-left: 4px solid var(--ak-green, #009639) !important;">
       <div class="card-body p-3 p-md-4">
         <div class="row align-items-center">
           <div class="col-md-4 mb-2 mb-md-0">
