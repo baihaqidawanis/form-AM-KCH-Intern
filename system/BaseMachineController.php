@@ -547,7 +547,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 
 	private function storeNokPhoto(array $file)
 	{
-		if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) { throw new RuntimeException('Upload Foto Before gagal.'); }
+		$error = intval($file['error'] ?? UPLOAD_ERR_NO_FILE);
+		if ($error !== UPLOAD_ERR_OK) {
+			$messages = array(
+				UPLOAD_ERR_INI_SIZE => 'Foto Before melebihi batas upload server. Pilih foto yang lebih kecil dari 5 MB.',
+				UPLOAD_ERR_FORM_SIZE => 'Foto Before melebihi batas ukuran form. Pilih foto yang lebih kecil dari 5 MB.',
+				UPLOAD_ERR_PARTIAL => 'Upload Foto Before terputus sebelum selesai. Periksa koneksi, pilih ulang foto, lalu coba lagi.',
+				UPLOAD_ERR_NO_FILE => 'Foto Before belum dipilih.',
+				UPLOAD_ERR_NO_TMP_DIR => 'Folder sementara upload server tidak tersedia. Hubungi administrator.',
+				UPLOAD_ERR_CANT_WRITE => 'Foto Before tidak dapat ditulis ke server. Hubungi administrator.',
+				UPLOAD_ERR_EXTENSION => 'Upload Foto Before dihentikan oleh konfigurasi server. Hubungi administrator.',
+			);
+			throw new RuntimeException($messages[$error] ?? 'Upload Foto Before gagal. Coba pilih ulang foto dan kirim kembali.');
+		}
 		if (intval($file['size'] ?? 0) <= 0 || intval($file['size']) > 5 * 1024 * 1024) { throw new RuntimeException('Foto Before maksimal 5 MB.'); }
 		$finfo = new finfo(FILEINFO_MIME_TYPE); $mime = $finfo->file($file['tmp_name']);
 		if (!in_array($mime, array('image/jpeg', 'image/png', 'image/webp'), true)) { throw new RuntimeException('Foto Before harus JPEG, PNG, atau WebP.'); }
@@ -565,7 +577,6 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return array('foto_before' => $relative, 'foto_before_sha256' => hash_file('sha256', $absolute),
 			'foto_before_mime' => 'image/jpeg', 'foto_before_size' => filesize($absolute));
 	}
-
 	private function prepareNokPhotos(array $formdata, array $part_fields, array $existing = array())
 	{
 		$this->preparedNokPhotos = array(); $valid = true;

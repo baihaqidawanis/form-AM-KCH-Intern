@@ -321,17 +321,25 @@
 					});
 
 					$form.on('change', '.nok-photo-input', function(){
-						var $input = $(this), $preview = $input.siblings('.nok-photo-preview-wrap');
-						if (this.files && this.files[0] && this.files[0].size > 5 * 1024 * 1024) {
-							alert('Foto Before maksimal 5 MB.'); $input.val('');
-						}
+						var $input = $(this), $box = $input.closest('.nok-photo-box'), $preview = $input.siblings('.nok-photo-preview-wrap'), $state = $input.siblings('.nok-photo-state');
 						var file = this.files && this.files[0];
+						if (file && file.size > 5 * 1024 * 1024) {
+							alert('Foto Before maksimal 5 MB.'); $input.val(''); file = null;
+						}
+						if (file && file.type && ['image/jpeg', 'image/png', 'image/webp'].indexOf(file.type) === -1) {
+							alert('Foto Before harus JPEG, PNG, atau WebP.'); $input.val(''); file = null;
+						}
 						$input.siblings('.nok-photo-cancel').toggleClass('d-none', !file);
 						if (file) {
+							var sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+							$state.text('Foto dipilih: ' + file.name + ' (' + sizeMb + ' MB)').removeClass('d-none');
+							$box.removeClass('border border-danger p-2 rounded');
 							var reader = new FileReader();
 							reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.removeClass('d-none'); };
 							reader.readAsDataURL(file);
-						} else { $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none'); }
+						} else {
+							$state.text('').addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none');
+						}
 					});
 					$form.on('change', '.nok-camera-input', function(){
 						var cameraInput = this, file = cameraInput.files && cameraInput.files[0];
@@ -346,13 +354,13 @@
 						}
 					});
 					$form.on('click', '.nok-photo-cancel', function(){
-						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
+						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-state').text('').addClass('d-none'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
 						$(this).addClass('d-none');
 					});
 					function syncNokPhotoBox($card) {
 						var $box = $card.find('.nok-photo-box');
 						var isNok = $card.find('.part-kondisi[value="NOK"]').is(':checked');
-						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
+						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-state').text('').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
 						$box.toggle(isNok);
 						var required = isNok && $box.attr('data-existing-photo') !== '1';
 						$box.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');
@@ -378,15 +386,21 @@
 						}
 					});
 					$form.on('submit', function(e){
-						var missing = false;
+						var missing = false, hasNok = false;
 						$form.find('.part-card').each(function(){
 							var $card = $(this);
-							if ($card.find('.part-kondisi[value="NOK"]').is(':checked') && $card.find('.nok-photo-box').attr('data-existing-photo') !== '1') {
-								var hasFile = false; $card.find('.nok-photo-input').each(function(){ if (this.files && this.files.length) { hasFile = true; } });
-								if (!hasFile) { missing = true; $card.find('.nok-photo-box').addClass('border border-danger p-2 rounded'); }
+							if ($card.find('.part-kondisi[value="NOK"]').is(':checked')) {
+								hasNok = true;
+								if ($card.find('.nok-photo-box').attr('data-existing-photo') !== '1') {
+									var hasFile = false; $card.find('.nok-photo-input').each(function(){ if (this.files && this.files.length) { hasFile = true; } });
+									if (!hasFile) { missing = true; $card.find('.nok-photo-box').addClass('border border-danger p-2 rounded'); }
+								}
 							}
 						});
-						if (missing) { e.preventDefault(); alert('Foto Before wajib untuk setiap part NOK.'); }
+						if (missing) { e.preventDefault(); alert('Foto Before wajib untuk setiap part NOK.'); return; }
+						var $submit = $form.find('button[type="submit"], input[type="submit"]').filter(':visible').first();
+						if (!$submit.length || $submit.data('amSubmitting')) { if ($submit.data('amSubmitting')) { e.preventDefault(); } return; }
+						$submit.data('amSubmitting', true).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> ' + (hasNok ? 'Mengunggah Foto Before...' : 'Menyimpan AM...'));
 					});
 				});
 			})();
