@@ -1590,3 +1590,52 @@ html, body {
 .page .bg-light.p-3 .d-flex.justify-content-between .btn {
     white-space: nowrap !important;
 }
+
+/* Checkbox and radio controls */
+.custom-control-label::before {
+    background-color: #fff !important;
+    border: 1.5px solid #94a3b8 !important;
+}
+
+.custom-checkbox .custom-control-label::before { border-radius: 4px !important; }
+.custom-radio .custom-control-label::before { border-radius: 50% !important; }
+
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--ak-green) !important;
+    border-color: var(--ak-green) !important;
+}
+
+/* Keep the batch-selection control centered without changing other controls. */
+table th.td-checkbox,
+table td.td-checkbox {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 0 !important;
+}
+
+table .td-checkbox .custom-control {
+    display: inline-block !important;
+    width: 1.35rem !important;
+    min-height: 1.35rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    vertical-align: middle !important;
+}
+
+table .td-checkbox .custom-control-label {
+    display: block !important;
+    width: 1.35rem !important;
+    height: 1.35rem !important;
+    margin: 0 !important;
+}
+
+table .td-checkbox .custom-control-label::before,
+table .td-checkbox .custom-control-label::after {
+    top: 0 !important;
+    left: 0 !important;
+    width: 1.35rem !important;
+    height: 1.35rem !important;
+}
