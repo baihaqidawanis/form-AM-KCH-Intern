@@ -320,8 +320,41 @@
 						setTimeout(function(){ $form.find('.part-not-applicable .part-kondisi').prop('checked', false); }, 0);
 					});
 
+					var nokPhotoTargetBytes = 2 * 1024 * 1024;
+					function nokPhotoSize(bytes) { return (bytes / (1024 * 1024)).toFixed(2) + ' MB'; }
+					function showNokPhotoPreview($preview, file) {
+						var reader = new FileReader();
+						reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.removeClass('d-none'); };
+						reader.readAsDataURL(file);
+					}
+					function compressNokPhoto(file, done) {
+						if (!window.URL || !window.URL.createObjectURL || !window.HTMLCanvasElement || !HTMLCanvasElement.prototype.toBlob) {
+							done(null, 'Browser ini belum mendukung kompresi foto. Gunakan foto asli atau Upload dari perangkat.'); return;
+						}
+						var sourceUrl = URL.createObjectURL(file), image = new Image();
+						image.onload = function() {
+							var maxDimension = 1920, baseScale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+							var attempts = 0;
+							function render(scale, quality) {
+								var canvas = document.createElement('canvas');
+								canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+								canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+								canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+								canvas.toBlob(function(blob) {
+									attempts++;
+									if (!blob) { URL.revokeObjectURL(sourceUrl); done(null, 'Foto tidak dapat dikompres.'); return; }
+									if (blob.size <= nokPhotoTargetBytes) { URL.revokeObjectURL(sourceUrl); done(blob); return; }
+									if (attempts >= 10) { URL.revokeObjectURL(sourceUrl); done(null, 'Foto belum dapat diperkecil hingga 2 MB. Pilih foto lain atau gunakan ukuran kamera lebih kecil.'); return; }
+									if (quality > 0.55) { render(scale, quality - 0.10); } else { render(scale * 0.80, 0.82); }
+								}, 'image/jpeg', quality);
+							}
+							render(baseScale, 0.88);
+						};
+						image.onerror = function() { URL.revokeObjectURL(sourceUrl); done(null, 'Foto tidak dapat dibaca untuk dikompres.'); };
+						image.src = sourceUrl;
+					}
 					$form.on('change', '.nok-photo-input', function(){
-						var $input = $(this), $box = $input.closest('.nok-photo-box'), $preview = $input.siblings('.nok-photo-preview-wrap'), $state = $input.siblings('.nok-photo-state');
+						var $input = $(this), $box = $input.closest('.nok-photo-box'), $preview = $input.siblings('.nok-photo-preview-wrap'), $state = $input.siblings('.nok-photo-state'), $compress = $input.siblings('.nok-photo-compress');
 						var file = this.files && this.files[0];
 						if (file && file.size > 5 * 1024 * 1024) {
 							alert('Foto Before maksimal 5 MB.'); $input.val(''); file = null;
@@ -331,15 +364,32 @@
 						}
 						$input.siblings('.nok-photo-cancel').toggleClass('d-none', !file);
 						if (file) {
-							var sizeMb = (file.size / (1024 * 1024)).toFixed(2);
-							$state.text('Foto dipilih: ' + file.name + ' (' + sizeMb + ' MB)').removeClass('d-none');
-							$box.removeClass('border border-danger p-2 rounded');
-							var reader = new FileReader();
-							reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.removeClass('d-none'); };
-							reader.readAsDataURL(file);
+							$input.data('nokOriginalBytes', file.size);
+							$state.text('Foto dipilih: ' + file.name + ' (' + nokPhotoSize(file.size) + ')').removeClass('d-none');
+							$compress.toggleClass('d-none', file.size <= nokPhotoTargetBytes).prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB');
+							$box.removeClass('border border-danger p-2 rounded'); showNokPhotoPreview($preview, file);
 						} else {
-							$state.text('').addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none');
+							$state.text('').addClass('d-none'); $compress.addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none');
 						}
+					});
+					$form.on('click', '.nok-photo-compress', function(){
+						var $button = $(this), $box = $button.closest('.nok-photo-box'), $input = $box.find('.nok-photo-input').first(), input = $input[0], file = input && input.files && input.files[0];
+						if (!file) { return; }
+						if (file.size <= nokPhotoTargetBytes) { $button.addClass('d-none'); return; }
+						$button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyiapkan foto...');
+						compressNokPhoto(file, function(blob, error) {
+							if (error) { $button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB'); alert(error); return; }
+							try {
+								var compressed = new File([blob], file.name.replace(/\.[^.]+$/, '') + '-compressed.jpg', { type: 'image/jpeg' });
+								var transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files;
+								var originalBytes = $input.data('nokOriginalBytes') || file.size;
+								$box.find('.nok-photo-state').text('Foto dikompres: ' + nokPhotoSize(originalBytes) + ' → ' + nokPhotoSize(compressed.size)).removeClass('d-none');
+								$button.addClass('d-none'); showNokPhotoPreview($box.find('.nok-photo-preview-wrap'), compressed);
+							} catch (err) {
+								$button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB');
+								alert('Browser ini tidak dapat memakai hasil kompresi. Foto asli tetap dipakai.');
+							}
+						});
 					});
 					$form.on('change', '.nok-camera-input', function(){
 						var cameraInput = this, file = cameraInput.files && cameraInput.files[0];
@@ -354,13 +404,13 @@
 						}
 					});
 					$form.on('click', '.nok-photo-cancel', function(){
-						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-state').text('').addClass('d-none'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
+						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-state').text('').addClass('d-none'); $(this).siblings('.nok-photo-compress').addClass('d-none'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
 						$(this).addClass('d-none');
 					});
 					function syncNokPhotoBox($card) {
 						var $box = $card.find('.nok-photo-box');
 						var isNok = $card.find('.part-kondisi[value="NOK"]').is(':checked');
-						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-state').text('').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
+						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-state').text('').addClass('d-none'); $box.find('.nok-photo-compress').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
 						$box.toggle(isNok);
 						var required = isNok && $box.attr('data-existing-photo') !== '1';
 						$box.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');

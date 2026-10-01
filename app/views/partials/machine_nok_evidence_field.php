@@ -9,6 +9,7 @@
     <label class="small d-block mb-1">Upload dari perangkat</label>
     <input type="file" name="foto_before_<?php echo $field; ?>" class="form-control-file nok-photo-input" accept="image/jpeg,image/png,image/webp">
     <div class="small text-success d-none nok-photo-state" aria-live="polite"></div>
+    <button type="button" class="btn btn-sm btn-outline-primary mt-2 d-none nok-photo-compress"><i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB</button>
     <label class="small d-block mt-3 mb-1">Ambil Foto Kamera</label>
     <span class="d-inline-block position-relative mb-1">
       <span class="btn btn-sm btn-outline-primary" aria-hidden="true"><i class="fa fa-camera"></i> Ambil Foto Kamera</span>
