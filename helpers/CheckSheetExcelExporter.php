@@ -152,7 +152,7 @@ class CheckSheetExcelExporter
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, 7);
         $rowIndex++;
 
-        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process Red Tag | (' . self::symbol('deactive') . ') Deaktivasi Mesin', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
+        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, $totalCols - 5);
         $writer->markMergedCell($sheet, $rowIndex, $totalCols - 4, $rowIndex, $totalCols - 1);
         $rowIndex++;

@@ -25,7 +25,7 @@ $current_page = $this->set_current_page_link();
                 <?php foreach ($parts as $field => $label) { $abn = (($data[$field] ?? '') === 'NOK') ? ($data['abnormalitas'][$field] ?? null) : null; ?>
                   <tr>
                     <th><?php echo htmlspecialchars($label); ?><?php if ($field === 'tekanan_angin_suplai' && !empty($data['value_tekanan_angin'])) { echo ' <span class="text-muted">(' . rtrim(rtrim($data['value_tekanan_angin'], '0'), '.') . ' BAR)</span>'; } ?></th>
-                    <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } elseif ($val === 'ON_PROCESS_RED_TAG') { echo '<span class="badge badge-info">&bull; On Process Red Tag</span>'; } elseif ($val === 'N/A') { echo '<span class="badge badge-secondary">N/A</span>'; } else { echo '-'; } ?></td>
+                    <td><?php $val = $data[$field] ?? ''; if ($val === 'OK') { echo '<span class="badge badge-success">OK</span>'; } elseif ($val === 'NOK') { echo '<span class="badge badge-danger">NOK</span>'; } elseif ($val === 'ON_PROCESS_RED_TAG') { echo '<span class="badge badge-info">&bull; On Process RTWT Mesin</span>'; } elseif ($val === 'N/A') { echo '<span class="badge badge-secondary">N/A</span>'; } else { echo '-'; } ?></td>
                     <td><?php echo htmlspecialchars($abn['kendala'] ?? '-'); ?></td>
                     <td><?php echo $abn['teks_kategori'] ?? '-'; ?></td>
                     <td><?php echo $abn['teks_korelasi'] ?? '-'; ?></td>

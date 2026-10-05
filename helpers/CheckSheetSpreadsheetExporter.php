@@ -359,7 +359,7 @@ class CheckSheetSpreadsheetExporter
 
         // Keterangan row
         $sheet->getRowDimension($row)->setRowHeight(18);
-        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process Red Tag | (' . self::symbol('deactive') . ') Deaktivasi Mesin';
+        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin';
         $doc = 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1';
         $refCol = self::colLetter($totalCols - 4);
         $sheet->setCellValue('A' . $row, $ket);
