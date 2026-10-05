@@ -9,6 +9,56 @@ if (PHP_SAPI !== 'cli') {
 
 require dirname(__DIR__) . '/config.php';
 
+function postRtwtOutbox(string $url, array $payload, array $headers, ?string $photoPath = null): array
+{
+    if (function_exists('curl_init') && ($photoPath === null || class_exists('CURLFile'))) {
+        $body = $payload;
+        if ($photoPath !== null) {
+            $body['foto_before'] = new CURLFile($photoPath, mime_content_type($photoPath) ?: 'image/jpeg', basename($photoPath));
+        }
+        $ch = curl_init($url);
+        if ($ch === false) return [false, 0, 'cURL tidak dapat memulai koneksi.'];
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_NOSIGNAL => true]);
+        $response = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        return [$response, $status, $error];
+    }
+
+    if (!filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+        return [false, 0, 'PHP cURL dan HTTP stream wrapper tidak tersedia di server.'];
+    }
+
+    if ($photoPath !== null) {
+        $contents = @file_get_contents($photoPath);
+        if ($contents === false) return [false, 0, 'Foto Before antrean tidak dapat dibaca.'];
+        $boundary = '----FormAmRtwt' . bin2hex(random_bytes(12));
+        $body = '';
+        foreach ($payload as $name => $value) {
+            $body .= '--' . $boundary . "\r\n";
+            $body .= 'Content-Disposition: form-data; name="' . str_replace('"', '', (string) $name) . "\"\r\n\r\n" . (string) $value . "\r\n";
+        }
+        $body .= '--' . $boundary . "\r\n";
+        $body .= 'Content-Disposition: form-data; name="foto_before"; filename="' . str_replace('"', '', basename($photoPath)) . "\"\r\n";
+        $body .= 'Content-Type: ' . (mime_content_type($photoPath) ?: 'image/jpeg') . "\r\n\r\n" . $contents . "\r\n--" . $boundary . "--\r\n";
+        $headers[] = 'Content-Type: multipart/form-data; boundary=' . $boundary;
+    } else {
+        $body = http_build_query($payload, '', '&');
+        $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+    }
+    $headers[] = 'Content-Length: ' . strlen($body);
+    $context = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", $headers), 'content' => $body, 'timeout' => 15, 'ignore_errors' => true]]);
+    $response = @file_get_contents($url, false, $context);
+    $status = 0;
+    foreach (($http_response_header ?? []) as $header) {
+        if (preg_match('#^HTTP/\\S+\\s+(\\d{3})#', $header, $matches)) { $status = (int) $matches[1]; break; }
+    }
+    $error = '';
+    if ($response === false) { $lastError = error_get_last(); $error = (string) ($lastError['message'] ?? 'HTTP stream gagal terhubung.'); }
+    return [$response, $status, $error];
+}
+
 if (RTWT_API_MODE !== 'modular' || RTWT_API_TOKEN === '') {
     fwrite(STDERR, "RTWT modular API belum dikonfigurasi.\n");
     exit(1);
@@ -29,6 +79,7 @@ foreach ($jobs as $job) {
     $payload = json_decode((string) $job['payload'], true);
     if (!is_array($payload)) $payload = [];
     $url = RTWT_API_URL;
+    $photoPath = null;
     if ($job['operation'] === 'CANCEL') {
         $url = preg_replace('#/sync/?$#', '/sync/cancel', $url) ?: $url;
     } else {
@@ -39,16 +90,11 @@ foreach ($jobs as $job) {
             $pdo->prepare("UPDATE rtwt_sync_outbox SET status='RETRY',attempts=attempts+1,last_error=?,next_attempt_at=NOW()+INTERVAL '1 hour',updated_at=NOW() WHERE id=?")->execute([$error, $job['id']]);
             continue;
         }
-        $payload['foto_before'] = new CURLFile($absolute, mime_content_type($absolute) ?: 'image/jpeg', basename($absolute));
+        $photoPath = $absolute;
     }
 
     $headers = ['Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN];
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_NOSIGNAL => true]);
-    $response = curl_exec($ch);
-    $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = $response === false ? curl_error($ch) : '';
-    curl_close($ch);
+    [$response, $status, $error] = postRtwtOutbox($url, $payload, $headers, $photoPath);
     $decoded = is_string($response) ? json_decode($response, true) : null;
     $review = is_array($decoded) && !empty($decoded['data']['review_required']);
 
