@@ -1976,34 +1976,21 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$isModularRtwt = defined('RTWT_API_MODE') && RTWT_API_MODE === 'modular';
 					$queuePayload = $payload;
 					$this->startRtwtOutbox($queuePayload, $relativePhoto, 'SYNC');
-					$payload['foto_before'] = new CURLFile($absolutePhoto, mime_content_type($absolutePhoto) ?: 'image/jpeg', basename($absolutePhoto));
 					$headers = array();
 					if ($isModularRtwt && defined('RTWT_API_TOKEN') && RTWT_API_TOKEN !== '') {
 						$headers[] = 'Authorization: Bearer ' . RTWT_API_TOKEN;
-                    $headers[] = 'X-RTWT-Token: ' . RTWT_API_TOKEN;
+						$headers[] = 'X-RTWT-Token: ' . RTWT_API_TOKEN;
 					}
-					$ch = curl_init(defined('RTWT_API_URL') ? RTWT_API_URL : 'http://127.0.0.1:8081/api/v1/integrations/form-am/tickets');
-					curl_setopt_array($ch, array(
-						CURLOPT_POST => true,
-						CURLOPT_POSTFIELDS => $payload,
-						CURLOPT_HTTPHEADER => $headers,
-						CURLOPT_RETURNTRANSFER => true,
-						CURLOPT_TIMEOUT => 2,
-						CURLOPT_CONNECTTIMEOUT => 1,
-						CURLOPT_NOSIGNAL => true,
-					));
-					$response = curl_exec($ch);
-					$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+					list($response, $status, $transportError) = $this->sendRtwtRequest(defined('RTWT_API_URL') ? RTWT_API_URL : 'http://127.0.0.1:8081/api/v1/integrations/form-am/tickets', $queuePayload, $headers, $absolutePhoto);
 					$decoded = is_string($response) ? json_decode($response, true) : null;
 					$needsReview = is_array($decoded) && !empty($decoded['data']['review_required']);
 					if ($response === false || $status < 200 || $status >= 300 || $needsReview) {
-						$errorMessage = $needsReview ? 'Menunggu review konflik di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: curl_error($ch)));
+						$errorMessage = $needsReview ? 'Menunggu review konflik di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: $transportError));
 						error_log('RTWT NOK Tag Sync ditunda untuk ' . $machine_name . '/' . $field . ': ' . $errorMessage);
 						$this->queueRtwtOutbox($queuePayload, $relativePhoto, 'SYNC', $needsReview ? 'REVIEW' : 'RETRY', $errorMessage, $decoded);
 					} else {
 						$this->markRtwtOutboxSynced((string) $queuePayload['source_reference'], 'SYNC', $decoded);
 					}
-					curl_close($ch);
 				}
 			}
 		} catch (Throwable $e) {
@@ -2022,19 +2009,16 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if (!$cancelUrl || $cancelUrl === $syncUrl) { return; }
 			$payload = array('source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field, 'reason' => (string) $reason);
 			$this->startRtwtOutbox($payload, null, 'CANCEL');
-			$ch = curl_init($cancelUrl);
-			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
-			$response = curl_exec($ch); $status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+			list($response, $status, $transportError) = $this->sendRtwtRequest($cancelUrl, $payload, array('Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN));
 			$decoded = is_string($response) ? json_decode($response, true) : null;
 			$needsReview = is_array($decoded) && !empty($decoded['data']['review_required']);
 			if ($response === false || $status < 200 || $status >= 300 || $needsReview) {
-				$errorMessage = $needsReview ? 'Menunggu review pembatalan di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: curl_error($ch)));
+				$errorMessage = $needsReview ? 'Menunggu review pembatalan di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: $transportError));
 				error_log('RTWT Form AM cancel ditunda untuk ' . $field . ': ' . $errorMessage);
 				$this->queueRtwtOutbox($payload, null, 'CANCEL', $needsReview ? 'REVIEW' : 'RETRY', $errorMessage, $decoded);
 			} else {
 				$this->markRtwtOutboxSynced((string) $payload['source_reference'], 'CANCEL', $decoded);
 			}
-			curl_close($ch);
 		} catch (Throwable $e) {
 			error_log('RTWT Form AM cancel error untuk ' . $field . ': ' . $e->getMessage());
 		}
@@ -2054,6 +2038,59 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			// The Form AM transaction must remain independent if the integration table is unavailable.
 			error_log('RTWT outbox tidak dapat dimulai: ' . $e->getMessage());
 		}
+	}
+
+	/** Sends the RTWT request with cURL when available, otherwise PHP's HTTP stream wrapper. */
+	private function sendRtwtRequest($url, array $payload, array $headers, $photoPath = null)
+	{
+		if (function_exists('curl_init') && ($photoPath === null || class_exists('CURLFile'))) {
+			$body = $payload;
+			if ($photoPath !== null) {
+				$body['foto_before'] = new CURLFile($photoPath, mime_content_type($photoPath) ?: 'image/jpeg', basename($photoPath));
+			}
+			$ch = curl_init($url);
+			if ($ch === false) return array(false, 0, 'cURL tidak dapat memulai koneksi.');
+			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
+			$response = curl_exec($ch);
+			$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+			$error = curl_error($ch);
+			curl_close($ch);
+			return array($response, $status, $error);
+		}
+
+		if (!filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+			return array(false, 0, 'PHP cURL dan HTTP stream wrapper tidak tersedia di server.');
+		}
+
+		if ($photoPath !== null) {
+			$fileContents = @file_get_contents($photoPath);
+			if ($fileContents === false) return array(false, 0, 'Foto Before tidak dapat dibaca untuk dikirim ke RTWT.');
+			$boundary = '----FormAmRtwt' . bin2hex(random_bytes(12));
+			$body = '';
+			foreach ($payload as $name => $value) {
+				$body .= '--' . $boundary . "\r\n";
+				$body .= 'Content-Disposition: form-data; name="' . str_replace('"', '', (string) $name) . "\"\r\n\r\n" . (string) $value . "\r\n";
+			}
+			$mime = mime_content_type($photoPath) ?: 'image/jpeg';
+			$body .= '--' . $boundary . "\r\n";
+			$body .= 'Content-Disposition: form-data; name="foto_before"; filename="' . str_replace('"', '', basename($photoPath)) . "\"\r\n";
+			$body .= 'Content-Type: ' . $mime . "\r\n\r\n" . $fileContents . "\r\n--" . $boundary . "--\r\n";
+			$headers[] = 'Content-Type: multipart/form-data; boundary=' . $boundary;
+		} else {
+			$body = http_build_query($payload, '', '&');
+			$headers[] = 'Content-Type: application/x-www-form-urlencoded';
+		}
+
+		$headers[] = 'Content-Length: ' . strlen($body);
+		$context = stream_context_create(array('http' => array('method' => 'POST', 'header' => implode("\r\n", $headers), 'content' => $body, 'timeout' => 2, 'ignore_errors' => true)));
+		$response = @file_get_contents($url, false, $context);
+		$status = 0;
+		foreach (($http_response_header ?? array()) as $header) {
+			if (preg_match('#^HTTP/\\S+\\s+(\\d{3})#', $header, $matches)) { $status = (int) $matches[1]; break; }
+		}
+		$error = '';
+		if ($response === false) { $lastError = error_get_last(); $error = (string) ($lastError['message'] ?? 'HTTP stream gagal terhubung.'); }
+		return array($response, $status, $error);
 	}
 
 	private function queueRtwtOutbox(array $payload, $photoPath, $operation, $status, $error, $response = null)
