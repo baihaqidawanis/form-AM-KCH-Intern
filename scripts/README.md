@@ -26,3 +26,11 @@ Dokumen ini melengkapi persyaratan **URS Form Autonomous Maintenance Poin 4.1.2 
 4. Trigger: **Daily** (Pukul 01:00:00).
 5. Action: **Start a program** -> Browse file `C:\xampp\htdocs\form-am\scripts\backup_form_am.bat`.
 6. Klik **Finish**.
+
+---
+
+## RTWT sync retry
+
+Jalankan `process_rtwt_sync_outbox.bat` melalui Windows Task Scheduler setiap 1 menit.
+Worker ini hanya memproses antrean integrasi Form AM ke RTWT yang gagal, tertunda,
+atau menunggu hasil review. Proses simpan Form AM tetap berjalan independen.

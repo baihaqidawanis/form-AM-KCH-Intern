@@ -29,6 +29,7 @@ abstract class BaseMachineController extends SecureController
 	private $snapshotSchema = null;
 	private $preparedNokPhotos = array();
 	private $newPhotoPaths = array();
+	private $rtwtActivePartFieldCache = array();
 	function __construct()
 	{
 		parent::__construct();
@@ -94,25 +95,26 @@ abstract class BaseMachineController extends SecureController
 	private function existingShiftRecord($mesin_id, $shift)
 	{
 		return $this->GetModel()->rawQueryOne(
-			'SELECT created_at, user_create FROM ' . $this->sqlTable() . ' WHERE mesin = ? AND operational_date = ? AND shift = ? ORDER BY created_at DESC LIMIT 1',
+			'SELECT created_at, user_create FROM ' . $this->sqlTable() . " WHERE mesin = ? AND operational_date = ? AND COALESCE(NULLIF(shift, ''), '1') = ? ORDER BY created_at DESC LIMIT 1",
 			array(intval($mesin_id), $this->operationalDate(), (string)$shift)
 		);
 	}
 
 	/**
-	 * Untuk modul shift, shift dan unit dipilih sebelum checklist dirender.
-	 * Single-unit cukup meminta shift; unit ditentukan otomatis.
+	 * Konteks pemeriksaan dipilih sebelum checklist dirender. Modul multi-unit
+	 * selalu meminta unit; pemilih shift hanya muncul bila memang dikonfigurasi.
 	 */
 	private function renderAddPreflightIfNeeded()
 	{
-		if (!in_array('shift', $this->extraFields, true)) { return null; }
 		$units = $this->mappedMachineUnits();
 		if ($units === null || empty($units)) { return null; }
-
-		$shifts = $this->getConfiguredShifts();
-		$shift = trim((string)($this->request->shift ?? ''));
-		$mesin_id = intval($this->request->mesin ?? 0);
+		$uses_shift = in_array('shift', $this->extraFields, true);
 		$single_unit = count($units) === 1;
+		if (!$uses_shift && $single_unit) { return null; }
+
+		$shifts = $uses_shift ? $this->getConfiguredShifts() : array('1');
+		$shift = $uses_shift ? trim((string)($this->request->shift ?? '')) : '1';
+		$mesin_id = intval($this->request->mesin ?? 0);
 		if ($single_unit) { $mesin_id = intval($units[0]['id']); }
 
 		$valid_shift = in_array($shift, $shifts, true);
@@ -136,6 +138,7 @@ abstract class BaseMachineController extends SecureController
 			'machine_key' => $this->machineKey,
 			'display_name' => $this->displayName,
 			'shifts' => $shifts,
+			'uses_shift' => $uses_shift,
 			'selected_shift' => $valid_shift ? $shift : '',
 			'units' => $units,
 			'selected_machine_id' => $selected_unit ? $mesin_id : 0,
@@ -631,7 +634,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if ($status === 'ON_PROCESS_RED_TAG') {
 				$mesinId = intval($formdata['mesin'] ?? 0);
 				if (!$mesinId || !$this->isOnProcessEligible($mesinId, $field, $rec_id)) {
-					$this->view->page_error[] = 'On Process Red Tag tidak berlaku untuk part ' . $label . '.';
+					$this->view->page_error[] = 'On Process RTWT Mesin tidak berlaku untuk part ' . $label . '.';
 					$valid = false;
 				}
 				continue;
@@ -665,6 +668,61 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return in_array($row['status'] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true);
 	}
 
+	private function activeRtwtPartFields($mesinId)
+	{
+		$mesinId = intval($mesinId);
+		if (!$mesinId) { return array(); }
+		if (array_key_exists($mesinId, $this->rtwtActivePartFieldCache)) {
+			return $this->rtwtActivePartFieldCache[$mesinId];
+		}
+
+		$this->rtwtActivePartFieldCache[$mesinId] = array();
+		$baseUrl = defined('RTWT_API_URL') ? trim((string) RTWT_API_URL) : trim((string) getenv('RTWT_API_URL'));
+		$token = defined('RTWT_API_TOKEN') ? trim((string) RTWT_API_TOKEN) : trim((string) getenv('RTWT_API_TOKEN'));
+		if ($baseUrl === '' || $token === '' || !function_exists('curl_init')) { return array(); }
+
+		$machine = $this->GetModel()->where('id', $mesinId)->getOne('mesin', array('nama_mesin'));
+		$machineName = trim((string) ($machine['nama_mesin'] ?? ''));
+		if ($machineName === '') { return array(); }
+
+		$endpoint = preg_replace('#/sync/?$#', '/form-am/active-parts', $baseUrl);
+		if (!$endpoint || $endpoint === $baseUrl) { return array(); }
+		$url = $endpoint . '?' . http_build_query(array(
+			'machine_key' => $this->machineKey,
+			'machine_name' => $machineName,
+		));
+
+		$ch = curl_init($url);
+		curl_setopt_array($ch, array(
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_CONNECTTIMEOUT => 1,
+			CURLOPT_TIMEOUT => 2,
+			CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $token, 'X-RTWT-Token: ' . $token, 'Accept: application/json'),
+		));
+		$body = curl_exec($ch);
+		$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+		curl_close($ch);
+		if ($body === false || $status < 200 || $status >= 300) { return array(); }
+
+		$payload = json_decode((string) $body, true);
+		$fields = is_array($payload['data']['fields'] ?? null) ? $payload['data']['fields'] : array();
+		$partNames = is_array($payload['data']['part_names'] ?? null) ? $payload['data']['part_names'] : array();
+		$partNameLookup = array();
+		foreach ($partNames as $partName) {
+			$normalized = strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $partName)));
+			if ($normalized !== '') { $partNameLookup[$normalized] = true; }
+		}
+		foreach ($this->parts as $field => $label) {
+			$normalized = strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $label)));
+			if ($normalized !== '' && isset($partNameLookup[$normalized])) { $fields[] = $field; }
+		}
+		$known = array_flip($this->part_fields());
+		$fields = array_values(array_unique(array_filter(array_map('strval', $fields), function ($field) use ($known) {
+			return isset($known[$field]);
+		})));
+		$this->rtwtActivePartFieldCache[$mesinId] = $fields;
+		return $fields;
+	}
 	function on_process_options()
 	{
 		$mesinId = intval($this->request->mesin ?? 0);
@@ -682,6 +740,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		$fields = array();
 		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field, $recId)) { $fields[] = $field; } }
+		$rtwtFields = $this->activeRtwtPartFields($mesinId);
 		$part_overrides = $recId ? $this->snapshotOverrides($recId) : $this->partMachineOverrides($mesinId);
 
 		// Form add memakai request yang sama untuk memberi peringatan duplikasi
@@ -692,7 +751,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$opDate = $this->operationalDate();
 			if (in_array('shift', $this->extraFields, true)) {
 				if (!in_array($shift, $this->getConfiguredShifts(), true)) {
-					return render_json(array('success' => true, 'fields' => $fields, 'part_overrides' => $part_overrides, 'duplicate' => false, 'operational_date' => $opDate));
+					return render_json(array('success' => true, 'fields' => $fields, 'rtwt_fields' => $rtwtFields, 'part_overrides' => $part_overrides, 'duplicate' => false, 'operational_date' => $opDate));
 				}
 			}
 			// Ambil builder sesudah getConfiguredShifts(); PDODb memakai instance
@@ -711,6 +770,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return render_json(array(
 			'success' => true,
 			'fields' => $fields,
+			'rtwt_fields' => $rtwtFields,
 			'part_overrides' => $part_overrides,
 			'duplicate' => $duplicate,
 			'operational_date' => $this->operationalDate(),
@@ -1907,14 +1967,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						'korelasi' => $correlation,
 						'kategori_masalah' => 'Abnormalitas Mesin',
 					);
+					$fingerprintData = $payload;
+					unset($fingerprintData['occurred_at']);
+					$payload['source_fingerprint'] = hash('sha256', json_encode($fingerprintData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ':' . hash_file('sha256', $absolutePhoto));
 
 					// Native RTWT dan API modular sama-sama membutuhkan Foto Before fisik.
 					// Kirim multipart pada kedua mode agar sinkronisasi tidak kehilangan bukti foto.
 					$isModularRtwt = defined('RTWT_API_MODE') && RTWT_API_MODE === 'modular';
+					$queuePayload = $payload;
 					$payload['foto_before'] = new CURLFile($absolutePhoto, mime_content_type($absolutePhoto) ?: 'image/jpeg', basename($absolutePhoto));
 					$headers = array();
 					if ($isModularRtwt && defined('RTWT_API_TOKEN') && RTWT_API_TOKEN !== '') {
 						$headers[] = 'Authorization: Bearer ' . RTWT_API_TOKEN;
+                    $headers[] = 'X-RTWT-Token: ' . RTWT_API_TOKEN;
 					}
 					$ch = curl_init(defined('RTWT_API_URL') ? RTWT_API_URL : 'http://127.0.0.1:8081/api/v1/integrations/form-am/tickets');
 					curl_setopt_array($ch, array(
@@ -1928,8 +1993,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					));
 					$response = curl_exec($ch);
 					$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
-					if ($response === false || $status < 200 || $status >= 300) {
-						error_log('RTWT NOK Tag Sync ditolak untuk ' . $machine_name . '/' . $field . ' (HTTP ' . $status . '): ' . ($response ?: curl_error($ch)));
+					$decoded = is_string($response) ? json_decode($response, true) : null;
+					$needsReview = is_array($decoded) && !empty($decoded['data']['review_required']);
+					if ($response === false || $status < 200 || $status >= 300 || $needsReview) {
+						$errorMessage = $needsReview ? 'Menunggu review konflik di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: curl_error($ch)));
+						error_log('RTWT NOK Tag Sync ditunda untuk ' . $machine_name . '/' . $field . ': ' . $errorMessage);
+						$this->queueRtwtOutbox($queuePayload, $relativePhoto, 'SYNC', $needsReview ? 'REVIEW' : 'RETRY', $errorMessage, $decoded);
+					} else {
+						$this->markRtwtOutboxSynced((string) $queuePayload['source_reference'], 'SYNC', $decoded);
 					}
 					curl_close($ch);
 				}
@@ -1950,11 +2021,44 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if (!$cancelUrl || $cancelUrl === $syncUrl) { return; }
 			$payload = array('source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field, 'reason' => (string) $reason);
 			$ch = curl_init($cancelUrl);
-			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . RTWT_API_TOKEN), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
+			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
 			$response = curl_exec($ch); $status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
-			if ($response === false || $status < 200 || $status >= 300) { error_log('RTWT Form AM cancel ditolak untuk ' . $field . ' (HTTP ' . $status . '): ' . ($response ?: curl_error($ch))); }
+			$decoded = is_string($response) ? json_decode($response, true) : null;
+			$needsReview = is_array($decoded) && !empty($decoded['data']['review_required']);
+			if ($response === false || $status < 200 || $status >= 300 || $needsReview) {
+				$errorMessage = $needsReview ? 'Menunggu review pembatalan di RTWT.' : ('HTTP ' . $status . ': ' . ($response ?: curl_error($ch)));
+				error_log('RTWT Form AM cancel ditunda untuk ' . $field . ': ' . $errorMessage);
+				$this->queueRtwtOutbox($payload, null, 'CANCEL', $needsReview ? 'REVIEW' : 'RETRY', $errorMessage, $decoded);
+			} else {
+				$this->markRtwtOutboxSynced((string) $payload['source_reference'], 'CANCEL', $decoded);
+			}
 			curl_close($ch);
 		} catch (Throwable $e) {
 			error_log('RTWT Form AM cancel error untuk ' . $field . ': ' . $e->getMessage());
 		}
-	}}
+	}
+
+	private function queueRtwtOutbox(array $payload, $photoPath, $operation, $status, $error, $response = null)
+	{
+		try {
+			$reference = trim((string) ($payload['source_reference'] ?? ''));
+			if ($reference === '') return;
+			$sql = "INSERT INTO rtwt_sync_outbox(source_reference,operation,payload,photo_path,status,attempts,next_attempt_at,last_error,last_response)
+				VALUES(?,?,CAST(? AS jsonb),?,?,1,NOW()+INTERVAL '1 minute',?,CAST(? AS jsonb))
+				ON CONFLICT(source_reference,operation) DO UPDATE SET payload=EXCLUDED.payload,photo_path=EXCLUDED.photo_path,status=EXCLUDED.status,next_attempt_at=EXCLUDED.next_attempt_at,last_error=EXCLUDED.last_error,last_response=EXCLUDED.last_response,updated_at=NOW(),synced_at=NULL";
+			$this->GetModel()->rawQuery($sql, array($reference, $operation, json_encode($payload, JSON_UNESCAPED_UNICODE), $photoPath, $status, substr((string) $error, 0, 2000), json_encode($response ?: array(), JSON_UNESCAPED_UNICODE)));
+		} catch (Throwable $e) {
+			error_log('RTWT outbox tidak dapat disimpan: ' . $e->getMessage());
+		}
+	}
+
+	private function markRtwtOutboxSynced($reference, $operation, $response = null)
+	{
+		try {
+			$this->GetModel()->rawQuery("UPDATE rtwt_sync_outbox SET status='SYNCED',last_error=NULL,last_response=CAST(? AS jsonb),synced_at=NOW(),updated_at=NOW() WHERE source_reference=? AND operation=?", array(json_encode($response ?: array(), JSON_UNESCAPED_UNICODE), $reference, $operation));
+		} catch (Throwable $e) {
+			// Migration outbox belum dipasang tidak boleh mengganggu alur Form AM yang sudah berjalan.
+			error_log('RTWT outbox status tidak dapat diperbarui: ' . $e->getMessage());
+		}
+	}
+}

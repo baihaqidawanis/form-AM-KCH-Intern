@@ -231,7 +231,7 @@ class Menu
 	public static function kondisi_options($highlight = '')
 	{
 		$options = self::$Kondisi_Harian;
-		$options[] = array("value" => "ON_PROCESS_RED_TAG", "label" => "On Process Red Tag");
+		$options[] = array("value" => "ON_PROCESS_RED_TAG", "label" => "On Process RTWT Mesin");
 		if ($highlight === 'mingguan' || $highlight === 'bulanan') {
 			$options[] = array("value" => "N/A", "label" => "Tidak Dilakukan");
 		}
@@ -249,7 +249,7 @@ class Menu
 		),
 		array(
 			"value" => "ON_PROCESS_RED_TAG",
-			"label" => "On Process Red Tag",
+			"label" => "On Process RTWT Mesin",
 		),
 		array(
 			"value" => "N/A",

@@ -96,9 +96,9 @@
 				<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls">
 					<div class="slides"></div>
 					<h3 class="title"></h3>
-					<a class="prev">‹</a>
-					<a class="next">›</a>
-					<a class="close">×</a>
+					<a class="prev">&#8249;</a>
+					<a class="next">&#8250;</a>
+					<a class="close">&times;</a>
 					<a class="play-pause"></a>
 					<ol class="indicator"></ol>
 				</div>
@@ -256,6 +256,8 @@
 					function updateOnProcess(){
 						var machineId = $machine.val();
 						var $options = $form.find('input.part-kondisi[value="ON_PROCESS_RED_TAG"]');
+						$form.find('.rtwt-process-value, .rtwt-process-note').remove();
+						$form.find('.part-card.part-rtwt-active').removeClass('part-rtwt-active').find('.part-kondisi').prop('disabled', false);
 						$options.prop('disabled', true).closest('.custom-control').addClass('d-none').hide();
 						if (statusRequest) { statusRequest.abort(); statusRequest = null; }
 						$form.data('partConfigLoading', false).data('partConfigError', false);
@@ -284,6 +286,7 @@
 							$form.data('partConfigLoading', false).data('partConfigError', false);
 							applyPartOverrides(data && data.success ? data.part_overrides : {});
 							var allowed = data && data.success ? data.fields : [];
+							var rtwtFields = data && data.success && $.isArray(data.rtwt_fields) ? data.rtwt_fields : [];
 							$options.each(function(){
 								var enabled = !$(this).closest('.part-card').hasClass('part-not-applicable') && allowed.indexOf(this.name) !== -1;
 								var $ctrl = $(this).prop('disabled', !enabled).closest('.custom-control');
@@ -298,6 +301,19 @@
 									}
 								}
 							});
+							if (isAddForm) {
+								$.each(rtwtFields, function(_, field){
+									var $card = $form.find('.part-card[data-part="' + field + '"]').first();
+									if (!$card.length || $card.hasClass('part-not-applicable')) { return; }
+									var $onProcess = $card.find('.part-kondisi[value="ON_PROCESS_RED_TAG"]').first();
+									$onProcess.closest('.custom-control').removeClass('d-none').show();
+									$onProcess.prop('disabled', false).prop('checked', true).trigger('change');
+									$card.find('.part-kondisi').prop('disabled', true).removeAttr('required');
+									$card.append($('<input>', { type: 'hidden', name: field, value: 'ON_PROCESS_RED_TAG', class: 'rtwt-process-value' }));
+									$card.addClass('part-rtwt-active');
+									$card.find('.part-kondisi').first().closest('.col-md-4').prepend('<div class="rtwt-process-note">On Process RTWT Mesin</div>');
+								});
+							}
 							updateDuplicateGuard(data);
 							// updateDuplicateGuard hanya mengatur form tambah. Pada form edit,
 							// tombol sebelumnya dinonaktifkan saat konfigurasi dimuat dan harus
@@ -366,7 +382,7 @@
 						if (file) {
 							$input.data('nokOriginalBytes', file.size);
 							$state.text('Foto dipilih: ' + file.name + ' (' + nokPhotoSize(file.size) + ')').removeClass('d-none');
-							$compress.toggleClass('d-none', file.size <= nokPhotoTargetBytes).prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB');
+							$compress.removeClass('d-none').prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto &lt; 2 MB');
 							$box.removeClass('border border-danger p-2 rounded'); showNokPhotoPreview($preview, file);
 						} else {
 							$state.text('').addClass('d-none'); $compress.addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none');
@@ -375,18 +391,18 @@
 					$form.on('click', '.nok-photo-compress', function(){
 						var $button = $(this), $box = $button.closest('.nok-photo-box'), $input = $box.find('.nok-photo-input').first(), input = $input[0], file = input && input.files && input.files[0];
 						if (!file) { return; }
-						if (file.size <= nokPhotoTargetBytes) { $button.addClass('d-none'); return; }
+
 						$button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyiapkan foto...');
 						compressNokPhoto(file, function(blob, error) {
-							if (error) { $button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB'); alert(error); return; }
+							if (error) { $button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto &lt; 2 MB'); alert(error); return; }
 							try {
 								var compressed = new File([blob], file.name.replace(/\.[^.]+$/, '') + '-compressed.jpg', { type: 'image/jpeg' });
 								var transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files;
 								var originalBytes = $input.data('nokOriginalBytes') || file.size;
-								$box.find('.nok-photo-state').text('Foto dikompres: ' + nokPhotoSize(originalBytes) + ' → ' + nokPhotoSize(compressed.size)).removeClass('d-none');
+								$box.find('.nok-photo-state').text('Foto dikompres: ' + nokPhotoSize(originalBytes) + ' menjadi ' + nokPhotoSize(compressed.size)).removeClass('d-none');
 								$button.addClass('d-none'); showNokPhotoPreview($box.find('.nok-photo-preview-wrap'), compressed);
 							} catch (err) {
-								$button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto ke maksimal 2 MB');
+								$button.prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto &lt; 2 MB');
 								alert('Browser ini tidak dapat memakai hasil kompresi. Foto asli tetap dipakai.');
 							}
 						});
@@ -436,6 +452,14 @@
 						}
 					});
 					$form.on('submit', function(e){
+						if (typeof this.checkValidity === 'function' && !this.checkValidity()) {
+							e.preventDefault();
+							e.stopImmediatePropagation();
+							if (typeof this.reportValidity === 'function') { this.reportValidity(); }
+							var invalidField = this.querySelector(':invalid');
+							if (invalidField) { invalidField.focus(); }
+							return false;
+						}
 						var missing = false, hasNok = false;
 						$form.find('.part-card').each(function(){
 							var $card = $(this);
@@ -548,10 +572,14 @@
 							return false;
 						}
 						if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+							e.preventDefault();
+							e.stopImmediatePropagation();
 							if (typeof form.reportValidity === 'function') {
 								form.reportValidity();
 							}
-							return;
+							var invalidField = form.querySelector(':invalid');
+							if (invalidField) { invalidField.focus(); }
+							return false;
 						}
 						var $buttons = $form.find('button[type="submit"], input[type="submit"]');
 						if (!$buttons.length) {

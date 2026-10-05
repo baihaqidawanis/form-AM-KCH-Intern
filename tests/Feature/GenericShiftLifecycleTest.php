@@ -96,9 +96,10 @@ $hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot
     /**
      * Skenario shift lifecycle lengkap untuk satu mesin.
      * @param string $machine     machineKey ('joeya', 'sig', dll)
-     * @param array  $extraSubmit field tambahan saat submit (misal value_tekanan_angin)
+     * @param array  $extraSubmitShift1 field tambahan khusus Shift 1
+     * @param array  $extraSubmitShift2 field tambahan khusus Shift 2
      */
-    private function runShiftLifecycle(string $machine, array $extraSubmit = []): void
+    private function runShiftLifecycle(string $machine, array $extraSubmitShift1 = [], array $extraSubmitShift2 = []): void
     {
         $this->cleanup['machine'] = $machine;
         $suffix    = substr(uniqid(), -8);
@@ -137,7 +138,7 @@ $hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot
         $this->assertStringContainsString($label, $shift2Html, "$machine: part shift-2 tidak muncul di form shift-2");
 
         // Submit shift-1 semua OK
-        $payload1 = FormScraper::buildAllOkPayload($shift1Html, array_merge(['shift' => '1'], $extraSubmit));
+        $payload1 = FormScraper::buildAllOkPayload($shift1Html, array_merge(['shift' => '1'], $extraSubmitShift1));
         $submit1  = $this->client->postWithCsrf("$machine/add", $payload1);
         $this->assertSame(200, $submit1->getStatusCode(), "$machine: submit shift-1 gagal");
         $body1 = (string) $submit1->getBody();
@@ -156,7 +157,7 @@ $hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot
             $shift2Html,
             $fieldName,
             "PHPUnit $machine shift-2 kondisi NOK",
-            array_merge(['shift' => '2'], $extraSubmit)
+            array_merge(['shift' => '2'], $extraSubmitShift2)
         );
         $submit2 = $this->client->postWithCsrf("$machine/add", $payload2);
         $this->assertSame(200, $submit2->getStatusCode(), "$machine: submit shift-2 NOK gagal");
@@ -225,7 +226,7 @@ $hasSnapshot = (bool) $pdo->query("SELECT to_regclass('public.form_part_snapshot
 
     public function test_sig_shift_lifecycle_add_nok_takeout_report(): void
     {
-        // SIG memerlukan value_tekanan_angin (extraFields) saat submit
+        // BAR hanya wajib di Shift 1 yang memuat Tekanan Angin Suplai.
         $this->runShiftLifecycle('sig', ['value_tekanan_angin' => '5']);
     }
 }

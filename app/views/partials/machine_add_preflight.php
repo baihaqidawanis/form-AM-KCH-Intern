@@ -2,6 +2,7 @@
 $data = $this->view_data;
 $machine_key = $data['machine_key'];
 $display_name = $data['display_name'];
+$uses_shift = !empty($data['uses_shift']);
 $shifts = $data['shifts'] ?? array('1');
 $selected_shift = (string)($data['selected_shift'] ?? '');
 $units = $data['units'] ?? array();
@@ -34,13 +35,17 @@ $operational_date = $data['operational_date'] ?? '';
             <?php } ?>
 
             <form id="am-preflight-form" method="get" action="<?php print_link($machine_key . '/add'); ?>">
-              <div class="form-group">
-                <label class="font-weight-bold" for="preflight-shift">Shift <span class="text-danger">*</span></label>
-                <select required id="preflight-shift" name="shift" class="custom-select">
-                  <option value="">Pilih shift ...</option>
-                  <?php foreach ($shifts as $shift) { ?><option value="<?php echo htmlspecialchars($shift); ?>" <?php echo $selected_shift === (string)$shift ? 'selected' : ''; ?>>Shift <?php echo htmlspecialchars($shift); ?></option><?php } ?>
-                </select>
-              </div>
+              <?php if ($uses_shift) { ?>
+                <div class="form-group">
+                  <label class="font-weight-bold" for="preflight-shift">Shift <span class="text-danger">*</span></label>
+                  <select required id="preflight-shift" name="shift" class="custom-select">
+                    <option value="">Pilih shift ...</option>
+                    <?php foreach ($shifts as $shift) { ?><option value="<?php echo htmlspecialchars($shift); ?>" <?php echo $selected_shift === (string)$shift ? 'selected' : ''; ?>>Shift <?php echo htmlspecialchars($shift); ?></option><?php } ?>
+                  </select>
+                </div>
+              <?php } else { ?>
+                <input type="hidden" name="shift" value="1">
+              <?php } ?>
 
               <?php if ($single_unit) { ?>
                 <input type="hidden" name="mesin" value="<?php echo intval($units[0]['id']); ?>">
