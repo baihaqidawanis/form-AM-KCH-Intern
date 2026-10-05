@@ -1975,6 +1975,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					// Kirim multipart pada kedua mode agar sinkronisasi tidak kehilangan bukti foto.
 					$isModularRtwt = defined('RTWT_API_MODE') && RTWT_API_MODE === 'modular';
 					$queuePayload = $payload;
+					$this->startRtwtOutbox($queuePayload, $relativePhoto, 'SYNC');
 					$payload['foto_before'] = new CURLFile($absolutePhoto, mime_content_type($absolutePhoto) ?: 'image/jpeg', basename($absolutePhoto));
 					$headers = array();
 					if ($isModularRtwt && defined('RTWT_API_TOKEN') && RTWT_API_TOKEN !== '') {
@@ -2020,6 +2021,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$cancelUrl = preg_replace('#/sync/?$#', '/sync/cancel', $syncUrl);
 			if (!$cancelUrl || $cancelUrl === $syncUrl) { return; }
 			$payload = array('source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field, 'reason' => (string) $reason);
+			$this->startRtwtOutbox($payload, null, 'CANCEL');
 			$ch = curl_init($cancelUrl);
 			curl_setopt_array($ch, array(CURLOPT_POST => true, CURLOPT_POSTFIELDS => $payload, CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN), CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
 			$response = curl_exec($ch); $status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
@@ -2035,6 +2037,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			curl_close($ch);
 		} catch (Throwable $e) {
 			error_log('RTWT Form AM cancel error untuk ' . $field . ': ' . $e->getMessage());
+		}
+	}
+
+	/** Records every integration attempt before the direct request for auditable diagnostics. */
+	private function startRtwtOutbox(array $payload, $photoPath, $operation)
+	{
+		try {
+			$reference = trim((string) ($payload['source_reference'] ?? ''));
+			if ($reference === '') return;
+			$sql = "INSERT INTO rtwt_sync_outbox(source_reference,operation,payload,photo_path,status,attempts,next_attempt_at,last_error,last_response)
+				VALUES(?,?,CAST(? AS jsonb),?,'PENDING',0,NOW()+INTERVAL '2 minutes',NULL,NULL)
+				ON CONFLICT(source_reference,operation) DO UPDATE SET payload=EXCLUDED.payload,photo_path=EXCLUDED.photo_path,status='PENDING',attempts=0,next_attempt_at=EXCLUDED.next_attempt_at,last_error=NULL,last_response=NULL,updated_at=NOW(),synced_at=NULL";
+			$this->GetModel()->rawQuery($sql, array($reference, $operation, json_encode($payload, JSON_UNESCAPED_UNICODE), $photoPath));
+		} catch (Throwable $e) {
+			// The Form AM transaction must remain independent if the integration table is unavailable.
+			error_log('RTWT outbox tidak dapat dimulai: ' . $e->getMessage());
 		}
 	}
 
