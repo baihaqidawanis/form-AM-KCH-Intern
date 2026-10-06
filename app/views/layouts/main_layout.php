@@ -314,7 +314,7 @@
 									$card.addClass('part-rtwt-active');
 									var ticketNumber = String(rtwtTickets[field] || '').trim();
 									var $note = $('<div>', { 'class': 'rtwt-process-note' }).text('On Process RTWT Mesin');
-									if (ticketNumber) { $note.append(document.createTextNode(' · ' + ticketNumber)); }
+									if (ticketNumber) { $note.append(document.createTextNode(' - ' + ticketNumber)); }
 									$card.find('.part-kondisi').first().closest('.col-md-4').prepend($note);
 								});
 							}

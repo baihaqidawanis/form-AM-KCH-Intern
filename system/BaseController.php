@@ -243,7 +243,15 @@ class BaseController{
 	 */
 	function get_pagination($page_count = MAX_RECORD_COUNT){
 		$request = $this->request;
-		$limit_count = (!empty($request->limit_count) ? $request->limit_count : $page_count);
+		$session_key = 'pagination_limit_' . strtolower(preg_replace('/[^A-Za-z0-9_]/', '_', get_class($this)));
+		$requested_limit = intval($request->limit_count ?? 0);
+		if ($requested_limit > 0) {
+			$limit_count = max(1, min(200, $requested_limit));
+			set_session($session_key, $limit_count);
+		} else {
+			$saved_limit = intval(get_session($session_key));
+			$limit_count = $saved_limit > 0 ? max(1, min(200, $saved_limit)) : $page_count;
+		}
 		$limit_start = (!empty($request->limit_start) ? $request->limit_start : 1);
 		$limit_start = ($limit_start - 1) * $limit_count;
 

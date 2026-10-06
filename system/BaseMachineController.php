@@ -679,7 +679,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$this->rtwtActivePartFieldCache[$mesinId] = array('fields' => array(), 'tickets' => array());
 		$baseUrl = defined('RTWT_API_URL') ? trim((string) RTWT_API_URL) : trim((string) getenv('RTWT_API_URL'));
 		$token = defined('RTWT_API_TOKEN') ? trim((string) RTWT_API_TOKEN) : trim((string) getenv('RTWT_API_TOKEN'));
-		if ($baseUrl === '' || $token === '' || !function_exists('curl_init')) { return $this->rtwtActivePartFieldCache[$mesinId]; }
+		if ($baseUrl === '' || $token === '') { return $this->rtwtActivePartFieldCache[$mesinId]; }
 
 		$machine = $this->GetModel()->where('id', $mesinId)->getOne('mesin', array('nama_mesin'));
 		$machineName = trim((string) ($machine['nama_mesin'] ?? ''));
@@ -692,16 +692,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'machine_name' => $machineName,
 		));
 
-		$ch = curl_init($url);
-		curl_setopt_array($ch, array(
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_CONNECTTIMEOUT => 1,
-			CURLOPT_TIMEOUT => 2,
-			CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $token, 'X-RTWT-Token: ' . $token, 'Accept: application/json'),
+		list($body, $status) = $this->sendRtwtGetRequest($url, array(
+			'Authorization: Bearer ' . $token,
+			'X-RTWT-Token: ' . $token,
+			'Accept: application/json',
 		));
-		$body = curl_exec($ch);
-		$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
-		curl_close($ch);
 		if ($body === false || $status < 200 || $status >= 300) { return $this->rtwtActivePartFieldCache[$mesinId]; }
 
 		$payload = json_decode((string) $body, true);
@@ -2067,6 +2062,34 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			// The Form AM transaction must remain independent if the integration table is unavailable.
 			error_log('RTWT outbox tidak dapat dimulai: ' . $e->getMessage());
 		}
+	}
+
+	/** Sends a GET request to RTWT with cURL or the PHP HTTP stream fallback. */
+	private function sendRtwtGetRequest($url, array $headers)
+	{
+		if (function_exists('curl_init')) {
+			$ch = curl_init($url);
+			if ($ch === false) return array(false, 0, 'cURL tidak dapat memulai koneksi.');
+			curl_setopt_array($ch, array(CURLOPT_HTTPGET => true, CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 2, CURLOPT_CONNECTTIMEOUT => 1, CURLOPT_NOSIGNAL => true));
+			$response = curl_exec($ch);
+			$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
+			$error = curl_error($ch);
+			curl_close($ch);
+			return array($response, $status, $error);
+		}
+
+		if (!filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+			return array(false, 0, 'PHP cURL dan HTTP stream wrapper tidak tersedia di server.');
+		}
+		$context = stream_context_create(array('http' => array('method' => 'GET', 'header' => implode("\r\n", $headers), 'timeout' => 2, 'ignore_errors' => true)));
+		$response = @file_get_contents($url, false, $context);
+		$status = 0;
+		foreach (($http_response_header ?? array()) as $header) {
+			if (preg_match('#^HTTP/\\S+\\s+(\\d{3})#', $header, $matches)) { $status = (int) $matches[1]; break; }
+		}
+		$error = '';
+		if ($response === false) { $lastError = error_get_last(); $error = (string)($lastError['message'] ?? 'HTTP stream gagal terhubung.'); }
+		return array($response, $status, $error);
 	}
 
 	/** Sends the RTWT request with cURL when available, otherwise PHP's HTTP stream wrapper. */
