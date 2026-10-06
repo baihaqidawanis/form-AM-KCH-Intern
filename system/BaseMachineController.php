@@ -668,25 +668,25 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		return in_array($row['status'] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true);
 	}
 
-	private function activeRtwtPartFields($mesinId)
+	private function activeRtwtPartLocks($mesinId)
 	{
 		$mesinId = intval($mesinId);
-		if (!$mesinId) { return array(); }
+		if (!$mesinId) { return array('fields' => array(), 'tickets' => array()); }
 		if (array_key_exists($mesinId, $this->rtwtActivePartFieldCache)) {
 			return $this->rtwtActivePartFieldCache[$mesinId];
 		}
 
-		$this->rtwtActivePartFieldCache[$mesinId] = array();
+		$this->rtwtActivePartFieldCache[$mesinId] = array('fields' => array(), 'tickets' => array());
 		$baseUrl = defined('RTWT_API_URL') ? trim((string) RTWT_API_URL) : trim((string) getenv('RTWT_API_URL'));
 		$token = defined('RTWT_API_TOKEN') ? trim((string) RTWT_API_TOKEN) : trim((string) getenv('RTWT_API_TOKEN'));
-		if ($baseUrl === '' || $token === '' || !function_exists('curl_init')) { return array(); }
+		if ($baseUrl === '' || $token === '' || !function_exists('curl_init')) { return $this->rtwtActivePartFieldCache[$mesinId]; }
 
 		$machine = $this->GetModel()->where('id', $mesinId)->getOne('mesin', array('nama_mesin'));
 		$machineName = trim((string) ($machine['nama_mesin'] ?? ''));
-		if ($machineName === '') { return array(); }
+		if ($machineName === '') { return $this->rtwtActivePartFieldCache[$mesinId]; }
 
 		$endpoint = preg_replace('#/sync/?$#', '/form-am/active-parts', $baseUrl);
-		if (!$endpoint || $endpoint === $baseUrl) { return array(); }
+		if (!$endpoint || $endpoint === $baseUrl) { return $this->rtwtActivePartFieldCache[$mesinId]; }
 		$url = $endpoint . '?' . http_build_query(array(
 			'machine_key' => $this->machineKey,
 			'machine_name' => $machineName,
@@ -702,26 +702,42 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$body = curl_exec($ch);
 		$status = intval(curl_getinfo($ch, CURLINFO_HTTP_CODE));
 		curl_close($ch);
-		if ($body === false || $status < 200 || $status >= 300) { return array(); }
+		if ($body === false || $status < 200 || $status >= 300) { return $this->rtwtActivePartFieldCache[$mesinId]; }
 
 		$payload = json_decode((string) $body, true);
 		$fields = is_array($payload['data']['fields'] ?? null) ? $payload['data']['fields'] : array();
 		$partNames = is_array($payload['data']['part_names'] ?? null) ? $payload['data']['part_names'] : array();
+		$locks = is_array($payload['data']['locks'] ?? null) ? $payload['data']['locks'] : array();
 		$partNameLookup = array();
 		foreach ($partNames as $partName) {
 			$normalized = strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $partName)));
 			if ($normalized !== '') { $partNameLookup[$normalized] = true; }
 		}
+		$tickets = array();
+		foreach ($locks as $lock) {
+			$field = trim((string)($lock['field'] ?? ''));
+			$ticket = trim((string)($lock['ticket_number'] ?? ''));
+			if ($field !== '' && $ticket !== '') { $tickets[$field] = $ticket; }
+		}
 		foreach ($this->parts as $field => $label) {
 			$normalized = strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $label)));
-			if ($normalized !== '' && isset($partNameLookup[$normalized])) { $fields[] = $field; }
+			if ($normalized !== '' && isset($partNameLookup[$normalized])) {
+				$fields[] = $field;
+				if (!isset($tickets[$field])) {
+					foreach ($locks as $lock) {
+						$lockPart = strtolower(trim((string) preg_replace('/\s+/', ' ', (string)($lock['part_name'] ?? ''))));
+						$ticket = trim((string)($lock['ticket_number'] ?? ''));
+						if ($ticket !== '' && $lockPart === $normalized) { $tickets[$field] = $ticket; break; }
+					}
+				}
+			}
 		}
 		$known = array_flip($this->part_fields());
 		$fields = array_values(array_unique(array_filter(array_map('strval', $fields), function ($field) use ($known) {
 			return isset($known[$field]);
 		})));
-		$this->rtwtActivePartFieldCache[$mesinId] = $fields;
-		return $fields;
+		$this->rtwtActivePartFieldCache[$mesinId] = array('fields' => $fields, 'tickets' => $tickets);
+		return $this->rtwtActivePartFieldCache[$mesinId];
 	}
 	function on_process_options()
 	{
@@ -740,7 +756,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		$fields = array();
 		foreach ($this->parts as $field => $label) { if ($this->isOnProcessEligible($mesinId, $field, $recId)) { $fields[] = $field; } }
-		$rtwtFields = $this->activeRtwtPartFields($mesinId);
+		$rtwtLocks = $this->activeRtwtPartLocks($mesinId);
+		$rtwtFields = $rtwtLocks['fields'];
+		$rtwtTickets = $rtwtLocks['tickets'];
 		$part_overrides = $recId ? $this->snapshotOverrides($recId) : $this->partMachineOverrides($mesinId);
 
 		// Form add memakai request yang sama untuk memberi peringatan duplikasi
@@ -751,7 +769,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			$opDate = $this->operationalDate();
 			if (in_array('shift', $this->extraFields, true)) {
 				if (!in_array($shift, $this->getConfiguredShifts(), true)) {
-					return render_json(array('success' => true, 'fields' => $fields, 'rtwt_fields' => $rtwtFields, 'part_overrides' => $part_overrides, 'duplicate' => false, 'operational_date' => $opDate));
+					return render_json(array('success' => true, 'fields' => $fields, 'rtwt_fields' => $rtwtFields, 'rtwt_tickets' => $rtwtTickets, 'part_overrides' => $part_overrides, 'duplicate' => false, 'operational_date' => $opDate));
 				}
 			}
 			// Ambil builder sesudah getConfiguredShifts(); PDODb memakai instance
@@ -771,6 +789,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			'success' => true,
 			'fields' => $fields,
 			'rtwt_fields' => $rtwtFields,
+			'rtwt_tickets' => $rtwtTickets,
 			'part_overrides' => $part_overrides,
 			'duplicate' => $duplicate,
 			'operational_date' => $this->operationalDate(),

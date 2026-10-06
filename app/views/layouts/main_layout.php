@@ -287,6 +287,7 @@
 							applyPartOverrides(data && data.success ? data.part_overrides : {});
 							var allowed = data && data.success ? data.fields : [];
 							var rtwtFields = data && data.success && $.isArray(data.rtwt_fields) ? data.rtwt_fields : [];
+							var rtwtTickets = data && data.success && data.rtwt_tickets ? data.rtwt_tickets : {};
 							$options.each(function(){
 								var enabled = !$(this).closest('.part-card').hasClass('part-not-applicable') && allowed.indexOf(this.name) !== -1;
 								var $ctrl = $(this).prop('disabled', !enabled).closest('.custom-control');
@@ -311,7 +312,10 @@
 									$card.find('.part-kondisi').prop('disabled', true).removeAttr('required');
 									$card.append($('<input>', { type: 'hidden', name: field, value: 'ON_PROCESS_RED_TAG', class: 'rtwt-process-value' }));
 									$card.addClass('part-rtwt-active');
-									$card.find('.part-kondisi').first().closest('.col-md-4').prepend('<div class="rtwt-process-note">On Process RTWT Mesin</div>');
+									var ticketNumber = String(rtwtTickets[field] || '').trim();
+									var $note = $('<div>', { 'class': 'rtwt-process-note' }).text('On Process RTWT Mesin');
+									if (ticketNumber) { $note.append(document.createTextNode(' · ' + ticketNumber)); }
+									$card.find('.part-kondisi').first().closest('.col-md-4').prepend($note);
 								});
 							}
 							updateDuplicateGuard(data);
