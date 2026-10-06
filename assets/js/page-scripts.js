@@ -594,6 +594,9 @@ $(document).on('change', '[data-load-select-options]', function(e){
 		else{
 			targetElem = $("#ctrl-" + field);
 		}
+		// Saat form edit dibuka, target sudah berisi ID kategori lama. Simpan
+		// nilainya sebelum option diganti agar label master dapat dimuat kembali.
+		var selectedTargetValue = targetElem.val();
 		var path = targetElem.data('load-path') + '/' + encodeURIComponent(selectedVal);
 		targetElem.html('<option value="">Loading...</option>');
 		var placeholder = targetElem.attr('placeholder') || 'Select a value...';
@@ -619,6 +622,9 @@ $(document).on('change', '[data-load-select-options]', function(e){
 						options += '<option value="' + data[i].value + '">' + data[i].label + '</option>';
 					}
 					targetElem.html(options);
+					if (selectedTargetValue !== undefined && selectedTargetValue !== null && selectedTargetValue !== '') {
+						targetElem.val(String(selectedTargetValue));
+					}
 				}
 			},
 			error: function(data) {
@@ -627,6 +633,16 @@ $(document).on('change', '[data-load-select-options]', function(e){
 			},
 		});
 	})
+});
+
+// Hydrate dependent dropdowns on edit pages. Previously the category field
+// showed its stored numeric ID until the user manually changed the correlation.
+$(function(){
+	$('[data-load-select-options]').each(function(){
+		if ($.trim(String($(this).val() || '')) !== '') {
+			$(this).trigger('change');
+		}
+	});
 });
 /**
  * populate another input check/radio control when a control value changes
