@@ -1944,9 +1944,13 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$relativePhoto = ltrim((string)($photoByPart[$field] ?? ''), '/\\');
 					$absolutePhoto = ROOT . str_replace('/', DIRECTORY_SEPARATOR, $relativePhoto);
 					if ($relativePhoto === '' || !is_file($absolutePhoto)) {
-                        error_log('RTWT NOK Tag Sync dilewati: Foto Before tidak ditemukan untuk ' . $machine_name . '/' . $field);
-                        continue;
-                    }
+						// Foto wajib untuk tiket Form AM yang baru. Namun untuk tiket yang
+						// sudah ada, RTWT dapat mempertahankan Foto Before sebelumnya saat
+						// metadata (tag, korelasi, atau deskripsi) diperbarui.
+						error_log('RTWT NOK Tag Sync tanpa Foto Before untuk ' . $machine_name . '/' . $field . '; mengirim pembaruan metadata.');
+						$relativePhoto = null;
+						$absolutePhoto = null;
+					}
 					$payload = array(
 						'source_system' => 'FORM_AM',
 						'source_reference' => 'form_am:' . $this->machineKey . ':' . $rec_id . ':' . $field,
@@ -1969,10 +1973,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					);
 					$fingerprintData = $payload;
 					unset($fingerprintData['occurred_at']);
-					$payload['source_fingerprint'] = hash('sha256', json_encode($fingerprintData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ':' . hash_file('sha256', $absolutePhoto));
+					$photoFingerprint = $absolutePhoto !== null ? hash_file('sha256', $absolutePhoto) : 'photo-unavailable';
+					$payload['source_fingerprint'] = hash('sha256', json_encode($fingerprintData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ':' . $photoFingerprint);
 
-					// Native RTWT dan API modular sama-sama membutuhkan Foto Before fisik.
-					// Kirim multipart pada kedua mode agar sinkronisasi tidak kehilangan bukti foto.
+					// Kirim multipart bila bukti foto masih tersedia. RTWT tetap mewajibkan
+					// Foto Before untuk pembuatan tiket baru, tetapi mengizinkan update tiket
+					// yang sudah ada tanpa mengganti bukti sebelumnya.
 					$isModularRtwt = defined('RTWT_API_MODE') && RTWT_API_MODE === 'modular';
 					$queuePayload = $payload;
 					$this->startRtwtOutbox($queuePayload, $relativePhoto, 'SYNC');
