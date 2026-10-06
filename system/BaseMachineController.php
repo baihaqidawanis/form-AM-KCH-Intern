@@ -1357,6 +1357,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$row = $db->getOne($sql, 'mesin');
 					if (!$row) { throw new RuntimeException('Record AM tidak ditemukan.'); }
 					$mesin_id = $row['mesin'];
+					// Field mesin tidak ikut divalidasi pada form edit karena nilainya
+					// berasal dari record yang sudah ada. Masukkan kembali agar sync RTWT
+					// dapat me-resolve nama mesin, sama seperti jalur submit baru.
+					$modeldata['mesin'] = $mesin_id;
 					$db->where('id_am', $rec_id);
 					$deleted = $db->delete($this->kendalaTable());
 					if ($deleted === false && $db->getLastError()) {
