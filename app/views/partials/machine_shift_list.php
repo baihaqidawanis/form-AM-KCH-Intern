@@ -5,6 +5,23 @@ $records = $d->records;
 $part_fields = $d->part_fields;
 $can_delete_reports = !empty($d->can_delete_reports);
 $bulk_delete_url = $d->bulk_delete_url;
+$is_shift_submission_late = static function ($shift, $createdAt, $operationalDate) {
+  if (empty($createdAt)) { return false; }
+  try {
+    $date = new DateTimeImmutable((string)($operationalDate ?: substr((string)$createdAt, 0, 10)), new DateTimeZone('Asia/Jakarta'));
+    $submittedAt = new DateTimeImmutable((string)$createdAt, new DateTimeZone('Asia/Jakarta'));
+    $shift = preg_replace('/^shift\s*/i', '', trim((string)$shift)) ?: '1';
+    $windows = array(
+      '1' => array($date->format('Y-m-d') . ' 06:30:00', $date->format('Y-m-d') . ' 15:15:00'),
+      '2' => array($date->format('Y-m-d') . ' 15:00:00', $date->format('Y-m-d') . ' 22:45:00'),
+      '3' => array($date->format('Y-m-d') . ' 22:30:00', $date->modify('+1 day')->format('Y-m-d') . ' 06:45:00'),
+    );
+    if (!isset($windows[$shift])) { return false; }
+    [$start, $end] = $windows[$shift];
+    return $submittedAt < new DateTimeImmutable($start, new DateTimeZone('Asia/Jakarta'))
+      || $submittedAt > new DateTimeImmutable($end, new DateTimeZone('Asia/Jakarta'));
+  } catch (Throwable $e) { return false; }
+};
 $groups = array();
 foreach ($records as $row) {
   $date = !empty($row['operational_date']) ? $row['operational_date'] : substr($row['created_at'], 0, 10);
@@ -61,12 +78,15 @@ foreach ($records as $row) {
         <?php if ($can_delete_reports) { ?><th class="td-checkbox"><label class="custom-control custom-checkbox custom-control-inline"><input class="toggle-check-all custom-control-input" type="checkbox" aria-label="Pilih semua report harian di halaman"><span class="custom-control-label"></span></label></th><?php } ?>
         <th>#</th><th>Tanggal</th><th>Mesin</th><th>Pembuat</th><th class="text-center text-nowrap" style="min-width: 96px;">Shift Terisi</th><th>Status</th><th>Approval</th><th>Approval Oleh</th><th>Tanggal Approval</th><th>User Update</th><th>Tanggal Update</th><th>Aksi</th>
       </tr></thead>
-      <tbody><?php if ($groups) { $i = 0; foreach ($groups as $report) { $i++; $record_ids=array(); $shifts=array(); $creators=array(); $nok=false; $all_approved=true; $approval_by_shift=array(); $approval_dates_by_shift=array(); $updaters=array(); $updated_at=null; $approval_date=null; $report_created_at=null;
+      <tbody><?php if ($groups) { $i = 0; foreach ($groups as $report) { $i++; $record_ids=array(); $shifts=array(); $creators=array(); $nok=false; $all_approved=true; $approval_by_shift=array(); $approval_dates_by_shift=array(); $late_shifts=array(); $updaters=array(); $updated_at=null; $approval_date=null; $report_created_at=null;
         foreach ($report['rows'] as $row) {
           $record_ids[] = $row[$d->id_column]; if ($report_created_at === null || $row['created_at'] < $report_created_at) { $report_created_at = $row['created_at']; }
           $shift_val = !empty($row['shift']) ? $row['shift'] : '1';
           $shift_clean = preg_replace('/^shift\s*/i', '', trim((string)$shift_val));
           $shifts[] = $shift_clean ?: '1';
+          if ($is_shift_submission_late($shift_clean, $row['created_at'] ?? null, $row['operational_date'] ?? $report['date'])) {
+            $late_shifts[] = array('shift' => $shift_clean ?: '1', 'time' => (new DateTimeImmutable((string)$row['created_at'], new DateTimeZone('Asia/Jakarta')))->format('H:i'));
+          }
           $creators[] = $row['user_create'];
           if (($row['approval'] ?? null) !== 'Approved') { $all_approved = false; }
           if (($row['approval'] ?? null) === 'Approved') {
@@ -80,7 +100,7 @@ foreach ($records as $row) {
         }
       ?><tr class="<?php echo $nok ? 'table-danger' : ''; ?>">
         <?php if ($can_delete_reports) { ?><td class="td-checkbox"><label class="custom-control custom-checkbox custom-control-inline"><input class="optioncheck custom-control-input" value="<?php echo htmlspecialchars(implode(',', $record_ids)); ?>" type="checkbox" aria-label="Pilih report harian"><span class="custom-control-label"></span></label></td><?php } ?>
-        <?php $shifts = array_values(array_unique($shifts)); natsort($shifts); ?><td><?php echo $i; ?></td><td><?php echo format_am_date($report_created_at ?: $report['date']); ?></td><td><?php echo htmlspecialchars($report['machine_name']); ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($creators))); ?></td>
+        <?php $shifts = array_values(array_unique($shifts)); natsort($shifts); ?><td><?php echo $i; ?></td><td><?php echo format_am_date($report_created_at ?: $report['date']); ?><?php foreach ($late_shifts as $late_shift) { ?><div class="text-danger small font-weight-bold mt-1" title="Pengisian Shift <?php echo htmlspecialchars($late_shift['shift']); ?> dilakukan di luar jam shift."><i class="fa fa-exclamation-triangle"></i> S<?php echo htmlspecialchars($late_shift['shift']); ?> · <?php echo htmlspecialchars($late_shift['time']); ?></div><?php } ?></td><td><?php echo htmlspecialchars($report['machine_name']); ?></td><td><?php echo htmlspecialchars(implode(', ', array_unique($creators))); ?></td>
         <td class="text-center align-middle" style="min-width: 96px; white-space: nowrap;">
           <?php if (!empty($shifts)) { ?>
             <div class="d-inline-flex align-items-center justify-content-center" style="gap: 5px;">
