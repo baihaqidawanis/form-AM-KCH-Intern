@@ -8,6 +8,7 @@ $machine_key = $data['machine_key'] ?? '';
 $mesin_id = intval($data['mesin_id'] ?? 0);
 $selected_unit = $data['selected_unit'] ?? null;
 $search = $data['search'] ?? '';
+$override_records = $data['override_records'] ?? array();
 $csrf_token = Csrf::$token;
 ?>
 <section class="page">
@@ -45,6 +46,38 @@ $csrf_token = Csrf::$token;
       </form>
       <?php if ($machine_key !== '' && empty($units)) { ?><div class="alert alert-warning mt-3 mb-0">Belum ada unit fisik yang dipetakan ke modul ini.</div><?php } ?>
       <?php if ($machine_key !== '' && !$selected_unit && !empty($units)) { ?><div class="small text-muted mt-3">Pilih unit fisik lalu tekan Tampilkan untuk mengatur override.</div><?php } ?>
+    </div>
+
+    <div class="bg-light p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="mb-1"><?php echo $selected_unit ? 'Override untuk ' . htmlspecialchars($selected_unit['nama_mesin']) : 'Daftar Override Part per Unit'; ?></h5>
+          <div class="text-muted small"><?php echo $selected_unit ? 'Override yang sudah disetel untuk unit fisik yang dipilih.' : 'Seluruh override part yang sudah disetel pada modul dengan lebih dari satu unit fisik.'; ?></div>
+        </div>
+        <span class="badge badge-info"><?php echo count($override_records); ?> override</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover bg-white mb-0">
+          <thead><tr><th>Modul</th><th>Unit Fisik</th><th>Part</th><th>Status</th><th>Durasi Khusus</th><th>Terakhir Diubah</th><th>Aksi</th></tr></thead>
+          <tbody>
+          <?php if (empty($override_records)) { ?><tr><td colspan="7" class="text-center text-muted">Belum ada override yang sesuai dengan filter. Part tetap memakai konfigurasi default.</td></tr><?php } ?>
+          <?php foreach ($override_records as $override) {
+            $is_applicable = in_array($override['is_applicable'] ?? null, array(true, 1, '1', 't', 'true'), true);
+            $override_url = 'part_override?' . http_build_query(array('machine_key' => $override['machine_key'], 'mesin_id' => intval($override['mesin_id'])));
+          ?>
+            <tr>
+              <td><?php echo htmlspecialchars(Master_partController::$machine_keys[$override['machine_key']] ?? $override['machine_key']); ?></td>
+              <td><strong><?php echo htmlspecialchars($override['nama_mesin']); ?></strong><?php if (!empty($override['nomor_seri'])) { ?><div class="small text-muted"><?php echo htmlspecialchars($override['nomor_seri']); ?></div><?php } ?></td>
+              <td><strong><?php echo htmlspecialchars($override['label']); ?></strong><div class="small text-muted"><?php echo htmlspecialchars($override['field_name']); ?><?php echo !empty($override['section']) ? ' &middot; ' . htmlspecialchars($override['section']) : ''; ?></div></td>
+              <td><?php echo $is_applicable ? '<span class="badge badge-success">Berlaku</span>' : '<span class="badge badge-secondary">Tidak Berlaku</span>'; ?></td>
+              <td><?php echo htmlspecialchars($override['override_durasi'] ?? '-') ?: '-'; ?></td>
+              <td><?php echo !empty($override['updated_at']) ? format_am_date($override['updated_at']) : '-'; ?></td>
+              <td><a class="btn btn-sm btn-outline-primary" href="<?php print_link($override_url); ?>">Atur</a></td>
+            </tr>
+          <?php } ?>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <?php if ($selected_unit) { ?>

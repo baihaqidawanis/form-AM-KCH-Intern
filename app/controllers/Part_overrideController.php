@@ -33,7 +33,7 @@ class Part_overrideController extends SecureController
 		$mesin_id = intval($request->mesin_id ?? 0);
 		$search = trim((string)($request->search ?? ''));
 		$modules = array();
-		$units = array(); $units_by_module = array(); $parts = array(); $selected_unit = null;
+		$units = array(); $units_by_module = array(); $parts = array(); $override_records = array(); $selected_unit = null;
 		try {
 			$db = $this->GetModel();
 			$mapped_units = $db->rawQuery('SELECT u.machine_key, m.id, m.nama_mesin, m.nomor_seri FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id ORDER BY u.machine_key ASC, m.nama_mesin ASC') ?: array();
@@ -54,6 +54,24 @@ class Part_overrideController extends SecureController
 			if (!isset($modules[$machine_key])) { $machine_key = ''; $mesin_id = 0; }
 			$units = $machine_key !== '' ? ($units_by_module[$machine_key] ?? array()) : array();
 			foreach ($units as $unit) { if (intval($unit['id']) === $mesin_id) { $selected_unit = $unit; break; } }
+			$override_where = array('mp.taken_out_at IS NULL', '(SELECT COUNT(*) FROM machine_module_units mapped WHERE mapped.machine_key = mp.machine_key) > 1');
+			$override_params = array();
+			if ($machine_key !== '') { $override_where[] = 'mp.machine_key = ?'; $override_params[] = $machine_key; }
+			if ($selected_unit) { $override_where[] = 'o.mesin_id = ?'; $override_params[] = intval($selected_unit['id']); }
+			if ($search !== '') {
+				$override_where[] = '(mp.label ILIKE ? OR mp.field_name ILIKE ? OR m.nama_mesin ILIKE ?)';
+				$like = '%' . $search . '%'; $override_params[] = $like; $override_params[] = $like; $override_params[] = $like;
+			}
+			$override_records = $db->rawQuery(
+				'SELECT o.id AS override_id, o.is_applicable, o.durasi AS override_durasi, o.updated_at, mp.machine_key, mp.field_name, mp.label, mp.section, m.id AS mesin_id, m.nama_mesin, m.nomor_seri '
+				. 'FROM master_part_machine_override o '
+				. 'JOIN master_part mp ON mp.id = o.master_part_id '
+				. 'JOIN machine_module_units u ON u.machine_key = mp.machine_key AND u.mesin_id = o.mesin_id '
+				. 'JOIN mesin m ON m.id = o.mesin_id '
+				. 'WHERE ' . implode(' AND ', $override_where)
+				. ' ORDER BY m.nama_mesin ASC, mp.urutan ASC, mp.label ASC',
+				$override_params
+			) ?: array();
 			if ($selected_unit) {
 				$params = array($mesin_id, $machine_key);
 				$filter = '';
@@ -72,6 +90,7 @@ class Part_overrideController extends SecureController
 			'modules' => $modules,
 			'machine_key' => $machine_key, 'mesin_id' => $mesin_id, 'units' => $units,
 			'units_by_module' => $units_by_module, 'selected_unit' => $selected_unit, 'parts' => $parts, 'search' => $search,
+			'override_records' => $override_records,
 		));
 	}
 
