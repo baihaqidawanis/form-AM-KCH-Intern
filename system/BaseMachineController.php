@@ -432,7 +432,16 @@ abstract class BaseMachineController extends SecureController
 	}
 	protected function partsForAdd($formdata = null)
 	{
-		if (!in_array('shift', $this->extraFields, true)) { return $this->parts; }
+		$mesin_id = is_array($formdata) ? intval($formdata['mesin'] ?? 0) : intval($this->request->mesin ?? 0);
+		$filterApplicableParts = function (array $parts) use ($mesin_id) {
+			if (!$mesin_id) { return $parts; }
+			$overrides = $this->partMachineOverrides($mesin_id);
+			foreach ($overrides as $field => $override) {
+				if (isset($parts[$field]) && empty($override['is_applicable'])) { unset($parts[$field]); }
+			}
+			return $parts;
+		};
+		if (!in_array('shift', $this->extraFields, true)) { return $filterApplicableParts($this->parts); }
 		$shift = is_array($formdata) ? (string) ($formdata['shift'] ?? '') : (string) ($this->request->shift ?? '');
 		$this->view->uses_shift = true; $this->view->selected_shift = $shift;
 		$this->view->configured_shifts = $this->getConfiguredShifts();
@@ -443,7 +452,7 @@ abstract class BaseMachineController extends SecureController
 			$shifts = array_filter(array_map('trim', explode(',', (string)($row['shift_schedule'] ?? '')))) ?: array('1');
 			if (in_array($shift, $shifts, true)) { $parts[$row['field_name']] = $row['label']; }
 		}
-		return $parts;
+		return $filterApplicableParts($parts);
 	}
 
 	/**
@@ -855,10 +864,6 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			}
 			$db = $this->GetModel();
 			$parts_for_add = $this->partsForAdd($formdata);
-			$part_overrides = $this->partMachineOverrides(intval($formdata['mesin'] ?? 0));
-			foreach ($part_overrides as $field => $override) {
-				if (isset($parts_for_add[$field]) && empty($override['is_applicable'])) { $formdata[$field] = 'N/A'; }
-			}
 			$extra_fields_for_add = $this->extraFieldsForParts($parts_for_add);
 			$fields = array_merge(array('mesin'), array_keys($parts_for_add), $extra_fields_for_add);
 			$this->fields = $fields;

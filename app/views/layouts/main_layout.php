@@ -243,11 +243,9 @@
 							if ($durationCell.length) { $durationCell.text(override && override.durasi !== null ? override.durasi : $durationCell.data('defaultDuration')); }
 							$card.find('.part-na-note, input.part-na-value').remove();
 							var applicable = !override || override.is_applicable;
-							$card.toggleClass('part-not-applicable', !applicable);
+							$card.toggleClass('part-not-applicable', !applicable).toggle(applicable);
 							if (!applicable) {
 								$card.find('.part-kondisi').prop('checked', false).prop('disabled', true).removeAttr('required').trigger('change');
-								$card.find('.part-kondisi').first().closest('.col-md-4').prepend('<div class="part-na-note alert alert-secondary py-2"><strong>N/A</strong> - Tidak berlaku untuk unit mesin ini.</div>');
-								$card.append($('<input>', {type:'hidden', name:field, value:'N/A', class:'part-na-value'}));
 							} else {
 								$card.find('.part-kondisi').prop('disabled', false).attr('required', 'required');
 							}
