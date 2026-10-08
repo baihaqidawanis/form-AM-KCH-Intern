@@ -112,4 +112,26 @@ foreach ($jobs as $job) {
     $processed++;
 }
 
+// Master Part uses a separate outbox, so it cannot delay or alter ticket sync.
+$masterJobs = $pdo->query("SELECT * FROM rtwt_master_part_sync_outbox WHERE status IN ('PENDING','RETRY') AND next_attempt_at<=NOW() ORDER BY next_attempt_at,id LIMIT 50")->fetchAll();
+foreach ($masterJobs as $job) {
+    $payload = json_decode((string)$job['payload'], true);
+    if (!is_array($payload)) $payload = [];
+    $url = preg_replace('#/sync/?$#', '/master-parts/sync', RTWT_API_URL) ?: RTWT_API_URL;
+    $headers = ['Authorization: Bearer ' . RTWT_API_TOKEN, 'X-RTWT-Token: ' . RTWT_API_TOKEN];
+    [$response, $status, $error] = postRtwtOutbox($url, $payload, $headers);
+    $decoded = is_string($response) ? json_decode($response, true) : null;
+    if ($status >= 200 && $status < 300) {
+        $pdo->prepare("UPDATE rtwt_master_part_sync_outbox SET status='SYNCED',attempts=attempts+1,last_error=NULL,last_response=CAST(? AS jsonb),synced_at=NOW(),updated_at=NOW() WHERE id=?")
+            ->execute([json_encode($decoded ?: ['raw' => (string)$response], JSON_UNESCAPED_UNICODE), $job['id']]);
+    } else {
+        $attempts = (int)$job['attempts'] + 1;
+        $delayMinutes = min(60, max(1, 2 ** min($attempts - 1, 6)));
+        $message = 'HTTP ' . $status . ': ' . ($error !== '' ? $error : (string)$response);
+        $pdo->prepare("UPDATE rtwt_master_part_sync_outbox SET status='RETRY',attempts=?,last_error=?,last_response=CAST(? AS jsonb),next_attempt_at=NOW()+(? * INTERVAL '1 minute'),updated_at=NOW() WHERE id=?")
+            ->execute([$attempts, substr($message, 0, 2000), json_encode($decoded ?: ['raw' => (string)$response], JSON_UNESCAPED_UNICODE), $delayMinutes, $job['id']]);
+    }
+    $processed++;
+}
+
 fwrite(STDOUT, "Processed {$processed} RTWT sync job(s).\n");

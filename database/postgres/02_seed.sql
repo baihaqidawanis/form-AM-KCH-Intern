@@ -519,3 +519,5 @@ JOIN "mesin" m ON (
 )
 WHERE mp."field_name" = 'body_mesin'
 ON CONFLICT ("master_part_id", "mesin_id") DO NOTHING;
+-- rtwt_master_part_sync_outbox sengaja tidak diberi seed: setiap event Master
+-- Part akan membuat payload dengan machine_key + field_name yang stabil.

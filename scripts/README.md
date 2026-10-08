@@ -32,5 +32,4 @@ Dokumen ini melengkapi persyaratan **URS Form Autonomous Maintenance Poin 4.1.2 
 ## RTWT sync retry
 
 Jalankan `process_rtwt_sync_outbox.bat` melalui Windows Task Scheduler setiap 1 menit.
-Worker ini hanya memproses antrean integrasi Form AM ke RTWT yang gagal, tertunda,
-atau menunggu hasil review. Proses simpan Form AM tetap berjalan independen.
+Worker ini memproses antrean tiket serta antrean Master Part Form AM ke RTWT yang gagal atau tertunda. Proses simpan Form AM tetap berjalan independen.

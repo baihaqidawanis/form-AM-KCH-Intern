@@ -70,6 +70,7 @@ class Master_partController extends SecureController
 	{
 		parent::__construct();
 		$this->tablename = 'master_part';
+		require_once dirname(__DIR__, 2) . '/system/RtwtMasterPartSync.php';
 		// Reuse profil upload 'pict' yang udah didaftarkan global di
 		// BaseController (dipakai juga buat foto profil user) -- dropzone widget
 		// di view pakai fieldname="pict" biar endpoint upload generic ketemu
@@ -110,6 +111,28 @@ class Master_partController extends SecureController
 			'search' => $search,
 			'area' => $area,
 		));
+	}
+
+	/** Queue master changes independently from the existing ticket integration. */
+	private function sync_rtwt_master_part($part, $previous_label = '')
+	{
+		if (empty($part['machine_key']) || empty($part['field_name']) || empty($part['label'])) { return; }
+		$machine_key = (string)$part['machine_key'];
+		if (!isset(self::$machine_keys[$machine_key])) { return; }
+		$units = $this->GetModel()->rawQuery('SELECT m.id, m.nama_mesin FROM machine_module_units u JOIN mesin m ON m.id=u.mesin_id WHERE u.machine_key=? ORDER BY m.id ASC', array($machine_key)) ?: array();
+		foreach ($units as $unit) {
+			$machine_name = trim((string)($unit['nama_mesin'] ?? ''));
+			if ($machine_name === '') { continue; }
+			RtwtMasterPartSync::queueAndSend($this->GetModel(), array(
+				'machine_key' => $machine_key,
+				'field_name' => (string)$part['field_name'],
+				'source_machine_id' => (int)$unit['id'],
+				'label' => (string)$part['label'],
+				'previous_label' => (string)$previous_label,
+				'area_name' => (string)$this->machine_area($machine_key),
+				'machine_name' => $machine_name,
+			));
+		}
 	}
 
 	/** Area template mengikuti satu-satunya mapping resmi ACL. */
@@ -294,6 +317,7 @@ class Master_partController extends SecureController
 					$alter_ok = $db->rawQuery('ALTER TABLE "' . $physical_table . '" ADD COLUMN IF NOT EXISTS "' . $modeldata['field_name'] . '" varchar(255) DEFAULT NULL');
 					if ($alter_ok !== false && !$db->getLastError()) {
 						$db->commit();
+						$this->sync_rtwt_master_part(array('machine_key' => $modeldata['machine_key'], 'field_name' => $modeldata['field_name'], 'label' => $modeldata['label']));
 						$this->write_to_log('add', 'true');
 						$this->set_flash_msg('Part berhasil ditambahkan (kolom baru otomatis dibuat di tabel mesin)', 'success');
 						//Balik ke list mesin yang barusan diisi, bukan ke mesin default.
@@ -328,6 +352,7 @@ class Master_partController extends SecureController
 			$this->view->part_overrides = $db->rawQuery('SELECT o.*, m.nama_mesin FROM master_part_machine_override o JOIN mesin m ON m.id = o.mesin_id WHERE o.master_part_id = ? ORDER BY m.id ASC', array((int)$rec_id)) ?: array();
 		} catch (Throwable $e) { /* update.sql belum dijalankan */ }
 		if ($formdata) {
+			$previous_part = $db->where('id', $rec_id)->getOne($this->tablename, array('machine_key', 'field_name', 'label'));
 			//Urutan gak ikut diedit di sini -- cuma diatur lewat drag-and-drop di
 			//list (lihat reorder()). Field deskriptif juga gak di-sanitize_string,
 			//sama alasannya kayak di add() -- lihat catatan di sana.
@@ -347,6 +372,9 @@ class Master_partController extends SecureController
 				$bool = $db->update($this->tablename, $modeldata);
 				$numRows = $db->getRowCount();
 				if ($bool && $numRows) {
+					if ($previous_part) {
+						$this->sync_rtwt_master_part(array('machine_key' => $previous_part['machine_key'], 'field_name' => $previous_part['field_name'], 'label' => $modeldata['label']), (string)($previous_part['label'] ?? ''));
+					}
 					$this->write_to_log('edit', 'true');
 					$this->set_flash_msg('Part berhasil diperbarui', 'success');
 					return $this->redirect($back_url);
@@ -466,6 +494,8 @@ class Master_partController extends SecureController
 		$update_data = array('taken_out_at' => null, 'taken_out_by' => null, 'takeout_reason' => null, 'active_from' => date('Y-m-d'), 'updated_at' => datetime_now());
 		if ($db->update($this->tablename, $update_data)) {
 			$this->write_part_status_history($rec_id, 'ACTIVE', datetime_now());
+			$active_part = $db->where('id', $rec_id)->getOne($this->tablename, array('machine_key', 'field_name', 'label'));
+			if ($active_part) { $this->sync_rtwt_master_part($active_part); }
 			$this->write_to_log('reactivate', 'true');
 			$this->set_flash_msg('Part berhasil diaktifkan kembali dan kini aktif di form AM.', 'success');
 			return $this->redirect($back_url);
