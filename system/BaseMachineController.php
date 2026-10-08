@@ -662,19 +662,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	private function isOnProcessEligible($mesinId, $field, $recId = null)
 	{
 		if (!in_array($field, $this->part_fields(), true) || !$mesinId) { return false; }
-		$sql = $this->sqlTable();
-		if ($recId) {
-			$cur = $this->GetModel()->where($this->idColumn(), (int)$recId)->getOne($sql, array($field));
-			if (in_array($cur[$field] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true)) {
-				return true;
-			}
-		}
-		$excludeClause = $recId ? "AND {$this->idColumn()} != " . (int)$recId : "";
-		$row = $this->GetModel()->rawQueryOne(
-			"SELECT {$field} AS status FROM {$sql} WHERE mesin = ? {$excludeClause} AND {$field} IN ('OK','NOK','ON_PROCESS_RED_TAG') ORDER BY operational_date DESC, COALESCE(updated_at, created_at) DESC, {$this->idColumn()} DESC LIMIT 1",
-			array((int)$mesinId)
-		);
-		return in_array($row['status'] ?? null, array('NOK', 'ON_PROCESS_RED_TAG'), true);
+		// Satu-satunya sumber kebenaran untuk opsi ini adalah lock Red Tag aktif
+		// di RTWT. Riwayat NOK lokal tidak boleh membuat opsi On Process tetap
+		// muncul setelah tiket RTWT sudah Closed atau Cancelled.
+		$locks = $this->activeRtwtPartLocks((int)$mesinId);
+		return in_array((string)$field, $locks['fields'] ?? array(), true);
 	}
 
 	private function activeRtwtPartLocks($mesinId)
