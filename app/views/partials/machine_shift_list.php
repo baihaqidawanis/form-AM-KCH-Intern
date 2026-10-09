@@ -45,12 +45,17 @@ foreach ($records as $row) {
       </div>
     </div>
     <?php
-    $model = new SharedController;
-    $all_options = $model->sig_Line_option_list();
-    $clean_name = trim(preg_replace('/\b(line|mesin)\b/i', '', (string)$d->display_name));
-    $machine_options = array_filter($all_options, function($o) use ($clean_name, $d) {
-      return stripos($o['label'], $clean_name) !== false || stripos($clean_name, $o['label']) !== false || (stripos($d->machine_key, 'fbd') !== false && stripos($o['label'], 'fbd') !== false);
-    });
+    // Gunakan pemetaan unit fisik dari controller. Fallback lama hanya dipakai
+    // untuk database yang belum menjalankan migrasi machine_module_units.
+    $machine_options = $d->machine_options ?? array();
+    if (empty($machine_options)) {
+      $model = new SharedController;
+      $all_options = $model->sig_Line_option_list();
+      $clean_name = trim(preg_replace('/\b(line|mesin)\b/i', '', (string)$d->display_name));
+      $machine_options = array_filter($all_options, function($o) use ($clean_name, $d) {
+        return stripos($o['label'], $clean_name) !== false || stripos($clean_name, $o['label']) !== false || (stripos($d->machine_key, 'fbd') !== false && stripos($o['label'], 'fbd') !== false);
+      });
+    }
     ?>
     <form class="search filter-form mt-2" action="<?php print_link($d->machine_key . '/list2'); ?>" method="get">
       <div class="form-row align-items-end">

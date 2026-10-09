@@ -540,6 +540,22 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$pagination = $this->get_pagination(MAX_RECORD_COUNT); $tc = $db->withTotalCount(); $records = $db->get($sql, $pagination, $fields);
 		$this->view->page_title = $this->displayName; $this->set_report_props($this->displayName, 'landscape');
 		$data = $this->page_data($records, $tc);
+		// Filter overview harus memakai unit fisik yang dipetakan ke modul ini,
+		// bukan menebak dari teks nama modul. Ini menjaga semua unit pada modul
+		// multi-unit (mis. Ilapak 3-12) tetap tersedia meski nama modul berupa
+		// rentang atau penamaan master berubah.
+		$mapped_units = $this->mappedMachineUnits();
+		$data->machine_options = array();
+		if (is_array($mapped_units)) {
+			foreach ($mapped_units as $unit) {
+				if (!empty($unit['id']) && trim((string)($unit['nama_mesin'] ?? '')) !== '') {
+					$data->machine_options[] = array(
+						'value' => $unit['id'],
+						'label' => $unit['nama_mesin'],
+					);
+				}
+			}
+		}
 		// Begitu sebuah mesin memakai shift, overview harus menjadi satu report
 		// harian seperti Illapak, bukan tiga form yang terpisah.
 		$data->uses_shift = $has_shift_history;
