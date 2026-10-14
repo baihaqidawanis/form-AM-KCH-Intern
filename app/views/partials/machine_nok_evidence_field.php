@@ -17,6 +17,6 @@
     </span>
     <div class="small text-muted">Perangkat menentukan pilihan kamera depan/belakang. Jika kamera tidak terbuka, gunakan Upload dari perangkat.</div>
     <button type="button" class="btn btn-sm btn-outline-secondary mt-2 nok-photo-cancel d-none">Batalkan pilihan foto</button>
-    <div class="nok-photo-preview-wrap d-none mt-2"><div class="small text-muted mb-1">Preview foto baru</div><img class="nok-photo-preview" alt="Preview Foto Before" style="max-width:160px;max-height:120px;border-radius:8px;border:1px solid #ddd"></div>
+    <div class="nok-photo-preview-wrap d-none mt-2"><div class="small text-muted mb-1">Preview foto baru</div><a class="part-image-link nok-photo-preview-link d-inline-block" href="#" aria-label="Perbesar preview foto"><img class="nok-photo-preview" alt="Preview Foto Before" style="max-width:160px;max-height:120px;border-radius:8px;border:1px solid #ddd;cursor:zoom-in"></a></div>
   </div>
 </div>

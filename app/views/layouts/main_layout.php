@@ -342,7 +342,7 @@
 					function nokPhotoSize(bytes) { return (bytes / (1024 * 1024)).toFixed(2) + ' MB'; }
 					function showNokPhotoPreview($preview, file) {
 						var reader = new FileReader();
-						reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.removeClass('d-none'); };
+						reader.onload = function(e) { $preview.find('.nok-photo-preview').attr('src', e.target.result); $preview.find('.nok-photo-preview-link').attr('href', e.target.result); $preview.removeClass('d-none'); };
 						reader.readAsDataURL(file);
 					}
 					function compressNokPhoto(file, done) {
@@ -387,7 +387,7 @@
 							$compress.removeClass('d-none').prop('disabled', false).html('<i class="fa fa-compress"></i> Kompres Foto &lt; 2 MB');
 							$box.removeClass('border border-danger p-2 rounded'); showNokPhotoPreview($preview, file);
 						} else {
-							$state.text('').addClass('d-none'); $compress.addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.addClass('d-none');
+							$state.text('').addClass('d-none'); $compress.addClass('d-none'); $preview.find('.nok-photo-preview').removeAttr('src'); $preview.find('.nok-photo-preview-link').attr('href', '#'); $preview.addClass('d-none');
 						}
 					});
 					$form.on('click', '.nok-photo-compress', function(){
@@ -422,13 +422,13 @@
 						}
 					});
 					$form.on('click', '.nok-photo-cancel', function(){
-						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-state').text('').addClass('d-none'); $(this).siblings('.nok-photo-compress').addClass('d-none'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
+						$(this).siblings('.nok-photo-input').val(''); $(this).siblings('.nok-photo-state').text('').addClass('d-none'); $(this).siblings('.nok-photo-compress').addClass('d-none'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview').removeAttr('src'); $(this).siblings('.nok-photo-preview-wrap').find('.nok-photo-preview-link').attr('href', '#'); $(this).siblings('.nok-photo-preview-wrap').addClass('d-none');
 						$(this).addClass('d-none');
 					});
 					function syncNokPhotoBox($card) {
 						var $box = $card.find('.nok-photo-box');
 						var isNok = $card.find('.part-kondisi[value="NOK"]').is(':checked');
-						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-state').text('').addClass('d-none'); $box.find('.nok-photo-compress').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
+						if (!isNok) { $box.find('.nok-photo-input').val(''); $box.find('.nok-photo-cancel').addClass('d-none'); $box.find('.nok-photo-state').text('').addClass('d-none'); $box.find('.nok-photo-compress').addClass('d-none'); $box.find('.nok-photo-preview').removeAttr('src'); $box.find('.nok-photo-preview-link').attr('href', '#'); $box.find('.nok-photo-preview-wrap').addClass('d-none'); }
 						$box.toggle(isNok);
 						var required = isNok && $box.attr('data-existing-photo') !== '1';
 						$box.find('.nok-photo-input').removeAttr('required').first().attr('data-photo-required', required ? '1' : '0');
