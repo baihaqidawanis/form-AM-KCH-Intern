@@ -150,7 +150,7 @@ class Master_partController extends SecureController
 		if (!array_key_exists($machine_key, self::$machine_keys)) { return array(); }
 		try {
 			$units = $this->GetModel()->rawQuery(
-				'SELECT m.id, m.nama_mesin FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY m.nama_mesin ASC',
+				'SELECT m.id, m.nama_mesin FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY NULLIF(substring(m.nama_mesin FROM \'([0-9]+)[[:space:]]*$\'), \'\')::int NULLS LAST, m.nama_mesin ASC',
 				array($machine_key)
 			) ?: array();
 			return count($units) > 1 ? $units : array();

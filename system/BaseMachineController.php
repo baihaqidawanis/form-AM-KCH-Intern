@@ -82,7 +82,7 @@ abstract class BaseMachineController extends SecureController
 	{
 		try {
 			return $this->GetModel()->rawQuery(
-				'SELECT m.id, m.nama_mesin, m.nomor_seri FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY m.nama_mesin ASC',
+				'SELECT m.id, m.nama_mesin, m.nomor_seri FROM machine_module_units u JOIN mesin m ON m.id = u.mesin_id WHERE u.machine_key = ? ORDER BY NULLIF(substring(m.nama_mesin FROM \'([0-9]+)[[:space:]]*$\'), \'\')::int NULLS LAST, m.nama_mesin ASC',
 				array($this->machineKey)
 			) ?: array();
 		} catch (Throwable $e) {

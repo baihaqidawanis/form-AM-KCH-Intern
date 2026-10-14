@@ -69,7 +69,7 @@ class Part_overrideController extends SecureController
 				. 'JOIN machine_module_units u ON u.machine_key = mp.machine_key AND u.mesin_id = o.mesin_id '
 				. 'JOIN mesin m ON m.id = o.mesin_id '
 				. 'WHERE ' . implode(' AND ', $override_where)
-				. ' ORDER BY m.nama_mesin ASC, mp.urutan ASC, mp.label ASC',
+				. ' ORDER BY NULLIF(substring(m.nama_mesin FROM \'([0-9]+)[[:space:]]*$\'), \'\')::int NULLS LAST, m.nama_mesin ASC, mp.urutan ASC, mp.label ASC',
 				$override_params
 			) ?: array();
 			if ($selected_unit) {
