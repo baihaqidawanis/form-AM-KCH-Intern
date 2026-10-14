@@ -157,6 +157,10 @@ class CheckSheetExcelExporter
         $writer->markMergedCell($sheet, $rowIndex, $totalCols - 4, $rowIndex, $totalCols - 1);
         $rowIndex++;
 
+        self::writeRow($writer, $sheet, $totalCols, array(0 => '* Dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun.'), $border, 16);
+        $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, $totalCols - 1);
+        $rowIndex++;
+
         $approval = !empty($d['all_approved']) ? 'APPROVED' : 'MENUNGGU APPROVAL';
         self::writeRow($writer, $sheet, $totalCols, array(0 => $approval), $boldCenter, 18);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, $totalCols - 1);

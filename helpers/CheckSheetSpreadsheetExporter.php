@@ -373,6 +373,14 @@ class CheckSheetSpreadsheetExporter
         $sheet->mergeCells($refCol . $row . ':' . $lastCol . $row);
         $row++;
 
+        // Archive retention note
+        $sheet->getRowDimension($row)->setRowHeight(16);
+        $sheet->setCellValue('A' . $row, '* Dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun.');
+        $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+        self::applyStyle($sheet, 'A' . $row . ':' . $lastCol . $row, $bStyle + ['font' => ['size' => 8, 'italic' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT, 'vertical' => Alignment::VERTICAL_CENTER]]);
+        $row++;
+
         // Deactivation notes use data already prepared for the PDF report.
         if (!empty($d['deactivation_records'])) {
             $notes = ['Catatan Deaktivasi Mesin pada Periode Ini:'];
