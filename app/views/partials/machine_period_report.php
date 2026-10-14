@@ -385,6 +385,9 @@ if (!function_exists('get_period_image_src')) {
         <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process RTWT Mesin &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
+      <tr>
+        <td colspan="2" style="border:none; text-align:left; font-size:6.8px; font-style:italic; padding:1px 0 0;">* Dokumen yang sudah terisi penuh diarsip di Produksi selama 3 tahun.</td>
+      </tr>
     </table>
     <?php if (!empty($d['deactivation_records'])) { ?>
     <div style="margin-top: 2px; padding: 2px 4px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 3px; font-size: 6.8px;">
