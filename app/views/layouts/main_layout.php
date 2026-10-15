@@ -331,9 +331,51 @@
 							$form.prepend('<div id="part-config-load-error" class="alert alert-danger"><strong>Konfigurasi part gagal dimuat.</strong> Pilih ulang mesin atau muat ulang halaman sebelum mengisi.</div>');
 						}).always(function(){
 							if (statusRequest === request) { statusRequest = null; }
+							if (isAddForm && $form.find('.part-card.part-rtwt-active').length && typeof scheduleRtwtLockPoll === 'function') {
+								scheduleRtwtLockPoll(nextRtwtLockPollDelay());
+							}
 						});
 					}
-					$machine.on('change', updateOnProcess); updateOnProcess();
+					// Poll ringan hanya saat form baru sedang memiliki Red Tag aktif.
+					// Tujuannya membuka kembali part setelah tiket RTWT ditutup, tanpa
+					// me-reload halaman atau mengubah isian operator lain.
+					var rtwtLockPollTimer = null;
+					var rtwtLockPollRequest = null;
+					function nextRtwtLockPollDelay(){
+						return document.visibilityState === 'visible' ? 12000 : 90000;
+					}
+					function scheduleRtwtLockPoll(delay){
+						if (rtwtLockPollTimer) { window.clearTimeout(rtwtLockPollTimer); }
+						rtwtLockPollTimer = window.setTimeout(refreshRtwtLocks, delay);
+					}
+					function sameRtwtLockedFields(current, latest){
+						current = (current || []).slice().sort();
+						latest = (latest || []).map(String).sort();
+						return current.length === latest.length && current.every(function(field, index){ return field === latest[index]; });
+					}
+					function refreshRtwtLocks(){
+						if (!isAddForm || !$machine.val() || !$form.find('.part-card.part-rtwt-active').length) { return; }
+						if (statusRequest || rtwtLockPollRequest) { scheduleRtwtLockPoll(nextRtwtLockPollDelay()); return; }
+						var params = { mesin: $machine.val() };
+						var selectedShift = $form.find('[name="shift"]').val();
+						if (selectedShift) { params.shift = selectedShift; }
+						var currentFields = $form.find('.part-card.part-rtwt-active').map(function(){ return String($(this).data('part') || ''); }).get();
+						rtwtLockPollRequest = $.getJSON(endpoint, params);
+						rtwtLockPollRequest.done(function(data){
+							if (String($machine.val() || '') !== String(params.mesin || '') || !data || !data.success) { return; }
+							var latestFields = $.isArray(data.rtwt_fields) ? data.rtwt_fields : [];
+							if (!sameRtwtLockedFields(currentFields, latestFields)) { updateOnProcess(); }
+						}).always(function(){
+							rtwtLockPollRequest = null;
+							if ($form.find('.part-card.part-rtwt-active').length) { scheduleRtwtLockPoll(nextRtwtLockPollDelay()); }
+						});
+					}
+					document.addEventListener('visibilitychange', function(){
+						if (document.visibilityState === 'visible' && $form.find('.part-card.part-rtwt-active').length) { scheduleRtwtLockPoll(0); }
+					});
+					$machine.on('change', function(){ updateOnProcess(); scheduleRtwtLockPoll(nextRtwtLockPollDelay()); });
+					updateOnProcess();
+					scheduleRtwtLockPoll(nextRtwtLockPollDelay());
 					$form.on('click', '.btn-check-section-ok', function(){
 						setTimeout(function(){ $form.find('.part-not-applicable .part-kondisi').prop('checked', false); }, 0);
 					});
