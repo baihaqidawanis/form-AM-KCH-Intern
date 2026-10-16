@@ -1675,7 +1675,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 	 */
 	protected function periodReportDisplay($rows, $start, $end)
 	{
-		$parts = array(); $checks = array(); $latest_version = array();
+		$parts = array(); $checks = array(); $latest_version = array(); $applicable_fields = array();
 		foreach ($rows as $row) {
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
 			$shift = trim((string)($row['shift'] ?? '')) ?: '1';
@@ -1693,7 +1693,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$raw_schedule = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
 				$schedule = array_values(array_intersect($raw_schedule, array('1', '2', '3'))) ?: array('1');
 				$parts[$key]['active_days'][$day] = true;
-				if (empty($row[$field]) && isset($part['is_applicable']) && !in_array($part['is_applicable'], array(true, 1, '1', 't', 'true'), true)) {
+				$is_applicable = !isset($part['is_applicable']) || in_array($part['is_applicable'], array(true, 1, '1', 't', 'true'), true);
+				if ($is_applicable || !empty($row[$field])) { $applicable_fields[$field] = true; }
+				if (empty($row[$field]) && !$is_applicable) {
 					$parts[$key]['override_shifts'][$day][$shift] = true;
 				}
 				$parts[$key]['schedule_by_day'][$day] = $schedule;
@@ -1731,6 +1733,10 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		foreach ($parts as &$part) { $part['shifts'] = array_keys($part['shifts']); sort($part['shifts'], SORT_NUMERIC); }
 		unset($part);
+		// Override sejak awal periode tidak perlu baris kosong berisi OVR saja.
+		$parts = array_filter($parts, function ($part) use ($applicable_fields) {
+			return !empty($applicable_fields[$part['field_name']]);
+		});
 		return array(array_values($parts), $checks);
 	}
 
