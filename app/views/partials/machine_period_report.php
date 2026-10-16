@@ -184,6 +184,7 @@ if (!function_exists('get_period_image_src')) {
       .mark-process { color: #0d6efd; font-weight: bold; font-size: 9px; }
       .mark-deactive { color: #856404; font-weight: bold; font-size: 9px; }
       .mark-to { color: #495057; font-weight: bold; font-size: 7px; }
+      .mark-ovr { color: #334d8f; font-weight: bold; font-size: 7px; }
       .mark-na { color: #6c757d; font-weight: bold; font-size: 8px; }
       .cell-deactive { background: #fff3cd !important; }
 	  .cell-holiday { background: #e2e3e5 !important; }
@@ -353,6 +354,7 @@ if (!function_exists('get_period_image_src')) {
               $is_deactive = isset($d['deactivated_days'][$day]); $is_holiday = isset($d['holiday_days'][$day]); $cell_val = ''; $c = ''; $cell_style = $is_holiday ? 'background:#e2e3e5 !important; text-align:center;' : '';
               if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
               elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
+              elseif (isset($part['override_shifts'][$day][(string)$curr_shift])) { $cell_val = 'OVR'; $c = 'mark-ovr'; $cell_style = 'background:#eef2ff !important; text-align:center;'; }
               elseif (is_array($schedule) && !in_array((string)$curr_shift, $schedule, true)) { $cell_val = '&mdash;'; $c = 'mark-na'; }
               else { $value = $entries[(string)$curr_shift] ?? ((string)$curr_shift === '1' ? ($entries['__default__'] ?? '') : ''); if ($value !== '') { if ($value === 'NOK') { $c = 'mark-nok'; $cell_val = '&times;'; } elseif ($value === 'ON_PROCESS_RED_TAG') { $c = 'mark-process'; $cell_val = '&bull;'; } elseif ($value === 'N/A') { $c = 'mark-na'; $cell_val = 'N/A'; } else { $c = 'mark-ok'; $cell_val = '&radic;'; } } }
             ?><td class="day" style="<?php echo $cell_style; ?>"><span class="<?php echo $c; ?>"><?php echo $cell_val; ?></span></td><?php } ?>
@@ -382,7 +384,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process RTWT Mesin &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process RTWT Mesin &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#eef2ff; color:#334d8f; padding:0 3px; font-weight:bold;">OVR: Override unit</span> &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
       <tr>

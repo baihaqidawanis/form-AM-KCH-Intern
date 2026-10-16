@@ -189,10 +189,20 @@ abstract class BaseMachineController extends SecureController
 	protected function partsForRecord($operational_date, $record_created_at = null, $form_id = null)
 	{
 		if ($form_id) {
-			$snapshots = $this->GetModel()->where('machine_key', $this->machineKey)->where('form_id', intval($form_id))->orderBy('urutan', 'ASC')->get('form_part_snapshot', null, array('field_name', 'label'));
+			$columns = array('field_name', 'label');
+			if (!empty($this->snapshotSchema()['is_applicable'])) { $columns[] = 'is_applicable'; }
+			$snapshots = $this->GetModel()->where('machine_key', $this->machineKey)->where('form_id', intval($form_id))->orderBy('urutan', 'ASC')->get('form_part_snapshot', null, $columns);
 			if (!empty($snapshots)) {
 				$parts = array();
-				foreach ($snapshots as $snapshot) { $parts[$snapshot['field_name']] = $snapshot['label']; }
+				$legacy_values = null;
+				foreach ($snapshots as $snapshot) {
+					if (isset($snapshot['is_applicable']) && !in_array($snapshot['is_applicable'], array(true, 1, '1', 't', 'true'), true)) {
+						// Form lama mungkin sudah menyimpan nilai sebelum filter override diperbaiki.
+						if ($legacy_values === null) { $legacy_values = $this->GetModel()->where($this->idColumn(), intval($form_id))->getOne($this->sqlTable()); }
+						if (empty($legacy_values[$snapshot['field_name']])) { continue; }
+					}
+					$parts[$snapshot['field_name']] = $snapshot['label'];
+				}
 				return $parts;
 			}
 		}
@@ -268,7 +278,7 @@ abstract class BaseMachineController extends SecureController
 	 * Skema sudah diperiksa sebelum BEGIN; tabel lama tetap kompatibel tanpa
 	 * shift_schedule. Error write lain diteruskan agar transaksi di-rollback.
 	 * @param int   $form_id   ID record baru yang baru saja di-INSERT
-	 * @param array $parts_meta Hasil partsForRecord() pada saat submit (field_name => label)
+	 * @param array $parts_meta Part yang berlaku dan diisi pada saat submit (field_name => label)
 	 */
 	private function partMachineOverrides($mesin_id)
 	{
@@ -305,20 +315,32 @@ abstract class BaseMachineController extends SecureController
 		} catch (Throwable $e) { return array(); }
 	}
 
-	protected function savePartSnapshot($form_id, $parts_meta, $snapshot_schema = null, $mesin_id = null)
+	protected function savePartSnapshot($form_id, $parts_meta, $snapshot_schema = null, $mesin_id = null, $shift = '1')
 	{
 		if (empty($parts_meta) || !$form_id) { return; }
 		$schema = $snapshot_schema ?: $this->snapshotSchema();
 		if (empty($schema['table'])) { return; }
 		$db = $this->GetModel();
-		$field_names = array_keys($parts_meta);
-		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in');
+		$overrides = $this->partMachineOverrides($mesin_id);
+		$excluded_fields = array();
+		if (!empty($schema['is_applicable'])) {
+			foreach ($overrides as $field => $override) {
+				if (empty($override['is_applicable'])) { $excluded_fields[] = $field; }
+			}
+		}
+		$field_names = array_values(array_unique(array_merge(array_keys($parts_meta), $excluded_fields)));
+		$db->where('machine_key', $this->machineKey)->where('field_name', $field_names, 'in')->where('taken_out_at', null, 'IS');
 		$master_rows = $db->get('master_part');
 		if (empty($master_rows)) { return; }
-		$overrides = $this->partMachineOverrides($mesin_id);
 		foreach ($master_rows as $row) {
+			$field = $row['field_name'];
 			$override = $overrides[$row['field_name']] ?? null;
-			$is_applicable = $override === null ? true : !empty($override['is_applicable']);
+			$is_applicable = $override === null || !empty($override['is_applicable']);
+			if (!isset($parts_meta[$field])) {
+				if ($is_applicable) { continue; }
+				$shifts = array_filter(array_map('trim', explode(',', (string)($row['shift_schedule'] ?? '')))) ?: array('1');
+				if (!in_array((string)$shift, $shifts, true)) { continue; }
+			}
 			if ($override !== null && $override['durasi'] !== null) { $row['durasi'] = $override['durasi']; }
 			$columns = 'machine_key, form_id, field_name, label, section, metode, alat, standard, durasi, pelaksanaan, highlight, image_path, urutan';
 			$values = '?,?,?,?,?,?,?,?,?,?,?,?,?';
@@ -929,7 +951,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					// PR-1: simpan snapshot metadata part saat submit -- mencegah perubahan
 					// label/section/metode/standard master_part di kemudian hari mengubah
 					// tampilan laporan lama. Dipanggil di dalam transaction yang sama.
-					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema, $modeldata['mesin']);
+					$this->savePartSnapshot($rec_id, $parts_for_add, $snapshot_schema, $modeldata['mesin'], $modeldata['shift'] ?? '1');
 					if (!$db->commit()) { throw new RuntimeException('Gagal menyelesaikan transaksi form AM.'); }
 					$this->write_to_log('add', 'true'); $this->set_flash_msg("Berhasil tambah AM {$this->displayName}", 'success');
 					// Sync every NOK Red/White Tag to RTWT Mesin (fail-safe, non-blocking).
@@ -1661,7 +1683,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$field = (string)($part['field_name'] ?? '');
 				if ($field === '') { continue; }
 				// Shift adalah konfigurasi form, bukan bagian dari teks/deskripsi part.
-				$identity = array($field, $part['label'] ?? '', $part['section'] ?? '', $part['metode'] ?? '', $part['alat'] ?? '', $part['standard'] ?? '', $part['durasi'] ?? '', $part['pelaksanaan'] ?? '', $part['highlight'] ?? '', $part['image_path'] ?? '', $part['is_applicable'] ?? true);
+				$identity = array($field, $part['label'] ?? '', $part['section'] ?? '', $part['metode'] ?? '', $part['alat'] ?? '', $part['standard'] ?? '', $part['durasi'] ?? '', $part['pelaksanaan'] ?? '', $part['highlight'] ?? '', $part['image_path'] ?? '');
 				$key = $field . '-' . substr(sha1(json_encode($identity)), 0, 12);
 				if (!isset($parts[$key])) {
 					$part['display_id'] = $key; $part['active_days'] = array();
@@ -1671,6 +1693,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$raw_schedule = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
 				$schedule = array_values(array_intersect($raw_schedule, array('1', '2', '3'))) ?: array('1');
 				$parts[$key]['active_days'][$day] = true;
+				if (empty($row[$field]) && isset($part['is_applicable']) && !in_array($part['is_applicable'], array(true, 1, '1', 't', 'true'), true)) {
+					$parts[$key]['override_shifts'][$day][$shift] = true;
+				}
 				$parts[$key]['schedule_by_day'][$day] = $schedule;
 				if (!isset($latest_version[$field]) || $day >= $latest_version[$field]['day']) {
 					$latest_version[$field] = array('day' => $day, 'key' => $key);
