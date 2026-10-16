@@ -59,6 +59,7 @@ class Illapak_3_12Controller extends BaseMachineController
 			$allowed_shifts = array_filter(array_map('trim', explode(',', (string) $row['shift_schedule'])));
 			if (in_array($shift, $allowed_shifts, true)) { $parts[$row['field_name']] = $row['label']; }
 		}
-		return $parts;
+		$mesin_id = is_array($formdata) ? intval($formdata['mesin'] ?? 0) : intval($this->request->mesin ?? 0);
+		return $this->filterApplicablePartsForUnit($parts, $mesin_id);
 	}
 }

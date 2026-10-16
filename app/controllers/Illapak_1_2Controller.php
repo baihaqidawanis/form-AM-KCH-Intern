@@ -62,6 +62,7 @@ class Illapak_1_2Controller extends BaseMachineController
 				$parts[$row['field_name']] = $row['label'];
 			}
 		}
-		return $parts;
+		$mesin_id = is_array($formdata) ? intval($formdata['mesin'] ?? 0) : intval($this->request->mesin ?? 0);
+		return $this->filterApplicablePartsForUnit($parts, $mesin_id);
 	}
 }
