@@ -186,6 +186,7 @@ $(function () {
   function toggleInkjetPart() {
     var isNonInkjet = $('#ctrl-mesin option:selected').data('non-inkjet') === 1;
     var inkjetCard = $('.part-card[data-part="print_head_inkjet"]');
+    inkjetCard.attr('data-unit-applicable', isNonInkjet ? '0' : '1');
     inkjetCard.toggle(!isNonInkjet);
     inkjetCard.find('input, select, textarea').prop('disabled', isNonInkjet);
   }

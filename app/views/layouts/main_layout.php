@@ -242,7 +242,8 @@
 							if ($durationCell.length && $durationCell.data('defaultDuration') === undefined) { $durationCell.data('defaultDuration', $durationCell.text()); }
 							if ($durationCell.length) { $durationCell.text(override && override.durasi !== null ? override.durasi : $durationCell.data('defaultDuration')); }
 							$card.find('.part-na-note, input.part-na-value').remove();
-							var applicable = !override || override.is_applicable;
+							// Aturan unit lokal (mis. Best Pack non-Inkjet) tetap berlaku setelah respons async.
+							var applicable = (!override || override.is_applicable) && $card.attr('data-unit-applicable') !== '0';
 							$card.toggleClass('part-not-applicable', !applicable).toggle(applicable);
 							if (!applicable) {
 								$card.find('.part-kondisi').prop('checked', false).prop('disabled', true).removeAttr('required').trigger('change');
