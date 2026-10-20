@@ -399,15 +399,25 @@ class Master_partController extends SecureController
 		if (!$formdata) { return $this->redirect('master_part/edit/' . intval($rec_id)); }
 		Csrf::cross_check();
 		$db = $this->GetModel();
-		$part = $db->where('id', intval($rec_id))->getOne($this->tablename, array('id', 'machine_key'));
+		$part = $db->where('id', intval($rec_id))->getOne($this->tablename, array('id', 'machine_key', 'field_name'));
 		$mesin_id = intval($formdata['mesin_id'] ?? 0);
-		$allowed_ids = array_map('intval', array_column($this->override_units($part['machine_key'] ?? ''), 'id'));
+		$override_units = $this->override_units($part['machine_key'] ?? '');
+		$allowed_ids = array_map('intval', array_column($override_units, 'id'));
 		$is_applicable = (string)($formdata['is_applicable'] ?? '1') === '1';
 		$durasi = trim((string)($formdata['durasi'] ?? ''));
 		if (strlen($durasi) > 50) { $this->set_page_error('Durasi khusus maksimal 50 karakter.'); return $this->redirect('master_part/edit/' . intval($rec_id)); }
 		if (!$part || !$mesin_id || !in_array($mesin_id, $allowed_ids, true)) {
 			$this->set_page_error('Unit mesin tidak valid untuk template part ini.');
 			return $this->redirect('master_part/edit/' . intval($rec_id));
+		}
+		foreach ($override_units as $unit) {
+			if (intval($unit['id']) !== $mesin_id) { continue; }
+			if ($part['machine_key'] === 'best_pack' && $part['field_name'] === 'print_head_inkjet'
+				&& strpos((string)$unit['nama_mesin'], 'Best Pack (non Inkjet) - ') === 0) {
+				$this->set_page_error('Print Head Inkjet tidak berlaku pada Best Pack non-Inkjet berdasarkan aturan unit. Status ini tidak dapat diubah melalui override.');
+				return $this->redirect('master_part/edit/' . intval($rec_id));
+			}
+			break;
 		}
 		try {
 			$this->modeldata = array('master_part_id' => (int)$rec_id, 'mesin_id' => $mesin_id, 'is_applicable' => $is_applicable, 'durasi' => $durasi === '' ? null : $durasi);

@@ -11,6 +11,10 @@ $sections_by_machine = !empty($this->sections_by_machine) ? $this->sections_by_m
 $existing_sections = isset($sections_by_machine[$data['machine_key']]) ? $sections_by_machine[$data['machine_key']] : array();
 $override_units = !empty($this->override_units) ? $this->override_units : array();
 $part_overrides = !empty($this->part_overrides) ? $this->part_overrides : array();
+$fixed_inkjet_part = ($data['machine_key'] ?? '') === 'best_pack' && ($data['field_name'] ?? '') === 'print_head_inkjet';
+$editable_override_units = array_values(array_filter($override_units, function ($unit) use ($fixed_inkjet_part) {
+  return !$fixed_inkjet_part || strpos((string)$unit['nama_mesin'], 'Best Pack (non Inkjet) - ') !== 0;
+}));
 ?>
 <section class="page">
   <div class="bg-light p-3 mb-3">
@@ -116,16 +120,21 @@ $part_overrides = !empty($this->part_overrides) ? $this->part_overrides : array(
         <div class="bg-light p-3 mt-3">
           <h5 class="mb-2">Override per Unit Mesin</h5>
           <p class="small text-muted">Atur part yang tidak berlaku atau durasi khusus. Nilai kosong memakai durasi default part.</p>
+          <?php if ($fixed_inkjet_part) { ?><p class="small text-muted">Best Pack non-Inkjet selalu N/A untuk Print Head Inkjet berdasarkan aturan unit. Nama, deskripsi, dan baseline part tetap dapat diedit di atas.</p><?php } ?>
+          <?php if (!empty($editable_override_units)) { ?>
           <form method="post" action="<?php print_link("master_part/save_override/$rec_id?csrf_token=$csrf_token") ?>" class="row align-items-end">
-            <div class="col-md-4 form-group"><label>Unit Mesin</label><select required name="mesin_id" class="custom-select"><option value="">Pilih unit</option><?php foreach ($override_units as $unit) { ?><option value="<?php echo intval($unit['id']); ?>"><?php echo htmlspecialchars($unit['nama_mesin']); ?></option><?php } ?></select></div>
+            <div class="col-md-4 form-group"><label>Unit Mesin</label><select required name="mesin_id" class="custom-select"><option value="">Pilih unit</option><?php foreach ($editable_override_units as $unit) { ?><option value="<?php echo intval($unit['id']); ?>"><?php echo htmlspecialchars($unit['nama_mesin']); ?></option><?php } ?></select></div>
             <div class="col-md-4 form-group"><label>Status Part</label><select name="is_applicable" class="custom-select"><option value="1">Berlaku</option><option value="0">Tidak berlaku (N/A)</option></select></div>
             <div class="col-md-2 form-group"><label>Durasi Khusus</label><input type="text" name="durasi" class="form-control" maxlength="50" placeholder="Default"></div>
             <div class="col-md-2 form-group"><button type="submit" class="btn btn-primary btn-block">Simpan</button></div>
           </form>
+          <?php } ?>
           <?php if (!empty($part_overrides)) { ?>
           <div class="table-responsive"><table class="table table-sm table-bordered bg-white mb-0"><thead><tr><th>Unit</th><th>Status</th><th>Durasi</th><th style="width:90px">Aksi</th></tr></thead><tbody>
-          <?php foreach ($part_overrides as $override) { ?>
-            <tr><td><?php echo htmlspecialchars($override['nama_mesin']); ?></td><td><?php echo !empty($override['is_applicable']) && $override['is_applicable'] !== 'f' ? 'Berlaku' : 'N/A'; ?></td><td><?php echo $override['durasi'] !== null && $override['durasi'] !== '' ? htmlspecialchars($override['durasi']) : '<span class="text-muted">Default</span>'; ?></td><td><form method="post" action="<?php print_link("master_part/delete_override/$rec_id?csrf_token=$csrf_token") ?>"><input type="hidden" name="override_id" value="<?php echo intval($override['id']); ?>"><button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button></form></td></tr>
+          <?php foreach ($part_overrides as $override) {
+            $fixed_unit = $fixed_inkjet_part && strpos((string)$override['nama_mesin'], 'Best Pack (non Inkjet) - ') === 0;
+          ?>
+            <tr><td><?php echo htmlspecialchars($override['nama_mesin']); ?></td><td><?php echo $fixed_unit ? 'N/A (aturan unit)' : (!empty($override['is_applicable']) && $override['is_applicable'] !== 'f' ? 'Berlaku' : 'N/A'); ?></td><td><?php echo $fixed_unit ? '<span class="text-muted">Tidak dipakai</span>' : ($override['durasi'] !== null && $override['durasi'] !== '' ? htmlspecialchars($override['durasi']) : '<span class="text-muted">Default</span>'); ?></td><td><form method="post" action="<?php print_link("master_part/delete_override/$rec_id?csrf_token=$csrf_token") ?>"><input type="hidden" name="override_id" value="<?php echo intval($override['id']); ?>"><button type="submit" class="btn btn-sm btn-outline-danger" <?php echo $fixed_unit ? 'title="Hapus override tersimpan; aturan unit tetap N/A"' : ''; ?>>Hapus</button></form></td></tr>
           <?php } ?>
           </tbody></table></div>
           <?php } ?>
