@@ -483,10 +483,18 @@ class CheckSheetSpreadsheetExporter
         if (!file_exists($absPath)) return;
         try {
             $drawing = new Drawing();
-            $availableHeight = max(18, (($endRow - $startRow + 1) * self::ROW_DATA_HEIGHT) - 5);
+            $rowCount = $endRow - $startRow + 1;
+            $availableHeight = $rowCount > 1
+                ? \PhpOffice\PhpSpreadsheet\Shared\Drawing::pointsToPixels($rowCount * self::ROW_DATA_HEIGHT) - 4
+                : 18;
+            $availableWidth = \PhpOffice\PhpSpreadsheet\Shared\Drawing::cellDimensionToPixels(
+                $sheet->getColumnDimension('A')->getWidth(),
+                $sheet->getParent()->getDefaultStyle()->getFont()
+            ) - 6;
             $drawing->setName('Part_' . $startRow)->setDescription('Part photo')
                 ->setPath($absPath)->setCoordinates('A' . $startRow)
-                ->setOffsetX(3)->setOffsetY(2)->setHeight((int)min(38, $availableHeight))
+                ->setWidthAndHeight(max(1, $availableWidth), max(1, $availableHeight))
+                ->setOffsetX(3)->setOffsetY(2)
                 ->setWorksheet($sheet);
         } catch (\Throwable $e) { /* silently skip */ }
     }

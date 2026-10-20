@@ -338,10 +338,13 @@ if (!function_exists('get_period_image_src')) {
         $shifts = $part['shifts'] ?? array('1');
         if (empty($shifts)) { $shifts = array('1'); }
         $rowspan = count($shifts);
+        $photo_style = $rowspan > 1
+          ? 'display:block;width:auto;height:auto;max-width:100%;max-height:' . (($rowspan * ((int)$css_img_h + 3)) - 2) . 'px;'
+          : 'max-width:' . $css_img_w . ';max-height:' . $css_img_h . ';';
         foreach ($shifts as $s_idx => $curr_shift) { ?>
           <tr>
             <?php if ($s_idx === 0) { ?>
-              <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;"><?php if (!empty($part['image_path'])) { ?><img style="max-width:<?php echo $css_img_w; ?>;max-height:<?php echo $css_img_h; ?>;" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>"><?php } ?></td>
+              <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;"><?php if (!empty($part['image_path'])) { ?><img style="<?php echo $photo_style; ?>" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>"><?php } ?></td>
               <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td><td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td><td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
             <?php } ?>
             <td style="font-weight:bold;"><?php if (count($shifts) === 1) { echo htmlspecialchars($part['pelaksanaan']); } elseif ($s_idx === 0) { echo htmlspecialchars($part['pelaksanaan']); ?><br><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } else { ?><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } ?></td>
