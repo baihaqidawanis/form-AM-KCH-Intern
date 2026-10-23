@@ -52,9 +52,9 @@ class ACL
 			'users' => array('export_specimen'),
 		),
 
-		// 2 = Manager: akses Home, AM (view saja, tidak bisa tambah form), Approval, Panduan (URS 2.2 & 4.2)
+		// 2 = Manager: akses Home, AM (view dan approval, tidak bisa tambah form), Approval, Panduan (URS 2.2 & 4.2)
 		2 => array(
-			'master_mesin' => '*',
+			'approval' => array('list'),
 			'sig' => array('list', 'list2', 'view', 'daily_report', 'period_report'),
 			'joeya' => array('list', 'list2', 'view', 'daily_report', 'period_report'),
 			'illapak_1_2' => array('list', 'list2', 'view', 'daily_report', 'period_report'),

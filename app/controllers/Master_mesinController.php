@@ -3,7 +3,7 @@ class Master_mesinController extends SecureController
 {
 	private function allowed()
 	{
-		return in_array(intval(get_active_user('user_role_id')), array(1, 2, 3), true);
+		return in_array(intval(get_active_user('user_role_id')), array(1, 3), true);
 	}
 
 	/** Area mesin fisik belum tersimpan sebagai kolom; pakai aturan area yang sama dengan registrasi dan ACL. */

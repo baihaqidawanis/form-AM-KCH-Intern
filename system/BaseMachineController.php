@@ -583,6 +583,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		// Begitu sebuah mesin memakai shift, overview harus menjadi satu report
 		// harian seperti Illapak, bukan tiga form yang terpisah.
 		$data->uses_shift = $has_shift_history;
+		// Manager hanya review/approval; sembunyikan tombol Add New di semua overview mesin.
+		if (intval(get_active_user('user_role_id')) === 2) { $this->view->show_header = false; }
 		return $this->render_view($data->uses_shift ? 'machine_shift_list.php' : "$table/list2.php", $data);
 	}
 
