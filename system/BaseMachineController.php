@@ -697,6 +697,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 					$valid = false;
 				}
 			}
+			try { $this->nokMultiSelection($formdata, $field); }
+			catch (RuntimeException $e) { $this->view->page_error[] = $e->getMessage() . ' Part: ' . $label . '.'; $valid = false; }
 		}
 		return $valid;
 	}
@@ -834,17 +836,44 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		));
 	}
 
+	private function nokMultiSelection(array $formdata, $field): array
+	{
+		$correlations = json_decode((string)($formdata['korelasi_tags_' . $field] ?? ''), true);
+		if (!is_array($correlations) || !$correlations) $correlations = [$formdata['korelasi_tag_' . $field] ?? null];
+		$correlations = array_values(array_unique(array_map('intval', array_filter($correlations, 'is_numeric'))));
+		$categories = json_decode((string)($formdata['kategori_ketidaksesuaian_ids_' . $field] ?? ''), true);
+		if (!is_array($categories) || !$categories) $categories = [$formdata['kategori_ketidaksesuaian_' . $field] ?? null];
+		$categories = array_values(array_unique(array_map('intval', array_filter($categories, 'is_numeric'))));
+		if (!$correlations || array_diff($correlations, [1, 2, 3, 5])) throw new RuntimeException('Korelasi NOK tidak valid.');
+		if (in_array(5, $correlations, true) && count($correlations) > 1) throw new RuntimeException('Korelasi lama None tidak dapat digabung dengan korelasi lain.');
+		$categoryMap = [1 => [1, 2, 3, 4, 5], 2 => [6, 7], 3 => [8], 5 => [11]];
+		if ($correlations === [3]) $categories = [8];
+		elseif ($correlations === [5]) $categories = [11];
+		else $categories = array_values(array_diff($categories, [8, 11]));
+		$allowed = [];
+		foreach ($correlations as $correlation) {
+			if ($correlation === 3 || $correlation === 5) continue;
+			$allowed = array_merge($allowed, $categoryMap[$correlation]);
+			if (count(array_intersect($categories, $categoryMap[$correlation])) !== 1) throw new RuntimeException('Pilih tepat satu kategori ketidaksesuaian untuk setiap korelasi NOK.');
+		}
+		if (array_diff($categories, $allowed) && $correlations !== [3] && $correlations !== [5]) throw new RuntimeException('Kategori ketidaksesuaian tidak sesuai dengan korelasi NOK.');
+		return [$correlations, $categories];
+	}
+
 	private function nokDetailData(array $formdata, $field, $rec_id, $mesin_id)
 	{
+		[$correlations, $categories] = $this->nokMultiSelection($formdata, $field);
 		return array(
 			'id_am' => $rec_id,
 			'mesin' => $mesin_id,
 			'nama_bagian' => $field,
 			'kendala' => trim((string)$formdata['kendala_' . $field]),
 			'kategori_tag' => trim((string)$formdata['kategori_tag_' . $field]),
-			'korelasi_tag' => trim((string)$formdata['korelasi_tag_' . $field]),
+			'korelasi_tag' => $correlations[0],
+			'korelasi_tags' => json_encode($correlations),
 			'klasifikasi_tag' => trim((string)$formdata['klasifikasi_tag_' . $field]),
-			'kategori_ketidaksesuaian' => trim((string)$formdata['kategori_ketidaksesuaian_' . $field]),
+			'kategori_ketidaksesuaian' => $categories[0] ?? null,
+			'kategori_ketidaksesuaian_ids' => json_encode($categories),
 			'created_at' => datetime_now(),
 		) + ($this->preparedNokPhotos[$field] ?? array());
 	}
@@ -1048,7 +1077,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		if ($value) { $db->where($rec_id, urldecode($value)); } else { $db->where("$sql.$idcol", urldecode($rec_id)); }
 		$record = $db->join('mesin', "$sql.mesin = mesin.id", 'LEFT')->getOne($sql, $fields);
 		if ($record) {
-			$details = $db->rawQuery("SELECT k.*, t1.kategori_tag AS teks_kategori, t2.nama AS teks_korelasi, t3.nama AS teks_klasifikasi, t4.kategori AS teks_ketidaksesuaian FROM {$this->kendalaTable()} k LEFT JOIN tag t1 ON k.kategori_tag=t1.id LEFT JOIN korelasi t2 ON k.korelasi_tag=t2.id LEFT JOIN klasifikasi t3 ON k.klasifikasi_tag=t3.id LEFT JOIN kategori t4 ON k.kategori_ketidaksesuaian=t4.id WHERE k.id_am=?", array($record[$idcol]));
+			$details = $db->rawQuery("SELECT k.*, t1.kategori_tag AS teks_kategori, COALESCE((SELECT string_agg(c.nama, ', ' ORDER BY x.ord) FROM jsonb_array_elements_text(COALESCE(k.korelasi_tags, '[]'::jsonb)) WITH ORDINALITY AS x(id, ord) JOIN korelasi c ON c.id = x.id::integer), t2.nama) AS teks_korelasi, t3.nama AS teks_klasifikasi, COALESCE((SELECT string_agg(c.kategori, ', ' ORDER BY x.ord) FROM jsonb_array_elements_text(COALESCE(k.kategori_ketidaksesuaian_ids, '[]'::jsonb)) WITH ORDINALITY AS x(id, ord) JOIN kategori c ON c.id = x.id::integer), t4.kategori) AS teks_ketidaksesuaian FROM {$this->kendalaTable()} k LEFT JOIN tag t1 ON k.kategori_tag=t1.id LEFT JOIN korelasi t2 ON k.korelasi_tag=t2.id LEFT JOIN klasifikasi t3 ON k.klasifikasi_tag=t3.id LEFT JOIN kategori t4 ON k.kategori_ketidaksesuaian=t4.id WHERE k.id_am=?", array($record[$idcol]));
 			$record['abnormalitas'] = array(); foreach ($details as $detail) { $record['abnormalitas'][$detail['nama_bagian']] = $detail; }
 		} else { $this->set_page_error($db->getLastError() ?: 'No record found'); }
 		if (!$record) { $record = array(); }
@@ -2000,6 +2029,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$tag_type = ($tag === '1' || stripos($tag, 'red') !== false) ? 'RED'
 					: (($tag === '2' || stripos($tag, 'white') !== false) ? 'WHITE' : null);
 				if ($tag_type !== null) {
+					[$correlationIds, $categoryIds] = $this->nokMultiSelection($formdata, $field);
 					$correlation_raw = trim((string)($formdata['korelasi_tag_' . $field] ?? ''));
 					$correlation_map = array('1' => '5R', '2' => 'HSE', '3' => 'PRODUCTIVITY', '5' => 'MESIN');
 					$correlation = $correlation_map[$correlation_raw] ?? strtoupper($correlation_raw);
@@ -2037,6 +2067,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						'korelasi' => $correlation,
 						'kategori_masalah' => 'Abnormalitas Mesin',
 					);
+					if (count($correlationIds) > 1 || count($categoryIds) > 1) {
+						$correlationNames = [1 => '5R', 2 => 'HSE', 3 => 'PRODUCTIVITY', 5 => 'MESIN'];
+						$categoryNames = [1 => 'Ringkas', 2 => 'Rapih', 3 => 'Resik', 4 => 'Rawat', 5 => 'Rajin', 6 => 'Unsafe Action', 7 => 'Unsafe Condition'];
+						$payload['correlations'] = json_encode(array_values(array_map(static fn($id) => $correlationNames[$id], $correlationIds)));
+						$payload['nonconformity_categories'] = json_encode(array_values(array_map(static fn($id) => $categoryNames[$id], array_filter($categoryIds, static fn($id) => isset($categoryNames[$id])))));
+					}
 					$fingerprintData = $payload;
 					unset($fingerprintData['occurred_at']);
 					$photoFingerprint = $absolutePhoto !== null ? hash_file('sha256', $absolutePhoto) : 'photo-unavailable';

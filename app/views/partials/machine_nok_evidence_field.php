@@ -1,4 +1,12 @@
-<?php $existing_photo = $abn['foto_before'] ?? ''; ?>
+<?php
+$existing_photo = $abn['foto_before'] ?? '';
+$selected_correlations = json_decode((string)($abn['korelasi_tags'] ?? ''), true);
+if (!is_array($selected_correlations) || !$selected_correlations) $selected_correlations = array_filter([(int)($abn['korelasi_tag'] ?? 0)]);
+$selected_categories = json_decode((string)($abn['kategori_ketidaksesuaian_ids'] ?? ''), true);
+if (!is_array($selected_categories) || !$selected_categories) $selected_categories = array_filter([(int)($abn['kategori_ketidaksesuaian'] ?? 0)]);
+?>
+<input type="hidden" name="korelasi_tags_<?php echo htmlspecialchars($field); ?>" value="<?php echo htmlspecialchars(json_encode(array_values($selected_correlations))); ?>" class="nok-correlation-ids">
+<input type="hidden" name="kategori_ketidaksesuaian_ids_<?php echo htmlspecialchars($field); ?>" value="<?php echo htmlspecialchars(json_encode(array_values($selected_categories))); ?>" class="nok-category-ids">
 <div class="nok-photo-box mt-3" data-existing-photo="<?php echo $existing_photo ? '1' : '0'; ?>">
   <label class="font-weight-bold mb-1">Foto Before <span class="text-danger">*</span></label>
   <div class="small text-muted mb-2">Wajib untuk kondisi NOK. JPEG/PNG/WebP, maksimal 5 MB; sistem menyimpan JPEG terkompresi.</div>

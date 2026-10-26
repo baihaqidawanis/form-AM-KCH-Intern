@@ -454,6 +454,10 @@ label, .form-text, .text-muted, .form-group > label {
     color: var(--ak-muted) !important; 
 }
 
+.nok-photo-box > label:first-child {
+    color: #111 !important;
+}
+
 .form-control, .custom-select, select.form-control, select.custom-select {
     color: var(--ak-text);
     background-color: var(--ak-surface);

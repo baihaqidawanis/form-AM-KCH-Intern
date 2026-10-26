@@ -677,6 +677,7 @@
 			Html ::  page_js('dropzone.min.js');
 			Html ::  page_js('plugins.js'); //boostrapswitch, passwordStrength, twbs-pagination, blueimp-gallery,
 			Html ::  page_js('plugins-init.js');
+			Html ::  page_js('am-multi-nok.js');
 			Html ::  page_js('page-scripts.js');
 		?>
 	</body>
