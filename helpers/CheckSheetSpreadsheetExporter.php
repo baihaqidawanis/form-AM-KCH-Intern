@@ -261,7 +261,7 @@ class CheckSheetSpreadsheetExporter
                 if ($shiftOffset === 0) {
                     $sheet->setCellValue('A' . $row, '');
                     $sheet->setCellValue('B' . $row, (string)$number);
-                    $sheet->setCellValue('C' . $row, (string)($part['label']    ?? ''));
+                    $sheet->setCellValue('C' . $row, (string)($part['export_label'] ?? $part['label'] ?? ''));
                     $sheet->setCellValue('D' . $row, (string)($part['alat']     ?? ''));
                     $sheet->setCellValue('E' . $row, (string)($part['metode']   ?? ''));
                     $sheet->setCellValue('F' . $row, (string)($part['standard'] ?? ''));
@@ -277,7 +277,9 @@ class CheckSheetSpreadsheetExporter
                     $col = self::colLetter(8 + $dayOffset);
                     $schedule = $part['schedule_by_day'][$day] ?? null;
                     $isTakenOut = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
-                    if ($isTakenOut) {
+                    if (isset($part['other_version_shifts'][$day][(string)$shift])) {
+                        $sheet->setCellValue($col . $row, self::symbol('deactive'));
+                    } elseif ($isTakenOut) {
                         $sheet->setCellValue($col . $row, 'TO');
                         self::applyStyle($sheet, $col . $row, ['font' => ['bold' => true, 'size' => 7], 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFE9ECEF']], 'borders' => self::thinBorders()]);
                     } elseif (isset($d['deactivated_days'][$day])) {
@@ -292,7 +294,7 @@ class CheckSheetSpreadsheetExporter
                     } else {
                         $entries = $displayChecks[$field][$day] ?? [];
                         $value   = '';
-                        $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
+                        $notApplicable = isset($part['other_version_shifts'][$day][(string)$shift]) || (is_array($schedule) && !in_array((string)$shift, $schedule, true));
                         if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
                         $symbol = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'ON_PROCESS_RED_TAG' ? self::symbol('process') : ($value === 'OK' ? self::symbol('ok') : '')));
                         $isNok  = ($value === 'NOK');
@@ -359,7 +361,7 @@ class CheckSheetSpreadsheetExporter
 
         // Keterangan row
         $sheet->getRowDimension($row)->setRowHeight(18);
-        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin';
+        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin / shift belum berlaku / versi part tidak digunakan';
         $doc = 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1';
         $refCol = self::colLetter($totalCols - 4);
         $sheet->setCellValue('A' . $row, $ket);

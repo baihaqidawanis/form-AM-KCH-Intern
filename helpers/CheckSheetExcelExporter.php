@@ -101,7 +101,7 @@ class CheckSheetExcelExporter
                 if ($shiftOffset === 0) {
                     $values[0] = !empty($part['image_path']) ? '[Foto]' : '';
                     $values[1] = (string)$number;
-                    $values[2] = (string)($part['label'] ?? '');
+                    $values[2] = (string)($part['export_label'] ?? $part['label'] ?? '');
                     $values[3] = (string)($part['alat'] ?? '');
                     $values[4] = (string)($part['metode'] ?? '');
                     $values[5] = (string)($part['standard'] ?? '');
@@ -116,7 +116,9 @@ class CheckSheetExcelExporter
                     $col = 8 + $dayOffset;
                     $schedule = $part['schedule_by_day'][$day] ?? null;
                     $isTakenOut = !empty($part['taken_out_from_day']) && $day >= $part['taken_out_from_day'];
-                    if ($isTakenOut) {
+                    if (isset($part['other_version_shifts'][$day][(string)$shift])) {
+                        $values[$col] = self::symbol('deactive'); $styles[$col] = $center;
+                    } elseif ($isTakenOut) {
                         $values[$col] = 'TO';
                         $styles[$col] = $center;
                     } elseif (isset($d['deactivated_days'][$day])) {
@@ -125,7 +127,7 @@ class CheckSheetExcelExporter
                     } else {
                         $entries = $displayChecks[$field][$day] ?? array();
                         $value = '';
-                        $notApplicable = is_array($schedule) && !in_array((string)$shift, $schedule, true);
+                        $notApplicable = isset($part['other_version_shifts'][$day][(string)$shift]) || (is_array($schedule) && !in_array((string)$shift, $schedule, true));
                         if (!$notApplicable) { $value = $entries[(string)$shift] ?? ((string)$shift === '1' ? ($entries['__default__'] ?? '') : ''); }
                         $values[$col] = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'ON_PROCESS_RED_TAG' ? self::symbol('process') : ($value === 'OK' ? self::symbol('ok') : '')));
                         $styles[$col] = $center + ($value === 'NOK' ? array('font-style' => 'bold') : array());

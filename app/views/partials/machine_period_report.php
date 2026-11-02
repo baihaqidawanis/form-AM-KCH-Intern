@@ -62,9 +62,18 @@ if (!function_exists('get_period_image_src')) {
     function get_period_image_src($rel_path) {
         $full_path = ROOT . ltrim($rel_path, '/\\');
         if (!empty($rel_path) && file_exists($full_path)) {
-            $ext = pathinfo($full_path, PATHINFO_EXTENSION);
-            $mime = ($ext === 'jpg' || $ext === 'jpeg') ? 'image/jpeg' : 'image/png';
-            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($full_path));
+            $bytes = file_get_contents($full_path);
+            $info = @getimagesize($full_path);
+            $mime = $info['mime'] ?? 'image/png';
+            // PDF renderer supports JPEG/PNG; browser-uploaded WebP needs conversion.
+            if (!in_array($mime, array('image/jpeg', 'image/png', 'image/gif'), true) && function_exists('imagecreatefromstring')) {
+                $image = @imagecreatefromstring($bytes);
+                if ($image !== false) {
+                    ob_start(); imagepng($image); $bytes = ob_get_clean();
+                    imagedestroy($image); $mime = 'image/png';
+                }
+            }
+            return 'data:' . $mime . ';base64,' . base64_encode($bytes);
         }
         return print_link($rel_path);
     }
@@ -345,7 +354,7 @@ if (!function_exists('get_period_image_src')) {
           <tr>
             <?php if ($s_idx === 0) { ?>
               <td class="photo" rowspan="<?php echo $rowspan; ?>" style="text-align:center; height:<?php echo $css_img_h; ?>;"><?php if (!empty($part['image_path'])) { ?><img style="<?php echo $photo_style; ?>" src="<?php echo get_period_image_src($part['image_path']); ?>" alt="<?php echo htmlspecialchars($part['label']); ?>"><?php } ?></td>
-              <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td><td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['label']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td><td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
+              <td rowspan="<?php echo $rowspan; ?>" style="text-align:center; font-weight:bold;"><?php echo $number; ?></td><td rowspan="<?php echo $rowspan; ?>" style="font-weight:bold;"><?php echo htmlspecialchars($part['export_label'] ?? $part['label']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['alat']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['metode']); ?></td><td rowspan="<?php echo $rowspan; ?>"><?php echo htmlspecialchars($part['standard']); ?></td><td rowspan="<?php echo $rowspan; ?>" style="text-align:center; white-space:nowrap;"><?php echo htmlspecialchars($part['durasi']); ?></td>
             <?php } ?>
             <td style="font-weight:bold;"><?php if (count($shifts) === 1) { echo htmlspecialchars($part['pelaksanaan']); } elseif ($s_idx === 0) { echo htmlspecialchars($part['pelaksanaan']); ?><br><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } else { ?><small>Shift <?php echo htmlspecialchars($curr_shift); ?></small><?php } ?></td>
             <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
@@ -355,7 +364,8 @@ if (!function_exists('get_period_image_src')) {
                 if ($day >= intval($to_interval['from']) && (empty($to_interval['until']) || $day < intval($to_interval['until']))) { $is_to = true; break; }
               }
               $is_deactive = isset($d['deactivated_days'][$day]); $is_holiday = isset($d['holiday_days'][$day]); $cell_val = ''; $c = ''; $cell_style = $is_holiday ? 'background:#e2e3e5 !important; text-align:center;' : '';
-              if ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
+              if (isset($part['other_version_shifts'][$day][(string)$curr_shift])) { $cell_val = '&mdash;'; $c = 'mark-na'; }
+              elseif ($is_to) { $cell_val = 'TO'; $c = 'mark-to'; $cell_style = 'background:#e9ecef !important; text-align:center;'; }
               elseif ($is_deactive) { $cell_val = '&mdash;'; $c = 'mark-deactive'; $cell_style = 'background:#fff3cd !important; text-align:center;'; }
               elseif (isset($part['override_shifts'][$day][(string)$curr_shift])) { $cell_val = 'OVR'; $c = 'mark-ovr'; $cell_style = 'background:#eef2ff !important; text-align:center;'; }
               elseif (is_array($schedule) && !in_array((string)$curr_shift, $schedule, true)) { $cell_val = '&mdash;'; $c = 'mark-na'; }
@@ -387,7 +397,7 @@ if (!function_exists('get_period_image_src')) {
     </table>
     <table style="width:100%; margin-top:2px; border:none;">
       <tr>
-        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process RTWT Mesin &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#eef2ff; color:#334d8f; padding:0 3px; font-weight:bold;">OVR: Override unit</span> &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku</td>
+        <td style="border:none; text-align:left; font-size:6.8px; padding:0;"><strong>Keterangan:</strong> (&radic;) OK &nbsp;|&nbsp; (&times;) NOK &nbsp;|&nbsp; (&bull;) On Process RTWT Mesin &nbsp;|&nbsp; N/A: Tidak berlaku &nbsp;|&nbsp; <span style="background:#eef2ff; color:#334d8f; padding:0 3px; font-weight:bold;">OVR: Override unit</span> &nbsp;|&nbsp; <span style="background:#e9ecef; color:#495057; padding:0 3px; font-weight:bold;">TO: Part Taken Out</span> &nbsp;|&nbsp; <span style="background:#fff3cd; color:#856404; padding:0 3px; font-weight:bold;">(&mdash;) Deaktivasi Mesin</span> &nbsp;|&nbsp; <span style="background:#e2e3e5; padding:0 3px; font-weight:bold;">OFF: Holiday/Off (tetap dapat diisi)</span> &nbsp;|&nbsp; (&mdash;) Shift belum berlaku / versi part tidak digunakan</td>
         <td style="border:none; text-align:right; font-size:6.8px; padding:0;">CR-PR-PR-1203.00 (26 Jan 2026)<br>Halaman : 1/1</td>
       </tr>
       <tr>

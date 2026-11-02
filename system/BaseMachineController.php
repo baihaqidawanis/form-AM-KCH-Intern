@@ -1724,6 +1724,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$raw_schedule = array_filter(array_map('trim', explode(',', (string)($part['shift_schedule'] ?? '1'))));
 				$schedule = array_values(array_intersect($raw_schedule, array('1', '2', '3'))) ?: array('1');
 				$parts[$key]['active_days'][$day] = true;
+				$parts[$key]['version_shifts'][$day][$shift] = true;
 				$is_applicable = !isset($part['is_applicable']) || in_array($part['is_applicable'], array(true, 1, '1', 't', 'true'), true);
 				if ($is_applicable || !empty($row[$field])) { $applicable_fields[$field] = true; }
 				if (empty($row[$field]) && !$is_applicable) {
@@ -1762,6 +1763,29 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				$parts[$key]['taken_out_intervals'][] = array('from' => $to_day, 'until' => $until_day);
 			}
 		}
+		// Keep versions adjacent and mark only dates/shifts with another saved version.
+		$versions = array();
+		foreach ($parts as $key => $part) { $versions[$part['field_name']][] = $key; }
+		$ordered = array();
+		foreach ($versions as $keys) {
+			foreach ($keys as $index => $key) {
+				if (count($keys) > 1) {
+					$parts[$key]['export_label'] = $parts[$key]['label'] . ' (Versi ' . ($index + 1) . ')';
+					foreach ($keys as $other) {
+						if ($other === $key) { continue; }
+						foreach ($parts[$other]['version_shifts'] as $day => $used_shifts) {
+							foreach (array_keys($used_shifts) as $scheduled_shift) {
+								if (!isset($parts[$key]['version_shifts'][$day][$scheduled_shift])) {
+									$parts[$key]['other_version_shifts'][$day][$scheduled_shift] = true;
+								}
+							}
+						}
+					}
+				}
+				$ordered[$key] = $parts[$key];
+			}
+		}
+		$parts = $ordered;
 		foreach ($parts as &$part) { $part['shifts'] = array_keys($part['shifts']); sort($part['shifts'], SORT_NUMERIC); }
 		unset($part);
 		// Override sejak awal periode tidak perlu baris kosong berisi OVR saja.
