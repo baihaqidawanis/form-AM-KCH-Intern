@@ -2,12 +2,12 @@ RewriteEngine on
 # Protect secrets and repository metadata from direct HTTP access.
 RewriteRule (^|/)\. - [F,L]
 RewriteRule (^|/)(composer\.(json|lock)|config\.php)$ - [F,L,NC]
-RewriteRule ^(database|tests|system|helpers|libs|vendor|app)(/|$) - [F,L,NC]
+RewriteRule ^(database|tests|system|helpers|libs|vendor|app|deploy)(/|$) - [F,L,NC]
 RewriteRule \.(?:log|sql|dump|bak|backup|old|orig|sqlite|sqlite3|ini)$ - [F,L,NC]
 <IfModule mod_headers.c>
     # Apply a baseline policy without restricting existing scripts, photos, or camera.
-    Header onsuccess unset Content-Security-Policy
-    Header always set Content-Security-Policy "base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'"
+    # PHP supplies per-document script nonces. Static/error responses get no scripts.
+    Header setifempty Content-Security-Policy "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
     Header onsuccess unset X-Powered-By
     Header always unset X-Powered-By
     Header always set X-Content-Type-Options "nosniff"

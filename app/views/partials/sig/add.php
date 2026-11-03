@@ -82,7 +82,7 @@ $page_element_id = 'sig-add-' . random_str();
             </div>
           <?php } ?>
           <form id="sig-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("sig/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
+            action="<?php print_link("sig/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select
                 required id="ctrl-mesin" name="mesin" class="custom-select">
                 <option value="" disabled selected>Pilih nama mesin ...</option>
@@ -211,7 +211,7 @@ $page_element_id = 'sig-add-' . random_str();
     </div>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   $('.part-kondisi').on('change', function () {
     var card = $(this).closest('.part-card'),

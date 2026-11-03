@@ -31,7 +31,7 @@ $selected_shifts = array_filter(array_map('trim', explode(',', $old('shift_sched
           <i class="fa fa-info-circle"></i> Nambah part di sini <strong>otomatis bikin kolom baru</strong> di tabel database mesin terkait (kalau Field Name-nya belum ada) -- part langsung muncul di form Add AM begitu disimpan. Field Name gak bisa diubah lagi setelah dibuat (identitas part), jadi pastikan sudah benar sebelum Simpan.
         </div>
         <div class="bg-light p-3">
-          <form class="form needs-validation" novalidate action="<?php print_link("master_part/add/$preselect_machine?csrf_token=$csrf_token") ?>" method="post">
+          <form class="form needs-validation" novalidate action="<?php print_link("master_part/add/$preselect_machine?csrf_token=$csrf_token") ?>" method="post"><?php Html::csrf_token(); ?>
             <div class="form-group">
               <label>Mesin <span class="text-danger">*</span></label>
               <select required name="machine_key" id="ctrl-machine-key" class="custom-select">
@@ -120,7 +120,7 @@ $selected_shifts = array_filter(array_map('trim', explode(',', $old('shift_sched
     </div>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   var sectionsByMachine = <?php echo json_encode($sections_by_machine); ?>;
   var $machineSelect = $('#ctrl-machine-key');

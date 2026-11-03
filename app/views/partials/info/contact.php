@@ -9,7 +9,7 @@
 					<?php $this::display_page_errors(); ?>
 					<h4>Share Info With Us Via Email</h4>
 					<hr />
-					<form method="post" action="<?php print_link("info/contact"); ?>">
+					<form method="post" action="<?php print_link("info/contact"); ?>"><?php Html::csrf_token(); ?>
 						<div class="form-group">
 							<input type="text" class="form-control" required id="name" name="name" placeholder="Enter Your name *">
 						</div>

@@ -25,7 +25,7 @@ $comp_model = new SharedController;
 
                     <!-- Login Form -->
                     <form name="loginForm" action="<?php print_link('index/login/?csrf_token=' . Csrf::$token); ?>"
-                        class="needs-validation form page-form" method="post" autocomplete="on">
+                        class="needs-validation form page-form" method="post" autocomplete="on"><?php Html::csrf_token(); ?>
 
                         <!-- NIK Input -->
                         <div class="form-group am-field-group">
@@ -490,7 +490,7 @@ $comp_model = new SharedController;
     }
 </style>
 
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
     // Lightweight Pure JS Slideshow with Smooth Crossfade
     (function () {
         function initAmSlideshow() {

@@ -301,7 +301,7 @@ class BaseView
 				// Auto-trigger the browser's print dialog on load so the user
 				// doesn't need to manually right-click / press Ctrl+P.
 				// From the print dialog the user can choose "Save as PDF".
-				$print_script = '<script>window.addEventListener("load", function () { window.print(); });</script>';
+				$print_script = '<script nonce="' . SecurityHeaders::nonce() . '">window.addEventListener("load", function () { window.print(); });</script>';
 				if (stripos($report_body, '</body>') !== false) {
 					$report_body = str_ireplace('</body>', $print_script . '</body>', $report_body);
 				} else {

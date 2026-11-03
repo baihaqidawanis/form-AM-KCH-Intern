@@ -38,7 +38,7 @@ if (!empty($header_pict)) {
                     </a>
                     <ul class="dropdown-menu">
                         <a class="dropdown-item" href="<?php print_link('account') ?>"><i class="fa fa-user"></i> My Account</a>
-                        <a class="dropdown-item" href="<?php print_link('index/logout?csrf_token=' . Csrf::$token) ?>"><i class="fa fa-sign-out"></i> Logout</a>
+                        <a data-csrf-action="post" class="dropdown-item" href="<?php print_link('index/logout?csrf_token=' . Csrf::$token) ?>"><i class="fa fa-sign-out"></i> Logout</a>
                     </ul>
                 </li>
             </ul>

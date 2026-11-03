@@ -2,6 +2,8 @@
 <html>
 
 <head>
+<meta name="csrf-token" content="<?php echo htmlspecialchars(Csrf::$token, ENT_QUOTES, 'UTF-8'); ?>">
+<meta name="csp-nonce" content="<?php echo SecurityHeaders::nonce(); ?>">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<title><?php echo $this->report_title; ?></title>
 	<style>
@@ -236,6 +238,7 @@
 			border: 0;
 		}
 	</style>
+<?php Html::page_js('security-transport.js'); ?>
 </head>
 
 <body>
@@ -260,7 +263,7 @@
 	<?php 
 		if($this->force_print){
 			?>
-			<script>
+			<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 				window.print();
 			</script>
 			<?php

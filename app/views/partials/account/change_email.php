@@ -3,7 +3,7 @@
 	<hr />
 	<div class="row">
 		<div class="col-sm-8">
-			<form name="loginForm" action="<?php print_link('account/change_email?csrf_token=' . Csrf :: $token); ?>" method="post">
+			<form name="loginForm" action="<?php print_link('account/change_email?csrf_token=' . Csrf :: $token); ?>" method="post"><?php Html::csrf_token(); ?>
 				<?php $this :: display_page_errors(); ?>
 				<div class="row">
 					<div  class="col-9">

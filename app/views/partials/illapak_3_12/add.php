@@ -82,7 +82,7 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
             <a class="btn btn-sm btn-outline-primary" href="<?php print_link('illapak_3_12/add'); ?>">Ganti shift</a>
           </div>
           <form id="illapak_3_12-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("illapak_3_12/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
+            action="<?php print_link("illapak_3_12/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?>
             <input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>">
             <div class="form-group"><label for="ctrl-mesin">Mesin <span class="text-danger">*</span></label><select required
                 id="ctrl-mesin" name="mesin" class="custom-select">
@@ -210,7 +210,7 @@ $page_element_id = 'illapak_3_12-add-' . random_str();
     </div>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   $('.part-kondisi').on('change', function () {
     var card = $(this).closest('.part-card'),

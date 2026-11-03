@@ -169,7 +169,7 @@ $(document).on('click', '.btn-delete-selected', function(e){
 		url = url.replace("{sel_ids}",sel_ids);
 		if(displayStyle == 'confirm'){
 			if(confirm(recordDeleteMsg)){
-				window.location = url;
+				window.submitCsrfAction(url);
 			}
 			else{
 				e.preventDefault();
@@ -184,7 +184,7 @@ $(document).on('click', '.btn-delete-selected', function(e){
 			e.preventDefault();
 		}
 		else{
-			window.location = url;
+			window.submitCsrfAction(url);
 		}
 	}
 	else{
@@ -220,13 +220,13 @@ $(document).on('click', '.record-delete-btn', function(e){
 $(document).on( "click", "#delete-record-modal-btn", function(e) {
 	var ajaxpage = $(this).data('ajax-page');
 	//if ajaxpage is present then delete using ajax else continue with delete navigation
-	if(ajaxpage.length){
+	if(ajaxpage && ajaxpage.length){
 		e.preventDefault();
 		var deleteUrl = $(this).attr('href');
 		$('#delete-record-modal-msg').html(inlineLoadingIndicator);
 		$.ajax({
 			url: deleteUrl,
-			type: "get",
+			type: "post",
 			success: function(msg) {
 				showToastSuccess(msg);
 				var pageUrl = ajaxpage.data("page-url");
@@ -486,7 +486,7 @@ $(document).on('submit', '#main-page-modal form.page-form', function(e){
 				savingIndicator.hide();
 				showToastSuccess(msg);
 				var ajaxpage = formElem.closest('.modal').data('ajax-page');
-				if(ajaxpage.length){
+				if(ajaxpage && ajaxpage.length){
 					var pageUrl = ajaxpage.data("page-url");
 					loadPageData(ajaxpage, pageUrl);
 					$('#main-page-modal').modal('hide');

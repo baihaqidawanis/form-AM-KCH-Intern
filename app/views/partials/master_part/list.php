@@ -102,7 +102,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
                     <a class="btn btn-sm btn-outline-primary py-1 px-2" href="<?php print_link('master_part/edit/' . $r['id']) ?>" title="Edit Part"><i class="fa fa-edit"></i></a>
   <?php if (empty($r['taken_out_at'])) { ?><a class="btn btn-sm btn-outline-warning py-1 px-2" href="<?php print_link('master_part/takeout/' . $r['id']); ?>" title="Takeout part tanpa menghapus riwayat"><i class="fa fa-sign-out"></i></a><?php } else { ?>
     <span class="badge badge-secondary" title="Di-takeout <?php echo htmlspecialchars($r['taken_out_at']); ?><?php echo !empty($r['takeout_reason']) ? ': ' . htmlspecialchars($r['takeout_reason']) : ''; ?>">Taken out</span>
-    <a class="btn btn-sm btn-outline-success py-1 px-2"
+    <a data-csrf-action="post" class="btn btn-sm btn-outline-success py-1 px-2"
       href="<?php print_link('master_part/reactivate/' . $r['id'] . '?csrf_token=' . Csrf::$token); ?>"
       onclick="return confirm('Aktifkan kembali part ini agar muncul di form AM baru?');"
       title="Aktifkan kembali part ke form AM">
@@ -150,7 +150,7 @@ $selected_label = isset($machine_keys[$selected_machine]) ? $machine_keys[$selec
     display: inline-block;
   }
 </style>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 (function () {
   // Drag-and-drop urutan part -- pakai HTML5 Drag & Drop API bawaan browser,
   // sengaja TANPA jQuery UI/library tambahan (project ini gak punya bundler &

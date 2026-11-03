@@ -251,8 +251,8 @@ $visible_groups = array_filter($machine_groups, function($machines){
     </div>
 </section>
 
-<?php Html::page_js('chartjs-2.3.0.js'); ?>
-<script>
+<?php Html::page_js('chartjs-2.9.4.min.js'); ?>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 (function(){
     var canvas = document.getElementById('amNokTrendChart');
     if (!canvas || typeof Chart === 'undefined') { return; }

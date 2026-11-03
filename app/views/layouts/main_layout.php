@@ -9,6 +9,8 @@
 <!DOCTYPE html>
 <html>
 	<head>
+<meta name="csrf-token" content="<?php echo htmlspecialchars(Csrf::$token, ENT_QUOTES, 'UTF-8'); ?>">
+<meta name="csp-nonce" content="<?php echo SecurityHeaders::nonce(); ?>">
 		<title><?php echo $page_title; ?></title>
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
@@ -32,7 +34,8 @@
 			Html ::  page_css('flatpickr.min.css');
 			Html ::  page_css('bootstrap-editable.css');
 			Html ::  page_css('dropzone.min.css');
-			Html ::  page_js('jquery-3.3.1.min.js');
+			Html ::  page_js('jquery-3.7.1.min.js');
+	Html::page_js('security-transport.js');
 		?>
 	</head>
 	<?php 
@@ -161,7 +164,7 @@
 				</template>
 			</div>
 		</div>
-		<script>
+		<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 			var siteAddr = '<?php echo SITE_ADDR; ?>';
 			var defaultPageLimit = <?php echo MAX_RECORD_COUNT; ?>;
 			var csrfToken = '<?php echo Csrf :: $token; ?>';

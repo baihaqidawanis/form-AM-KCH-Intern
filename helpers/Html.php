@@ -39,7 +39,7 @@ class Html
 	public static function page_js($arg)
 	{
 	?>
-		<script type="text/javascript" src="<?php print_link(JS_DIR . $arg . self::asset_version('js/' . $arg)); ?>"></script>
+		<script nonce="<?php echo SecurityHeaders::nonce(); ?>" type="text/javascript" src="<?php print_link(JS_DIR . $arg . self::asset_version('js/' . $arg)); ?>"></script>
 		<?php
 	}
 
@@ -535,7 +535,7 @@ class Html
 			<?php
 			} else {
 			?>
-				<script>
+				<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 					$(document).ready(function() {
 						<?php
 						foreach ($formerror as $key => $value) {

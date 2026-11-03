@@ -443,7 +443,7 @@ if (!function_exists('get_period_image_src')) {
     </div></div>
   </div>
 
-  <script>
+  <script nonce="<?php echo SecurityHeaders::nonce(); ?>">
   document.addEventListener('DOMContentLoaded', function() {
     var pendingSignButton = null;
     var pendingRoleType = null;

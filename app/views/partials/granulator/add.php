@@ -58,7 +58,7 @@ $mesin_id = $master_db->GetModel()->where('nama_mesin', 'Granulator')->getValue(
 <div class="alert alert-info"><strong>Pilih Shift Pemeriksaan</strong><div class="form-inline mt-2"><select id="shift-selector" class="custom-select mr-2"><option value="">Pilih shift ...</option><?php foreach (($this->configured_shifts ?? array('1')) as $shift_option) { ?><option value="<?php echo $shift_option; ?>">Shift <?php echo $shift_option; ?></option><?php } ?></select><button type="button" class="btn btn-primary" onclick="var s=document.getElementById('shift-selector').value;if(s){window.location.href=window.location.pathname+'?shift='+s;}">Tampilkan Checklist</button></div></div>
 <?php } ?>
           <form id="granulator-add-form" class="form page-form needs-validation" novalidate
-            action="<?php print_link("granulator/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
+            action="<?php print_link("granulator/add?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?><?php if (!empty($is_shift_form) && !empty($selected_shift)) { ?><input type="hidden" name="shift" value="<?php echo htmlspecialchars($selected_shift); ?>"><?php } ?>
             <input type="hidden" name="mesin" value="<?php echo $mesin_id; ?>">
 
             <?php foreach ($sections as $section_title => $section_fields) {
@@ -168,7 +168,7 @@ $mesin_id = $master_db->GetModel()->where('nama_mesin', 'Granulator')->getValue(
     </div>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   $('.part-kondisi').on('change', function () {
     var card = $(this).closest('.part-card'),

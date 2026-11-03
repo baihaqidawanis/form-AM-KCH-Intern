@@ -108,7 +108,7 @@ $csrf_token = Csrf::$token;
       <a class="btn btn-sm btn-outline-primary mb-3" href="<?php print_link('part_override?' . http_build_query(array('machine_key' => $machine_key, 'search' => $search))); ?>">&larr; Kembali ke daftar part</a>
       <h5 class="mb-1"><?php echo htmlspecialchars($selected_part['label']); ?> &mdash; Status per Unit</h5>
       <p class="small text-muted mb-3">Baseline master: berlaku, durasi <?php echo htmlspecialchars($selected_part['durasi'] ?? '-'); ?>. <?php if ($machine_key === 'best_pack' && $selected_part['field_name'] === 'print_head_inkjet') { ?>Unit non-Inkjet memiliki pengecualian tetap untuk part ini.<?php } ?> Ubah beberapa unit sekaligus, lalu klik Simpan Perubahan sekali. Tombol Kembali ke baseline juga baru berlaku setelah disimpan.</p>
-      <form id="bulk-part-override-form" method="post" action="<?php print_link('part_override/save_bulk?csrf_token=' . $csrf_token); ?>">
+      <form id="bulk-part-override-form" method="post" action="<?php print_link('part_override/save_bulk?csrf_token=' . $csrf_token); ?>"><?php Html::csrf_token(); ?>
         <input type="hidden" name="master_part_id" value="<?php echo intval($selected_part['id']); ?>">
         <input type="hidden" name="machine_key" value="<?php echo htmlspecialchars($machine_key); ?>">
       </form>
@@ -177,7 +177,7 @@ $csrf_token = Csrf::$token;
               <td colspan="3"><span class="badge badge-secondary">Tidak berlaku</span> <span class="small text-muted">Aturan unit non-Inkjet; tidak dapat diubah melalui override.</span></td>
               <?php } else { ?>
               <td colspan="3" class="p-2">
-                <form method="post" action="<?php print_link('part_override/save?csrf_token=' . $csrf_token); ?>" class="form-row align-items-center m-0">
+                <form method="post" action="<?php print_link('part_override/save?csrf_token=' . $csrf_token); ?>" class="form-row align-items-center m-0"><?php Html::csrf_token(); ?>
                   <input type="hidden" name="master_part_id" value="<?php echo intval($part['id']); ?>">
                   <input type="hidden" name="machine_key" value="<?php echo htmlspecialchars($machine_key); ?>">
                   <input type="hidden" name="mesin_id" value="<?php echo $mesin_id; ?>">
@@ -186,7 +186,7 @@ $csrf_token = Csrf::$token;
                   <div class="col-md-4 px-1 text-nowrap"><button type="submit" class="btn btn-sm btn-primary">Simpan</button></div>
                 </form>
                 <?php if ($has_override) { ?>
-                  <form method="post" action="<?php print_link('part_override/delete?csrf_token=' . $csrf_token); ?>" class="d-inline-block mt-1">
+                  <form method="post" action="<?php print_link('part_override/delete?csrf_token=' . $csrf_token); ?>" class="d-inline-block mt-1"><?php Html::csrf_token(); ?>
                     <input type="hidden" name="override_id" value="<?php echo intval($part['override_id']); ?>">
                     <input type="hidden" name="machine_key" value="<?php echo htmlspecialchars($machine_key); ?>">
                     <input type="hidden" name="mesin_id" value="<?php echo $mesin_id; ?>">
@@ -205,7 +205,7 @@ $csrf_token = Csrf::$token;
   </div>
 </section>
 <?php if ($view_mode === 'part' && $selected_part) { ?>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   var $feedback = $('#bulk-override-feedback');
   function showFeedback(message, level) {
@@ -250,7 +250,7 @@ $(function () {
 </script>
 <?php } ?>
 <?php if ($view_mode === 'unit') { ?>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   var unitsByModule = <?php echo json_encode($units_by_module, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
   var $module = $('#override-machine-key');

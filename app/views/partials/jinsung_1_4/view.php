@@ -74,7 +74,7 @@ $current_page = $this->set_current_page_link();
             </a>
           <?php } ?>
           <?php if ($can_delete) { ?>
-            <a class="btn btn-sm btn-danger record-delete-btn mx-1"
+            <a data-csrf-action="post" class="btn btn-sm btn-danger record-delete-btn mx-1"
               href="<?php print_link("jinsung_1_4/delete/$rec_id/?csrf_token=$csrf_token&redirect=$current_page"); ?>"
               data-prompt-msg="Are you sure you want to delete this record?" data-display-style="none">
               <i class="fa fa-times"></i> Delete

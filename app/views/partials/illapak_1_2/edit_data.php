@@ -38,7 +38,7 @@ $rec_id = !empty($data['id_illapak_1_2']) ? $data['id_illapak_1_2'] : null;
         <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="illapak_1_2-edit-data-form" class="form page-form needs-validation"
-        action="<?php print_link("illapak_1_2/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
+        action="<?php print_link("illapak_1_2/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?>
         <?php if (!empty($data['shift'])) { ?>
           <input type="hidden" name="shift" value="<?php echo htmlspecialchars($data['shift']); ?>">
         <?php } ?>
@@ -151,7 +151,7 @@ $rec_id = !empty($data['id_illapak_1_2']) ? $data['id_illapak_1_2'] : null;
     <?php } ?>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   function toggleKendala(card) {
     var box = card.find('.kendala-box'),

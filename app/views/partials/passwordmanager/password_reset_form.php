@@ -4,7 +4,7 @@
 	<div class="row">
 		<div class="col-sm-6">
 			<?php $page_link = $this->set_current_page_link(); ?>
-			<form method="post" action="<?php print_link($page_link); ?>">
+			<form method="post" action="<?php print_link($page_link); ?>"><?php Html::csrf_token(); ?>
 				<?php Html::csrf_token(); ?><input type="hidden" name="key" value="<?php echo htmlspecialchars($this->view_data['key'] ?? get_value('key'), ENT_QUOTES, 'UTF-8'); ?>">
 				<?php 
 					$this :: display_page_errors();			
@@ -33,7 +33,7 @@
 		</div>
 	</div>
 </div>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 function togglePassVisibility(inputId, btn) {
 	var input = document.getElementById(inputId);
 	if (!input) return;

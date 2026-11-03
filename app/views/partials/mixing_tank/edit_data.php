@@ -38,7 +38,7 @@ $rec_id = !empty($data['id_mixing_tank']) ? $data['id_mixing_tank'] : null;
         <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="mixing_tank-edit-data-form" class="form page-form needs-validation" novalidate
-        action="<?php print_link("mixing_tank/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
+        action="<?php print_link("mixing_tank/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?>
         <?php if (!empty($data['shift'])) { ?>
           <input type="hidden" name="shift" value="<?php echo htmlspecialchars($data['shift']); ?>">
         <?php } ?>
@@ -151,7 +151,7 @@ $rec_id = !empty($data['id_mixing_tank']) ? $data['id_mixing_tank'] : null;
     <?php } ?>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   function toggleKendala(card) {
     var box = card.find('.kendala-box'),

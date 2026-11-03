@@ -97,7 +97,8 @@
 
 	$lang = new Lang;// Initialize language class and load default language phrases
 	$csrf = new Csrf;// Initialize Csrf class and generate new application token
-	$csrf_token = $csrf::$token; 
+	$csrf_token = $csrf::$token;
+	SecurityHeaders::send();
 	
 
 	// Application Core Files

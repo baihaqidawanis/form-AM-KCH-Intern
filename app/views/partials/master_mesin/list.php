@@ -85,7 +85,7 @@ $csrf_token = Csrf::$token;
                                     </td>
                                     <td class="text-center align-middle">
                                         <?php if ($is_deactive) { ?>
-                                            <form method="post" action="<?php print_link("master_mesin/reactivate?csrf_token=$csrf_token"); ?>" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengaktifkan kembali mesin ini?');">
+                                            <form method="post" action="<?php print_link("master_mesin/reactivate?csrf_token=$csrf_token"); ?>" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin mengaktifkan kembali mesin ini?');"><?php Html::csrf_token(); ?>
                                                 <input type="hidden" name="mesin_id" value="<?php echo $row['id']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-success px-3" style="background: #009639; border-color: #009639; border-radius: 8px; font-weight: 600;">
                                                     <i class="fa fa-play mr-1"></i> Re-Aktivasi
@@ -112,7 +112,7 @@ $csrf_token = Csrf::$token;
 <div class="modal fade" id="modalDeactivate" tabindex="-1" role="dialog" aria-labelledby="modalDeactivateLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content" style="border-radius: 16px; overflow: hidden; border: none; box-shadow: 0 16px 40px rgba(0,0,0,0.12);">
-            <form method="post" action="<?php print_link("master_mesin/deactivate?csrf_token=$csrf_token"); ?>" class="needs-validation" novalidate>
+            <form method="post" action="<?php print_link("master_mesin/deactivate?csrf_token=$csrf_token"); ?>" class="needs-validation" novalidate><?php Html::csrf_token(); ?>
                 <input type="hidden" name="mesin_id" id="deactivate-mesin-id" value="">
                 <div class="modal-header" style="background: #FFF4E5; border-bottom: 1px solid #FFE0B2; color: #9A3412;">
                     <h5 class="modal-title font-weight-bold" id="modalDeactivateLabel">
@@ -161,7 +161,7 @@ $csrf_token = Csrf::$token;
     </div>
 </div>
 
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 document.addEventListener('DOMContentLoaded', function() {
     var buttons = document.querySelectorAll('.btn-deactivate');
     var reasonSelect = document.getElementById('deactivate-reason');

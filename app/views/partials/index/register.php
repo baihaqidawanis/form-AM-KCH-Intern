@@ -35,7 +35,7 @@ $redirect_to = $this->redirect_to;
                 <div class="col-md-7 comp-grid">
                     <?php $this :: display_page_errors(); ?>
                     <div  class="bg-light p-3 animated fadeIn page-content">
-                        <form id="users-userregister-form" role="form" novalidate enctype="multipart/form-data" class="form page-form form-horizontal needs-validation" action="<?php print_link("index/register?csrf_token=$csrf_token") ?>" method="post">
+                        <form id="users-userregister-form" role="form" novalidate enctype="multipart/form-data" class="form page-form form-horizontal needs-validation" action="<?php print_link("index/register?csrf_token=$csrf_token") ?>" method="post"><?php Html::csrf_token(); ?>
                             <!--[main-form-start]-->
                             <div>
                                 <div class="form-group ">

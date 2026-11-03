@@ -937,6 +937,9 @@ function get_link($link = "")
 
 function print_link($link = "")
 {
+    $link = preg_replace('/([?&])csrf_token=[^&#]*&?/', '$1', $link);
+    $link = rtrim(str_replace('?&', '?', $link), '?&');
+
 	
 	//check if is a valid Link
 	if (filter_var($link, FILTER_VALIDATE_URL) !== FALSE) {

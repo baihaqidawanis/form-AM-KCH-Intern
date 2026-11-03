@@ -61,7 +61,7 @@ $has_valid_paraf = is_valid_base64_png_data_uri($paraf_image);
     </div>
 </div>
 
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 document.addEventListener('DOMContentLoaded', function() {
     var canvas = document.getElementById('paraf-canvas');
     if (!canvas) return;

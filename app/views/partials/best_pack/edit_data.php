@@ -37,7 +37,7 @@ $rec_id = !empty($data['id_best_pack']) ? $data['id_best_pack'] : null;
         <tr><th>Dibuat</th><td><?php echo format_am_date($data["created_at"]); ?> oleh <?php echo $data['user_create']; ?></td></tr>
       </table>
       <form id="best_pack-edit-data-form" class="form page-form needs-validation" novalidate
-        action="<?php print_link("best_pack/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data">
+        action="<?php print_link("best_pack/edit_data/$rec_id?csrf_token=$csrf_token") ?>" method="post" enctype="multipart/form-data"><?php Html::csrf_token(); ?>
         <?php if (!empty($data['shift'])) { ?>
           <input type="hidden" name="shift" value="<?php echo htmlspecialchars($data['shift']); ?>">
         <?php } ?>
@@ -150,7 +150,7 @@ $rec_id = !empty($data['id_best_pack']) ? $data['id_best_pack'] : null;
     <?php } ?>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   function toggleKendala(card) {
     var box = card.find('.kendala-box'),

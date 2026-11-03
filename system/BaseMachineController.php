@@ -518,7 +518,7 @@ abstract class BaseMachineController extends SecureController
 		// Kontrol UI ini hanya pelengkap; otorisasi penghapusan tetap diverifikasi
 		// ulang di delete(), sehingga URL tidak bisa dipakai oleh role lain.
 		$data->can_delete_reports = intval(get_active_user('user_role_id')) === 1;
-		$data->bulk_delete_url = SITE_ADDR . $this->machineKey . '/delete/{sel_ids}/?csrf_token=' . urlencode(Csrf::$token);
+		$data->bulk_delete_url = SITE_ADDR . $this->machineKey . '/delete/{sel_ids}/';
 		return $data;
 	}
 

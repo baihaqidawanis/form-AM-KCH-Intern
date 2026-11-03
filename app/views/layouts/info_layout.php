@@ -2,6 +2,8 @@
 <html>
 
 <head>
+<meta name="csrf-token" content="<?php echo htmlspecialchars(Csrf::$token, ENT_QUOTES, 'UTF-8'); ?>">
+<meta name="csp-nonce" content="<?php echo SecurityHeaders::nonce(); ?>">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	<link rel="shortcut icon" href="<?php print_link(SITE_FAVICON . '?v=' . time()); ?>" />
@@ -22,7 +24,8 @@
 	Html::page_css('apple-kalbe-theme.css');
 	?>
 	<?php
-	Html::page_js('jquery-3.3.1.min.js');
+	Html::page_js('jquery-3.7.1.min.js');
+	Html::page_js('security-transport.js');
 	?>
 	<style>
 		#main-content {

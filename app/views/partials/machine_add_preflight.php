@@ -71,7 +71,7 @@ $operational_date = $data['operational_date'] ?? '';
     </div>
   </div>
 </section>
-<script>
+<script nonce="<?php echo SecurityHeaders::nonce(); ?>">
 $(function () {
   $('#am-preflight-form').on('submit', function (event) {
     event.preventDefault();

@@ -10,7 +10,7 @@
 						Masukkan Email atau NIK Anda yang terdaftar untuk mengatur ulang password secara mandiri.
 					</p>
 					<?php $this::display_page_errors(); ?>
-					<form method="post" action="<?php print_link("passwordmanager/postresetlink?csrf_token=" . Csrf::$token); ?>">
+					<form method="post" action="<?php print_link("passwordmanager/postresetlink?csrf_token=" . Csrf::$token); ?>"><?php Html::csrf_token(); ?>
 						<input type="hidden" name="csrf_token" value="<?php echo Csrf::$token; ?>" />
 						<div class="form-group mb-3">
 							<label class="font-weight-bold" for="ctrl-email">Email atau NIK <span class="text-danger">*</span></label>
