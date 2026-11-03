@@ -1,4 +1,12 @@
 RewriteEngine on
+# Protect secrets and repository metadata from direct HTTP access.
+RewriteRule (^|/)\. - [F,L]
+RewriteRule (^|/)(composer\.(json|lock)|config\.php)$ - [F,L,NC]
+RewriteRule ^(database|tests)(/|$) - [F,L,NC]
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
 Options -Indexes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
