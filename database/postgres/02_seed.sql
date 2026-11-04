@@ -160,6 +160,21 @@ INSERT INTO "kategori" ("id", "korelasi_id", "kategori") OVERRIDING SYSTEM VALUE
 ON CONFLICT DO NOTHING;
 SELECT setval(pg_get_serial_sequence('"kategori"', 'id'), COALESCE((SELECT MAX("id") FROM "kategori"), 1));
 
+-- Tambahan kategori HSE; ID lama dan histori tetap dipertahankan.
+SELECT setval(pg_get_serial_sequence('kategori', 'id'), GREATEST(COALESCE((SELECT MAX(id) FROM kategori), 1), 1));
+INSERT INTO kategori (korelasi_id, kategori)
+SELECT 2, seed.nama FROM (VALUES
+  ('APD'),
+  ('Signage'),
+  ('Sarana Prasarana'),
+  ('Limbah B3'),
+  ('Limbah Non B3'),
+  ('Efisiensi Energi'),
+  ('Efisiensi dan Pencemaran Air'),
+  ('Pencemaran Udara')
+) AS seed(nama)
+WHERE NOT EXISTS (SELECT 1 FROM kategori k WHERE k.korelasi_id = 2 AND k.kategori = seed.nama);
+
 -- korelasi (4 baris)
 INSERT INTO "korelasi" ("id", "nama") OVERRIDING SYSTEM VALUE VALUES
   ('1', '5R'),

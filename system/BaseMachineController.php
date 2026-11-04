@@ -28,6 +28,7 @@ abstract class BaseMachineController extends SecureController
 
 	private $snapshotSchema = null;
 	private $preparedNokPhotos = array();
+	private $nokHseCategoryCache = null;
 	private $newPhotoPaths = array();
 	private $rtwtActivePartFieldCache = array();
 	function __construct()
@@ -836,6 +837,16 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		));
 	}
 
+	private function nokHseCategories()
+	{
+		if ($this->nokHseCategoryCache === null) {
+			$rows = $this->GetModel()->rawQuery('SELECT id, kategori FROM kategori WHERE korelasi_id = 2 ORDER BY id');
+			$this->nokHseCategoryCache = array();
+			foreach ($rows as $row) $this->nokHseCategoryCache[(int)$row['id']] = (string)$row['kategori'];
+		}
+		return $this->nokHseCategoryCache;
+	}
+
 	private function nokMultiSelection(array $formdata, $field): array
 	{
 		$correlations = json_decode((string)($formdata['korelasi_tags_' . $field] ?? ''), true);
@@ -846,7 +857,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$categories = array_values(array_unique(array_map('intval', array_filter($categories, 'is_numeric'))));
 		if (!$correlations || array_diff($correlations, [1, 2, 3, 5])) throw new RuntimeException('Korelasi NOK tidak valid.');
 		if (in_array(5, $correlations, true) && count($correlations) > 1) throw new RuntimeException('Korelasi lama None tidak dapat digabung dengan korelasi lain.');
-		$categoryMap = [1 => [1, 2, 3, 4, 5], 2 => [6, 7], 3 => [8], 5 => [11]];
+		$categoryMap = [1 => [1, 2, 3, 4, 5], 2 => array_keys($this->nokHseCategories()), 3 => [8], 5 => [11]];
 		if ($correlations === [3]) $categories = [8];
 		elseif ($correlations === [5]) $categories = [11];
 		else $categories = array_values(array_diff($categories, [8, 11]));
@@ -2091,9 +2102,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						'korelasi' => $correlation,
 						'kategori_masalah' => 'Abnormalitas Mesin',
 					);
-					if (count($correlationIds) > 1 || count($categoryIds) > 1) {
+					if (count($correlationIds) > 1 || count($categoryIds) > 1 || in_array(2, $correlationIds, true)) {
 						$correlationNames = [1 => '5R', 2 => 'HSE', 3 => 'PRODUCTIVITY', 5 => 'MESIN'];
-						$categoryNames = [1 => 'Ringkas', 2 => 'Rapih', 3 => 'Resik', 4 => 'Rawat', 5 => 'Rajin', 6 => 'Unsafe Action', 7 => 'Unsafe Condition'];
+						$categoryNames = [1 => 'Ringkas', 2 => 'Rapih', 3 => 'Resik', 4 => 'Rawat', 5 => 'Rajin'] + $this->nokHseCategories();
 						$payload['correlations'] = json_encode(array_values(array_map(static fn($id) => $correlationNames[$id], $correlationIds)));
 						$payload['nonconformity_categories'] = json_encode(array_values(array_map(static fn($id) => $categoryNames[$id], array_filter($categoryIds, static fn($id) => isset($categoryNames[$id])))));
 					}
