@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/CheckSheetPeriod.php';
 defined('ROOT') or exit('No direct script access allowed');
 
 /**
@@ -28,7 +29,7 @@ class CheckSheetExcelExporter
         $writer->setTitle((string)($d['machine_name'] ?? 'Check Sheet'));
 
         $widths = array(7, 4, 24, 14, 12, 34, 7, 15);
-        foreach ($days as $_) { $widths[] = 4; }
+        foreach ($days as $_) { $widths[] = count($days) <= 9 ? 11 : 4; }
         $writer->writeSheetHeader($sheet, array_fill(0, $totalCols, 'string'), array(
             'suppress_row' => true, 'widths' => $widths, 'freeze_rows' => 6
         ));
@@ -53,8 +54,8 @@ class CheckSheetExcelExporter
         $spv = $d['period_signature']['spv_user']['nama'] ?? '(Belum TTD)';
         self::writeRow($writer, $sheet, $totalCols, array($sigStart => $operator, $sigStart + 2 => $spv), $center, 22);
         self::writeRow($writer, $sheet, $totalCols, array($sigStart => self::signatureDetail($d, 'operator'), $sigStart + 2 => self::signatureDetail($d, 'spv')), $center, 18);
-        $periodText = self::monthName((int)$d['month']) . ' ' . $d['year'] . ' (P' . $d['period'] . ')';
-        self::writeRow($writer, $sheet, $totalCols, array($sigStart => 'Periode: ' . $periodText), $boldCenter, 14);
+        $periodText = self::monthName((int)$d['month']) . ' ' . $d['year'] ;
+        self::writeRow($writer, $sheet, $totalCols, array($sigStart => 'Bulan / Tahun: ' . $periodText), $boldCenter, 14);
 
         $writer->markMergedCell($sheet, 0, 0, 3, 2);
         $writer->markMergedCell($sheet, 0, 3, 3, 7);
@@ -66,13 +67,13 @@ class CheckSheetExcelExporter
         $writer->markMergedCell($sheet, 3, $sigStart, 3, $totalCols - 1);
 
         $area = self::areaName((string)($d['machine_key'] ?? ''));
+        $metaMiddleEnd = min(12, $totalCols - 5);
         self::writeRow($writer, $sheet, $totalCols, array(
             0 => 'Area: ' . $area,
             3 => 'Mesin / Line: ' . ($d['machine_name'] ?? '-'),
-            13 => 'Bulan / Tahun: ' . self::monthName((int)$d['month']) . ' ' . $d['year'],
+            $metaMiddleEnd + 1 => 'Bulan / Tahun: ' . self::monthName((int)$d['month']) . ' ' . $d['year'],
         ), $border + array('font-style' => 'bold'), 15);
         $writer->markMergedCell($sheet, 4, 0, 4, 2);
-        $metaMiddleEnd = min(12, $totalCols - 5);
         $writer->markMergedCell($sheet, 4, 3, 4, $metaMiddleEnd);
         $writer->markMergedCell($sheet, 4, $metaMiddleEnd + 1, 4, $totalCols - 1);
 
@@ -142,15 +143,16 @@ class CheckSheetExcelExporter
         }
 
         $paraf = array_fill(0, $totalCols, '');
-        $paraf[0] = 'Paraf Pelaksana';
+        $paraf[0] = "Paraf Pelaksana\nNama, tanggal & waktu pengisian (WIB)";
         foreach ($days as $i => $day) {
             if (isset($d['deactivated_days'][$day])) {
                 $paraf[8 + $i] = 'DEAKTIF';
             } else {
-                $paraf[8 + $i] = (string)($d['daily_paraf'][$day]['user_initials'] ?? '');
+                $pinfo = $d['daily_paraf'][$day] ?? null;
+                $paraf[8 + $i] = $pinfo ? ($pinfo['full_name'] ?? $pinfo['user_create']) . PHP_EOL . ($pinfo['submitted_date'] ?? '') . PHP_EOL . ($pinfo['submitted_time'] ?? '') : '';
             }
         }
-        self::writeRow($writer, $sheet, $totalCols, $paraf, $center, 17);
+        self::writeRow($writer, $sheet, $totalCols, $paraf, $center, 76);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, 7);
         $rowIndex++;
 

@@ -1255,7 +1255,7 @@ CREATE TABLE IF NOT EXISTS "am_period_signatures" (
   "mesin_id" integer NOT NULL,
   "bulan" integer NOT NULL CHECK ("bulan" BETWEEN 1 AND 12),
   "tahun" integer NOT NULL CHECK ("tahun" BETWEEN 2020 AND 2100),
-  "periode" integer NOT NULL CHECK ("periode" IN (1, 2)),
+  "periode" integer NOT NULL CHECK ("periode" IN (1, 2, 11, 12, 13, 14)),
   "document_hash" varchar(64) NOT NULL,
   "document_payload" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "signature_version" smallint NOT NULL DEFAULT 2,

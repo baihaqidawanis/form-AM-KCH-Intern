@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/CheckSheetPeriod.php';
 
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
@@ -175,6 +176,16 @@ class QrSignatureHelper
      * @param int $periode
      * @return array|null
      */
+    /** Preserve the signed-document lock for both legacy and weekly date ranges. */
+    public static function getSignatureForDate($mesinSlug, $mesinId, DateTimeInterface $date)
+    {
+        foreach (CheckSheetPeriod::coveringKeys((int)$date->format('j')) as $period) {
+            $row = self::getPeriodSignature($mesinSlug, $mesinId, (int)$date->format('n'), (int)$date->format('Y'), $period);
+            if ($row && (!empty($row['operator_token']) || !empty($row['spv_token']))) return $row;
+        }
+        return null;
+    }
+
     public static function getPeriodSignature($mesinSlug, $mesinId, $bulan, $tahun, $periode)
     {
         $db = self::getDb();

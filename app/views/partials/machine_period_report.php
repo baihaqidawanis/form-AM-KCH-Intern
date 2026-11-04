@@ -82,7 +82,7 @@ if (!function_exists('get_period_image_src')) {
 <section class="page"><div class="container-fluid py-3">
 <?php if (!empty($d['selection_only'])) { ?>
   <h4>Cetak Check Sheet Periode — <?php echo htmlspecialchars($d['display_name']); ?></h4>
-  <p class="text-muted">Periode 1: tanggal 1–16. Periode 2: tanggal 17 sampai akhir bulan.</p>
+  <p class="text-muted">Periode 1: 1–7. Periode 2: 8–14. Periode 3: 15–22. Periode 4: 23 sampai akhir bulan.</p>
   <form class="form-row" method="get" action="<?php print_link($d['machine_key'] . '/period_report'); ?>">
     <div class="col-md-3 form-group"><label>Mesin</label>
       <?php if ($single_machine_option) { ?>
@@ -96,7 +96,7 @@ if (!function_exists('get_period_image_src')) {
     </div>
     <div class="col-md-2 form-group"><label>Bulan</label><select class="custom-select" name="month"><?php foreach ($month_names as $n => $name) { ?><option value="<?php echo $n; ?>" <?php echo $n === intval(date('n')) ? 'selected' : ''; ?>><?php echo $name; ?></option><?php } ?></select></div>
     <div class="col-md-2 form-group"><label>Tahun</label><input class="form-control" type="number" name="year" value="<?php echo date('Y'); ?>" min="2020" max="2100"></div>
-    <div class="col-md-2 form-group"><label>Periode</label><select class="custom-select" name="period"><option value="1">1 (1–16)</option><option value="2">2 (17–akhir bulan)</option></select></div>
+    <div class="col-md-2 form-group"><label>Periode</label><select class="custom-select" name="period"><option value="11">1 (1–7)</option><option value="12">2 (8–14)</option><option value="13">3 (15–22)</option><option value="14">4 (23–akhir bulan)</option></select></div>
     <div class="col-md-2 form-group align-self-end"><button class="btn btn-primary" <?php echo empty($machine_options) ? 'disabled' : ''; ?>>Tampilkan Check Sheet</button></div>
   </form>
 <?php } else { 
@@ -122,6 +122,8 @@ if (!function_exists('get_period_image_src')) {
       $col_nama_part_val = 20.0;
       $col_standar_val = 26.0;
   }
+  // Redistribute width for the shorter period so full operator names remain readable.
+  if ($num_days <= 9) { $col_standar_val -= 8.0; }
   $col_nama_part = $col_nama_part_val . '%';
   $col_standar = $col_standar_val . '%';
   $fixed_cols_width = 5.0 + 1.8 + $col_nama_part_val + 6.5 + 5.5 + $col_standar_val + 2.8 + 8.2;
@@ -198,6 +200,10 @@ if (!function_exists('get_period_image_src')) {
       .cell-deactive { background: #fff3cd !important; }
 	  .cell-holiday { background: #e2e3e5 !important; }
       .signature { height: <?php echo $css_sig_h; ?>; }
+      .daily-paraf td { min-height:58px; padding:3px 1px !important; vertical-align:middle; }
+      .daily-paraf .paraf-image { width:48px; height:auto; max-height:28px; max-width:90%; display:block; margin:0 auto 3px; object-fit:contain; }
+      .daily-paraf .paraf-name { font-size:5.9px; font-weight:bold; line-height:1.25; overflow-wrap:break-word; word-wrap:break-word; }
+      .daily-paraf .paraf-time { font-size:5.3px; line-height:1.3; margin-top:2px; }
       @media print { .btn-cancel-signature { display:none !important; } }
     </style>
 
@@ -295,7 +301,7 @@ if (!function_exists('get_period_image_src')) {
             </tr>
             <tr>
               <td colspan="2" style="border:none; border-top:1px solid #000; text-align:center; font-size:6.5px; padding:1px; background:#f8f9fa;">
-                <strong>Periode:</strong> <?php echo $month_names[$d['month']] . ' ' . $d['year'] . ' (P' . $d['period'] . ')'; ?>
+                <strong>Bulan / Tahun:</strong> <?php echo $month_names[$d['month']] . ' ' . $d['year']; ?>
               </td>
             </tr>
           </table>
@@ -375,20 +381,25 @@ if (!function_exists('get_period_image_src')) {
         <?php }
       }
       ?>
-      <tr>
-        <td class="signature" colspan="8" style="font-weight:bold; text-align:center;">Paraf Pelaksana</td>
+      <tr class="daily-paraf">
+        <td class="signature" colspan="8" style="font-weight:bold; text-align:center;">Paraf Pelaksana<br><span style="font-weight:normal; font-size:6.5px;">Nama, tanggal &amp; waktu pengisian (WIB)</span></td>
         <?php for ($day = $d['start_day']; $day <= $d['end_day']; $day++) {
           $is_deactive = isset($d['deactivated_days'][$day]);
 		  $is_holiday = isset($d['holiday_days'][$day]);
           $pinfo = $d['daily_paraf'][$day] ?? null;
+          $export_paraf = $pinfo ? CheckSheetParaf::forExport($pinfo['paraf_image'] ?? null) : null;
         ?>
           <td class="day" style="<?php echo $is_deactive ? 'background:#fff3cd !important; text-align:center; font-size:6px; color:#856404; font-weight:bold;' : ($is_holiday ? 'background:#e2e3e5 !important; text-align:center; vertical-align:middle; padding:0;' : 'text-align:center; vertical-align:middle; padding:0;'); ?>">
             <?php if ($is_deactive) { ?>
               DEAKTIF
-            <?php } elseif ($pinfo && is_valid_base64_png_data_uri($pinfo['paraf_image'] ?? null)) { ?>
-              <img src="<?php echo htmlspecialchars($pinfo['paraf_image'], ENT_QUOTES, 'UTF-8'); ?>" style="max-height:13px; max-width:22px; display:block; margin:0 auto; object-fit:contain;" alt="Paraf" title="<?php echo htmlspecialchars($pinfo['tooltip'] ?? $pinfo['user_create']); ?>">
-            <?php } elseif ($pinfo && !empty($pinfo['user_initials'])) { ?>
-              <span style="font-size:5.5px; font-weight:bold; font-family:sans-serif; color:#002244; display:block; line-height:1;" title="<?php echo htmlspecialchars($pinfo['tooltip'] ?? $pinfo['user_create']); ?>"><?php echo htmlspecialchars($pinfo['user_initials']); ?></span>
+            <?php } elseif ($pinfo) { ?>
+              <?php if ($export_paraf) { ?>
+                <img class="paraf-image" src="<?php echo htmlspecialchars($export_paraf, ENT_QUOTES, 'UTF-8'); ?>" alt="Paraf" title="<?php echo htmlspecialchars($pinfo['tooltip'] ?? $pinfo['user_create']); ?>">
+              <?php } ?>
+              <div class="paraf-name"><?php echo htmlspecialchars($pinfo['full_name'] ?? $pinfo['user_create']); ?></div>
+              <?php if (!empty($pinfo['submitted_date']) || !empty($pinfo['submitted_time'])) { ?>
+                <div class="paraf-time"><?php echo htmlspecialchars($pinfo['submitted_date'] ?? ''); ?><br><?php echo htmlspecialchars($pinfo['submitted_time'] ?? ''); ?></div>
+              <?php } ?>
             <?php } ?>
           </td>
         <?php } ?>

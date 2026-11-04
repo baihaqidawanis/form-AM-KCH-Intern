@@ -85,7 +85,7 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
                     <tr>
                         <td class="text-muted">Periode Check Sheet:</td>
                         <td class="font-weight-bold text-dark">
-                            Bulan <?php echo ($month_names[$sig['bulan']] ?? $sig['bulan']) . ' ' . $sig['tahun']; ?> (Periode <?php echo $sig['periode']; ?>)
+                            Bulan <?php echo ($month_names[$sig['bulan']] ?? $sig['bulan']) . ' ' . $sig['tahun']; ?> (Periode <?php echo htmlspecialchars(CheckSheetPeriod::label($sig['tahun'], $sig['bulan'], $sig['periode'])); ?>)
                         </td>
                     </tr>
                     <tr>
@@ -142,7 +142,7 @@ $month_names = array(1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni'
                     <tr>
                         <td class="text-muted">Periode Check Sheet:</td>
                         <td class="font-weight-bold text-dark">
-                            Bulan <?php echo ($month_names[$sig['bulan']] ?? $sig['bulan']) . ' ' . $sig['tahun']; ?> (Periode <?php echo $sig['periode']; ?>)
+                            Bulan <?php echo ($month_names[$sig['bulan']] ?? $sig['bulan']) . ' ' . $sig['tahun']; ?> (Periode <?php echo htmlspecialchars(CheckSheetPeriod::label($sig['tahun'], $sig['bulan'], $sig['periode'])); ?>)
                         </td>
                     </tr>
                 </table>

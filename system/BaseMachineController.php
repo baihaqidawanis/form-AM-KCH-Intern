@@ -6,6 +6,8 @@
  * persis polanya di 17 modul sebelum di-refactor -- lihat DOCS_MD/FINAL_IMPROVEMENT.md
  * buat histori kenapa/gimana refactor ini dikerjain.
  */
+require_once dirname(__DIR__) . '/helpers/CheckSheetPeriod.php';
+
 abstract class BaseMachineController extends SecureController
 {
 	/** @var string nama tabel utama, contoh 'chimei', 'sig' */
@@ -436,9 +438,10 @@ abstract class BaseMachineController extends SecureController
 	private function lockPeriodMutation($db, $mesinId, $operationalDate)
 	{
 		$date = new DateTime($operationalDate);
-		$period = intval($date->format('j')) <= 16 ? 1 : 2;
-		$key = 'form-am:' . $this->machineKey . ':' . intval($mesinId) . ':' . $date->format('Y-m') . ':p' . $period;
-		$db->rawQuery('SELECT pg_advisory_xact_lock(hashtext(?))', array($key));
+		foreach (CheckSheetPeriod::coveringKeys((int)$date->format('j')) as $period) {
+			$key = 'form-am:' . $this->machineKey . ':' . intval($mesinId) . ':' . $date->format('Y-m') . ':p' . $period;
+			$db->rawQuery('SELECT pg_advisory_xact_lock(hashtext(?))', array($key));
+		}
 	}
 
 	/** Part yang boleh diedit harus sama dengan checklist pada shift record itu. */
@@ -914,16 +917,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 			if ($deactivated_unit) { $this->set_page_error('Unit mesin sedang DEAKTIVASI. Pemeriksaan AM tidak dapat disimpan.'); return $this->redirect($table . '/add'); }
 			if (isset($formdata['mesin'])) {
 				$op_date = new DateTime($this->operationalDate());
-				$m_month = intval($op_date->format('n'));
-				$m_year = intval($op_date->format('Y'));
-				$m_period = intval($op_date->format('j')) <= 16 ? 1 : 2;
-				$sig = QrSignatureHelper::getPeriodSignature(
-					$this->machineKey,
-					intval($formdata['mesin']),
-					$m_month,
-					$m_year,
-					$m_period
-				);
+				$sig = QrSignatureHelper::getSignatureForDate($this->machineKey, intval($formdata['mesin']), $op_date);
 				if ($sig && (!empty($sig['operator_token']) || !empty($sig['spv_token']))) {
 					$this->set_flash_msg('Form AM pada periode ini telah ditandatangani secara digital. Untuk melakukan pengisian data baru pada periode ini, batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
 					return $this->redirect($table . '/add');
@@ -980,7 +974,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				try {
 					$db->startTransaction();
 					$this->lockPeriodMutation($db, $modeldata['mesin'], $modeldata['operational_date']);
-					$locked_signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($modeldata['mesin']), intval((new DateTime($modeldata['operational_date']))->format('n')), intval((new DateTime($modeldata['operational_date']))->format('Y')), intval((new DateTime($modeldata['operational_date']))->format('j')) <= 16 ? 1 : 2);
+					$locked_signature = QrSignatureHelper::getSignatureForDate($this->machineKey, intval($modeldata['mesin']), new DateTime($modeldata['operational_date']));
 					if ($locked_signature && (!empty($locked_signature['operator_token']) || !empty($locked_signature['spv_token']))) { throw new RuntimeException('Periode telah ditandatangani digital.'); }
 					$rec_id = $this->rec_id = $db->insert($sql, $modeldata);
 					if (!$rec_id) { throw new RuntimeException('Gagal menyimpan form AM.'); }
@@ -1045,12 +1039,12 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$signed_units = array();
 		try {
 			$signed_rows = $this->GetModel()->rawQuery("
-				SELECT s.mesin_id, m.nama_mesin, s.status, s.operator_signed_at, s.spv_signed_at, s.operator_token, s.spv_token
+				SELECT s.mesin_id, m.nama_mesin, s.periode, s.status, s.operator_signed_at, s.spv_signed_at, s.operator_token, s.spv_token
 				FROM am_period_signatures s
 				JOIN mesin m ON m.id = s.mesin_id
-				WHERE s.mesin_slug = ? AND s.bulan = ? AND s.tahun = ? AND s.periode = ?
+				WHERE s.mesin_slug = ? AND s.bulan = ? AND s.tahun = ? AND s.periode IN (?, ?)
 				  AND (s.operator_token IS NOT NULL OR s.spv_token IS NOT NULL)
-			", array($this->machineKey, $m_month, $m_year, $m_period));
+			", array($this->machineKey, $m_month, $m_year, $m_period, CheckSheetPeriod::forDay((int)$op_date->format('j'))));
 			if (!empty($signed_rows)) {
 				foreach ($signed_rows as $sr) {
 					$signed_units[intval($sr['mesin_id'])] = array(
@@ -1061,7 +1055,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 						'spv_signed_at' => $sr['spv_signed_at'],
 						'is_operator_signed' => !empty($sr['operator_token']),
 						'is_spv_signed' => !empty($sr['spv_token']),
-						'periode' => $m_period,
+						'periode' => (int)$sr['periode'],
 						'bulan' => $m_month,
 						'tahun' => $m_year,
 					);
@@ -1101,21 +1095,19 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 	}
 
-	/** Cetak check sheet resmi untuk Periode 1 (1-16) atau Periode 2 (17-akhir bulan). */
+	/** Cetak check sheet mingguan; key 1/2 tetap membaca arsip setengah bulan. */
 	function period_report()
 	{
 		$request = $this->request;
 		$year = intval($request->year ?? date('Y'));
 		$month = intval($request->month ?? date('n'));
-		$period = intval($request->period ?? 1);
+		$period = intval($request->period ?? 11);
 		$mesin = intval($request->mesin ?? 0);
-		if ($year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !$mesin) {
+		if ($year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !CheckSheetPeriod::isValid($period) || !$mesin) {
 			$this->view->page_title = 'Cetak Check Sheet ' . $this->displayName;
 			return $this->render_view('machine_period_report.php', array('selection_only' => true, 'machine_key' => $this->machineKey, 'display_name' => $this->displayName));
 		}
-		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
-		$start_day = $period === 1 ? 1 : 17;
-		$end_day = $period === 1 ? 16 : intval($first->format('t'));
+		list($start_day, $end_day) = CheckSheetPeriod::bounds($year, $month, $period);
 		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
 		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
 		$db = $this->GetModel(); $sql = $this->sqlTable(); $idcol = $this->idColumn();
@@ -1173,13 +1165,15 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		// Record lama tanpa nilai shift diperlakukan sebagai Shift 1.
 		$daily_paraf = array();
 		$daily_operators = array();
+		$daily_operator_times = array();
 		$operator_names = array();
 		foreach ($rows as $row) {
 			$day = intval((new DateTime($row['operational_date']))->format('j'));
-			$shift = trim((string)($row['shift'] ?? '1'));
+			$shift = trim((string)($row['shift'] ?? '1')) ?: '1';
 			$active_user = trim((string)($row['user_create'] ?? ''));
 			if ($shift === '1' && $active_user !== '' && !isset($daily_operators[$day])) {
 				$daily_operators[$day] = $active_user;
+				$daily_operator_times[$day] = $row['created_at'] ?? null;
 				$operator_names[] = $active_user;
 			}
 		}
@@ -1205,12 +1199,17 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		foreach ($daily_operators as $day => $op_identifier) {
 			$prof = $operator_profiles[$op_identifier] ?? null;
 			$valid_paraf = $prof && is_valid_base64_png_data_uri($prof['paraf_image'] ?? null);
-			$fallback = $prof ? 'ID:' . intval($prof['id_user']) : 'ID:?';
+			$fallback = trim((string)($prof['nama'] ?? $op_identifier));
 			$full_name = trim((string)($prof['nama'] ?? $op_identifier));
 			$nik = trim((string)($prof['username'] ?? $op_identifier));
 
+			$submitted = !empty($daily_operator_times[$day]) ? new DateTime($daily_operator_times[$day], new DateTimeZone('Asia/Jakarta')) : null;
+			if ($submitted) $submitted->setTimezone(new DateTimeZone('Asia/Jakarta'));
 			$daily_paraf[$day] = array(
 				'user_create' => $op_identifier,
+				'full_name' => $full_name,
+				'submitted_date' => $submitted ? $submitted->format('d/m/y') : '',
+				'submitted_time' => $submitted ? $submitted->format('H:i') : '',
 				'paraf_image' => $valid_paraf ? $prof['paraf_image'] : null,
 				'user_initials' => $fallback,
 				'tooltip' => $full_name . ' | NIK: ' . $nik
@@ -1271,7 +1270,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		);
 		$data['all_approved'] = $all_approved;
 		$this->view->page_title = 'Check Sheet ' . $this->displayName;
-		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-P' . $period, 'landscape');
+		$this->set_report_props('Check-Sheet-' . $this->machineKey . '-' . $year . '-' . $month . '-' . CheckSheetPeriod::label($year, $month, $period), 'landscape');
 		$this->view->report_layout = 'check_sheet_layout.php';
 		return $this->render_view('machine_period_report.php', $data);
 	}
@@ -1382,16 +1381,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 
 		$op_date = new DateTime($existing_record['operational_date']);
-		$m_month = intval($op_date->format('n'));
-		$m_year = intval($op_date->format('Y'));
-		$m_period = intval($op_date->format('j')) <= 16 ? 1 : 2;
-		$sig = QrSignatureHelper::getPeriodSignature(
-			$this->machineKey,
-			intval($existing_record['mesin']),
-			$m_month,
-			$m_year,
-			$m_period
-		);
+		$sig = QrSignatureHelper::getSignatureForDate($this->machineKey, intval($existing_record['mesin']), $op_date);
 		if ($sig && (!empty($sig['operator_token']) || !empty($sig['spv_token']))) {
 			$this->set_flash_msg('Form AM pada periode ini telah ditandatangani secara digital. Untuk melakukan revisi data, batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
 			return $this->redirect($table . '/view/' . $rec_id);
@@ -1441,7 +1431,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 				try {
 					$db->startTransaction();
 					$this->lockPeriodMutation($db, $existing_record['mesin'], $existing_record['operational_date']);
-					$locked_signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($existing_record['mesin']), intval((new DateTime($existing_record['operational_date']))->format('n')), intval((new DateTime($existing_record['operational_date']))->format('Y')), intval((new DateTime($existing_record['operational_date']))->format('j')) <= 16 ? 1 : 2);
+					$locked_signature = QrSignatureHelper::getSignatureForDate($this->machineKey, intval($existing_record['mesin']), new DateTime($existing_record['operational_date']));
 					if ($locked_signature && (!empty($locked_signature['operator_token']) || !empty($locked_signature['spv_token']))) { throw new RuntimeException('Periode telah ditandatangani digital.'); }
 					$db->where($idcol, $rec_id);
 					$bool = $db->update($sql, $modeldata);
@@ -1570,8 +1560,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		}
 		foreach ($records as $record) {
 			$op_date = new DateTime($record['operational_date']);
-			$period = intval($op_date->format('j')) <= 16 ? 1 : 2;
-			$signature = QrSignatureHelper::getPeriodSignature($this->machineKey, intval($record['mesin']), intval($op_date->format('n')), intval($op_date->format('Y')), $period);
+			$signature = QrSignatureHelper::getSignatureForDate($this->machineKey, intval($record['mesin']), $op_date);
 			if ($signature && (!empty($signature['operator_token']) || !empty($signature['spv_token']))) {
 				$this->set_flash_msg('Checklist pada periode yang sudah ditandatangani tidak dapat dihapus. Batalkan TTD terlebih dahulu oleh penandatangan terkait.', 'warning');
 				return $this->redirect($table);
@@ -1614,13 +1603,11 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$month = intval($month);
 		$year = intval($year);
 		$period = intval($period);
-		if (!$mesin || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true)) {
+		if (!$mesin || $month < 1 || $month > 12 || !CheckSheetPeriod::isValid($period)) {
 			throw new InvalidArgumentException('Parameter periode dokumen tidak valid.');
 		}
 
-		$first = new DateTime(sprintf('%04d-%02d-01', $year, $month));
-		$start_day = $period === 1 ? 1 : 17;
-		$end_day = $period === 1 ? 16 : intval($first->format('t'));
+		list($start_day, $end_day) = CheckSheetPeriod::bounds($year, $month, $period);
 		$start = sprintf('%04d-%02d-%02d', $year, $month, $start_day);
 		$end = sprintf('%04d-%02d-%02d', $year, $month, $end_day);
 
@@ -1823,7 +1810,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$role_type = trim((string)($request->role_type ?? '')); // 'operator' or 'spv'
 		$password = (string)($request->password ?? '');
 
-		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !in_array($role_type, array('operator', 'spv'), true)) {
+		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !CheckSheetPeriod::isValid($period) || !in_array($role_type, array('operator', 'spv'), true)) {
 			http_response_code(400);
 			render_json(array('success' => false, 'message' => 'Parameter tidak lengkap.'));
 			return;
@@ -1923,7 +1910,7 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$role_type = trim((string)($request->role_type ?? ''));
 		$reason = trim((string)($request->reason ?? ''));
 
-		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !in_array($period, array(1, 2), true) || !in_array($role_type, array('operator', 'spv'), true)) {
+		if (!$mesin || $year < 2020 || $year > 2100 || $month < 1 || $month > 12 || !CheckSheetPeriod::isValid($period) || !in_array($role_type, array('operator', 'spv'), true)) {
 			http_response_code(400);
 			render_json(array('success' => false, 'message' => 'Parameter pembatalan tidak valid.'));
 			return;

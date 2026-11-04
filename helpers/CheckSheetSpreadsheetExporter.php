@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/CheckSheetPeriod.php';
+require_once __DIR__ . '/CheckSheetParaf.php';
 defined('ROOT') or exit('No direct script access allowed');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -85,7 +87,7 @@ class CheckSheetSpreadsheetExporter
             $sheet->getColumnDimension($col)->setWidth($width);
         }
         foreach (array_keys($days) as $i) {
-            $sheet->getColumnDimension(self::colLetter(8 + $i))->setWidth(4);
+            $sheet->getColumnDimension(self::colLetter(8 + $i))->setWidth($dayCount <= 9 ? 11 : 4);
         }
         $sheet->freezePane('A7');
 
@@ -144,7 +146,7 @@ class CheckSheetSpreadsheetExporter
         $spvSigned      = !empty($d['period_signature']['spv_token']);
         $opDetail     = self::signatureDetail($d, 'operator');
         $spvDetail    = self::signatureDetail($d, 'spv');
-        $periodText   = self::monthName((int)$d['month']) . ' ' . $d['year'] . ' (P' . $d['period'] . ')';
+        $periodText   = self::monthName((int)$d['month']) . ' ' . $d['year'] ;
 
         $sigData = [
             1 => ["Diperiksa Oleh\nOperator Produksi", "Disetujui Oleh\nSupervisor"],
@@ -170,7 +172,7 @@ class CheckSheetSpreadsheetExporter
         }
 
         // Period row 4
-        $sheet->setCellValue($sigC1 . '4', 'Periode: ' . $periodText);
+        $sheet->setCellValue($sigC1 . '4', 'Bulan / Tahun: ' . $periodText);
         self::applyStyle($sheet, $sigC1 . '4:' . $lastCol . '4', $bStyle + [
             'font' => ['bold' => true, 'size' => 8],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -347,15 +349,39 @@ class CheckSheetSpreadsheetExporter
         $centerAlign = ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER];
 
         // Paraf row
-        $sheet->getRowDimension($row)->setRowHeight(self::ROW_FOOTER_HEIGHT);
-        $sheet->setCellValue('A' . $row, 'Paraf Pelaksana');
+        $sheet->getRowDimension($row)->setRowHeight(76);
+        $sheet->setCellValue('A' . $row, "Paraf Pelaksana\nNama, tanggal & waktu pengisian (WIB)");
         self::applyStyle($sheet, 'A' . $row, $bStyle + ['font' => ['bold' => true, 'size' => 8], 'alignment' => $centerAlign]);
         $sheet->mergeCells('A' . $row . ':H' . $row);
         foreach ($days as $i => $day) {
             $col = self::colLetter(8 + $i);
-            $val = isset($d['deactivated_days'][$day]) ? 'DEAKTIF' : (string)($d['daily_paraf'][$day]['user_initials'] ?? '');
-            $sheet->setCellValue($col . $row, $val);
-            self::applyStyle($sheet, $col . $row, $bStyle + ['font' => ['size' => 7], 'alignment' => $centerAlign]);
+            $pinfo = $d['daily_paraf'][$day] ?? null;
+            $hasParaf = !isset($d['deactivated_days'][$day]) && $pinfo && is_valid_base64_png_data_uri($pinfo['paraf_image'] ?? null);
+            $val = isset($d['deactivated_days'][$day]) ? 'DEAKTIF' : ($pinfo ? ($pinfo['full_name'] ?? $pinfo['user_create']) . PHP_EOL . ($pinfo['submitted_date'] ?? '') . PHP_EOL . ($pinfo['submitted_time'] ?? '') : '');
+            if ($hasParaf) $val = PHP_EOL . PHP_EOL . PHP_EOL . $val;
+            $sheet->setCellValueExplicit($col . $row, $val, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            self::applyStyle($sheet, $col . $row, array_replace_recursive($bStyle, ['font' => ['size' => 6], 'alignment' => $centerAlign + ['wrapText' => true]]));
+            if ($pinfo && !isset($d['deactivated_days'][$day])) {
+                $text = new \PhpOffice\PhpSpreadsheet\RichText\RichText();
+                if ($hasParaf) $text->createText(PHP_EOL . PHP_EOL . PHP_EOL);
+                $text->createTextRun((string)($pinfo['full_name'] ?? $pinfo['user_create']))->getFont()->setSize(6)->setBold(true);
+                $text->createTextRun(PHP_EOL . ($pinfo['submitted_date'] ?? '') . PHP_EOL . ($pinfo['submitted_time'] ?? ''))->getFont()->setSize(5.5);
+                $sheet->setCellValue($col . $row, $text);
+            }
+            if ($hasParaf) {
+                $parafImage = CheckSheetParaf::forExport($pinfo['paraf_image']);
+                $image = imagecreatefromstring(base64_decode(substr($parafImage, strpos($parafImage, ',') + 1)));
+                if ($image !== false) {
+                    $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing();
+                    $drawing->setName('Paraf harian ' . $day)->setImageResource($image)
+                        ->setRenderingFunction(\PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::RENDERING_PNG)
+                        ->setMimeType(\PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing::MIMETYPE_PNG)
+                        ->setCoordinates($col . $row)->setOffsetY(3);
+                    $cellWidth = \PhpOffice\PhpSpreadsheet\Shared\Drawing::cellDimensionToPixels($sheet->getColumnDimension($col)->getWidth(), $sheet->getParent()->getDefaultStyle()->getFont());
+                    $height = min(26, max(1, (int)floor(($cellWidth - 6) * imagesy($image) / imagesx($image))));
+                    $drawing->setHeight($height)->setOffsetX(max(3, (int)(($cellWidth - $drawing->getWidth()) / 2)))->setWorksheet($sheet);
+                }
+            }
         }
         $row++;
 
