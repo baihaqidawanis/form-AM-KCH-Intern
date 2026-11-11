@@ -30,11 +30,11 @@ class CheckSheetParaf
         imagedestroy($source);
         $bold = imagecreatetruecolor($drawW + 6, $drawH + 6);
         imagefill($bold, 0, 0, imagecolorallocate($bold, 255, 255, 255));
-        $black = imagecolorallocate($bold, 0, 0, 0);
+        $ink = imagecolorallocate($bold, 25, 71, 184);
         for ($y = 1; $y < imagesy($resized)-1; $y++) for ($x = 1; $x < imagesx($resized)-1; $x++) {
             $rgb = imagecolorat($resized, $x, $y);
             if ((($rgb >> 16) & 255) * .299 + (($rgb >> 8) & 255) * .587 + ($rgb & 255) * .114 < 190) {
-                imagefilledellipse($bold, $x, $y, 3, 3, $black);
+                imagefilledellipse($bold, $x, $y, 3, 3, $ink);
             }
         }
         ob_start(); imagepng($bold); $bytes = ob_get_clean();

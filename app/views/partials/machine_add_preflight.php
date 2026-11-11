@@ -30,7 +30,7 @@ $operational_date = $data['operational_date'] ?? '';
             <?php if ($duplicate) { ?>
               <div class="alert alert-warning">
                 <strong><i class="fa fa-exclamation-triangle"></i> AM sudah diisi.</strong>
-                <div class="mt-1">Kombinasi ini sudah tersimpan untuk tanggal operasional <strong><?php echo htmlspecialchars($operational_date); ?></strong><?php echo !empty($duplicate['user_create']) ? ' oleh <strong>' . htmlspecialchars($duplicate['user_create']) . '</strong>' : ''; ?><?php echo !empty($duplicate['created_at']) ? ' pada ' . htmlspecialchars($duplicate['created_at']) : ''; ?>. Pilih kombinasi lain.</div>
+                <div class="mt-1">Mesin ini sudah tersimpan untuk tanggal operasional <strong><?php echo htmlspecialchars($operational_date); ?></strong><?php echo !empty($duplicate['user_create']) ? ' oleh <strong>' . htmlspecialchars($duplicate['user_create']) . '</strong>' : ''; ?><?php echo !empty($duplicate['created_at']) ? ' pada ' . htmlspecialchars($duplicate['created_at']) : ''; ?>. Pilih mesin atau shift lain.</div>
               </div>
             <?php } ?>
 
