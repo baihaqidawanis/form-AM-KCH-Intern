@@ -117,7 +117,7 @@ $show_pagination = $this->show_pagination;
                                                 <th class="td-sno">#</th>
                                                 <th  class="td-id_user"> Id User</th>
                                                 <th  class="td-nama"> Nama</th>
-                                                <th  class="td-email"> Email</th>
+
                                                 <th  class="td-username"> NIK</th>
                                                 <th  class="td-area"> Area</th>
                                                 <th  class="td-account_status"> Account Status</th>
@@ -160,7 +160,7 @@ $show_pagination = $this->show_pagination;
                                                             <?php echo $data['nama']; ?> 
                                                         </span>
                                                     </td>
-                                                    <td class="td-email"><a href="<?php print_link("mailto:$data[email]") ?>"><?php echo $data['email']; ?></a></td>
+
                                                     <td class="td-username">
                                                         <span  data-value="<?php echo $data['username']; ?>" 
                                                             data-pk="<?php echo $data['id_user'] ?>" 

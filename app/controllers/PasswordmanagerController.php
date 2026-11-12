@@ -25,57 +25,35 @@ class PasswordmanagerController extends BaseController{
 		$this->render_view("passwordmanager/index.php", null, "info_layout.php");
 	}
 	function postresetlink(){
-		$email = trim($this->post->email ?? '');
-		if(!empty($email)){
-			if (!$this->reset_rate_allowed($email)) { http_response_code(429); $this->set_page_error('Terlalu banyak percobaan. Silakan tunggu 15 menit.'); return $this->render_view('passwordmanager/index.php', null, 'info_layout.php'); }
-			$tablename = $this->tablename;
-			$db = $this->GetModel();
-			$db->where("email", $email)->orWhere("username", $email);
-			$user = $db->getOne($tablename, array('id_user', 'username', 'email'));
-			if(!empty($user)){
-				//Generate new password reset
-				$password_reset_key = password_hash(random_str(), PASSWORD_DEFAULT);
-				$date_to_expire = date("Y-m-d H:i:s", time() + (20 * 60));
-				$modeldata = array(
-					"password_reset_key" => hash_value($password_reset_key),
-					"password_expire_date" => $date_to_expire
-				);
-				$user_id = $user['id_user'];
-				$db->where ("id_user", $user_id);
-				$db->update($tablename, $modeldata);
-				$reset_link = SITE_ADDR."Passwordmanager/updatepassword?key=$password_reset_key";
-				$sitename = SITE_NAME;
-				$user_name = $user['username'];
-				$mailtitle = "$sitename password reset";
-				//Password reset html template
-				$mailbody = file_get_contents(PAGES_DIR . "passwordmanager/password_reset_email_template.html");
-				$mailbody = str_ireplace("{{username}}", $user_name, $mailbody);
-				$mailbody = str_ireplace("{{link}}" , $reset_link,$mailbody);
-				$mailbody = str_ireplace("{{sitename}}" , $sitename,$mailbody);
-				// Mode internal: TIDAK redirect langsung ke token (mencegah enumerasi akun).
-				// Administrator harus menyampaikan link reset secara manual kepada user.
-				if (!USE_SMTP) {
-					$this->set_flash_msg('Permintaan reset password telah diproses. Hubungi Administrator untuk langkah selanjutnya.', 'info');
-					return $this->render_view("passwordmanager/index.php", null, "info_layout.php");
-				}
-				$mailer = new Mailer;
-				if($mailer->send_mail($user['email'], $mailtitle, $mailbody) == true){
-					$this->render_view("passwordmanager/password_reset_link_sent.php", $mailbody, "info_layout.php");
-				} else {
-					$msg = "Error sending email. Please contact system administrator for more info";
-					$this->render_view("errors/error_general.php", $msg, "info_layout.php");
-				}
-			}
-			else{
-				// Pesan generik agar attacker tidak bisa tahu apakah akun ada/tidak
-				$this->set_flash_msg('Jika data terdaftar, permintaan reset telah diproses. Hubungi Administrator.', 'info');
-				$this->render_view("passwordmanager/index.php", null, "info_layout.php");
-			}
+		if (!is_post_request()) { http_response_code(405); return $this->redirect('passwordmanager'); }
+		$nik = strtoupper(trim((string)($this->post->nik ?? '')));
+		$password = (string)($this->post->password ?? '');
+		$confirmation = (string)($this->post->confirm_password ?? '');
+		if (!is_valid_nik_username($nik) || $password !== $confirmation || !is_valid_password_complexity($password)) {
+			$this->set_page_error('Isi NIK yang valid, password minimal 8 karakter (huruf besar, huruf kecil, angka, dan simbol), serta konfirmasi yang sama.');
+			return $this->render_view('passwordmanager/index.php', null, 'info_layout.php');
 		}
-		else{
-			$this->redirect("passwordmanager");
+		if (!$this->reset_rate_allowed($nik)) {
+			http_response_code(429); $this->set_page_error('Terlalu banyak percobaan. Silakan tunggu 15 menit.');
+			return $this->render_view('passwordmanager/index.php', null, 'info_layout.php');
 		}
+		$db = $this->GetModel();
+		$user = $db->where('username', $nik)->getOne($this->tablename, array('id_user', 'is_super_admin'));
+		// The root administrator cannot be deactivated through a public self-service request.
+		if ($user && empty($user['is_super_admin'])) {
+			$changed = $db->where('id_user', $user['id_user'])->update($this->tablename, array(
+				'password'=>password_hash($password, PASSWORD_DEFAULT), 'account_status'=>'pending_activation',
+				'password_reset_key'=>null, 'password_expire_date'=>null, 'failed_login_attempts'=>0
+			));
+			if (!$changed) { $this->set_page_error('Permintaan belum dapat diproses. Silakan coba lagi.'); return $this->render_view('passwordmanager/index.php', null, 'info_layout.php'); }
+			$this->rec_id = $user['id_user'];
+			$this->write_to_log('password_reset_pending_activation', 'true');
+		}
+		// Same response for unknown NIKs; account existence is not exposed.
+		$this->set_flash_msg('Jika NIK terdaftar, password baru disimpan dan akun menunggu aktivasi. Hubungi Administrator.', 'info');
+		return $this->render_view('passwordmanager/index.php', null, 'info_layout.php');
 	}
+
 	function updatepassword(){
 		header('Referrer-Policy: no-referrer');
 		$password_key = trim((string)($_POST['key'] ?? get_value("key")));

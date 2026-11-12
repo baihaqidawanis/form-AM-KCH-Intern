@@ -119,28 +119,7 @@ class AccountController extends SecureController{
      * @return BaseView
      */
 	function change_email($formdata = null){
-		if($formdata){
-			$email = trim((string)($formdata['email'] ?? ''));
-			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-				$this->set_page_error('Format email tidak valid.');
-			} else {
-				$db = $this->GetModel();
-				$db->where('email', $email)->where('id_user', USER_ID, '!=');
-				if ($db->has($this->tablename)) {
-					$this->set_page_error('Email sudah digunakan.');
-				} else {
-					$db->where('id_user', USER_ID);
-					if($db->update($this->tablename, array('email' => $email))){
-						$user = get_session('user_data'); $user['email'] = $email; set_session('user_data', $user);
-						$this->write_to_log('change_email', 'true');
-						$this->set_flash_msg('Email berhasil diperbarui.', 'success');
-						return $this->redirect('account');
-					}
-					$this->set_page_error($db->getLastError() ?: 'Email tidak dapat diperbarui.');
-				}
-			}
-		}
-		return $this->render_view('account/change_email.php');
+		return $this->redirect('account');
 	}
 
 	function change_password($formdata = null){

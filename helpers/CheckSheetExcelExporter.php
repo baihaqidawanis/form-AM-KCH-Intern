@@ -78,8 +78,10 @@ class CheckSheetExcelExporter
         $writer->markMergedCell($sheet, 4, $metaMiddleEnd + 1, 4, $totalCols - 1);
 
         $headers = array('Gambar', 'No', 'Nama Part', 'Alat', 'Metode', 'Standar', 'Durasi', 'Pelaksanaan');
-        foreach ($days as $day) { $headers[] = (string)$day; }
-        self::writeRow($writer, $sheet, $totalCols, $headers, $boldCenter, 18);
+        foreach ($days as $day) { $headers[] = (string)$day . (isset($d['holiday_days'][$day]) ? "\nOFF" : ''); }
+        $headerStyles = array_fill(0, $totalCols, $boldCenter);
+        foreach ($days as $i=>$day) if (isset($d['holiday_days'][$day])) $headerStyles[8+$i] = $boldCenter + array('fill'=>'#E2E3E5');
+        self::writeRow($writer, $sheet, $totalCols, $headers, $headerStyles, empty($d['holiday_days']) ? 18 : 28);
 
         $rowIndex = 6;
         $number = 0;
@@ -133,6 +135,7 @@ class CheckSheetExcelExporter
                         $values[$col] = $notApplicable ? self::symbol('deactive') : ($value === 'NOK' ? self::symbol('nok') : ($value === 'ON_PROCESS_RED_TAG' ? self::symbol('process') : ($value === 'OK' ? self::symbol('ok') : '')));
                         $styles[$col] = $center + ($value === 'NOK' ? array('font-style' => 'bold') : array());
                     }
+                    if (isset($d['holiday_days'][$day]) && !$isTakenOut && !isset($d['deactivated_days'][$day])) $styles[$col]['fill'] = '#E2E3E5';
                 }
                 self::writeRow($writer, $sheet, $totalCols, $values, $styles, 20);
                 $rowIndex++;
@@ -152,11 +155,13 @@ class CheckSheetExcelExporter
                 $paraf[8 + $i] = $pinfo ? ($pinfo['full_name'] ?? $pinfo['user_create']) . PHP_EOL . ($pinfo['submitted_date'] ?? '') . PHP_EOL . ($pinfo['submitted_time'] ?? '') : '';
             }
         }
-        self::writeRow($writer, $sheet, $totalCols, $paraf, $center, 76);
+        $parafStyles = array_fill(0, $totalCols, $center);
+        foreach ($days as $i=>$day) if (isset($d['holiday_days'][$day]) && !isset($d['deactivated_days'][$day])) $parafStyles[8+$i]['fill'] = '#E2E3E5';
+        self::writeRow($writer, $sheet, $totalCols, $paraf, $parafStyles, 76);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, 7);
         $rowIndex++;
 
-        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
+        self::writeRow($writer, $sheet, $totalCols, array(0 => 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin | OFF: Holiday/Off (tetap dapat diisi)', $totalCols - 4 => 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1'), $border, 18);
         $writer->markMergedCell($sheet, $rowIndex, 0, $rowIndex, $totalCols - 5);
         $writer->markMergedCell($sheet, $rowIndex, $totalCols - 4, $rowIndex, $totalCols - 1);
         $rowIndex++;

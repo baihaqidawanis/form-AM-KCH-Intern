@@ -7,23 +7,25 @@
 				</div>
 				<div class="card-body p-4">
 					<p class="text-muted text-center mb-4">
-						Masukkan Email atau NIK Anda yang terdaftar untuk mengatur ulang password secara mandiri.
+						Masukkan NIK dan password baru. Setelah disimpan, hubungi Administrator untuk mengaktifkan kembali akun.
 					</p>
 					<?php $this::display_page_errors(); ?>
 					<form method="post" action="<?php print_link("passwordmanager/postresetlink?csrf_token=" . Csrf::$token); ?>"><?php Html::csrf_token(); ?>
 						<input type="hidden" name="csrf_token" value="<?php echo Csrf::$token; ?>" />
 						<div class="form-group mb-3">
-							<label class="font-weight-bold" for="ctrl-email">Email atau NIK <span class="text-danger">*</span></label>
+							<label class="font-weight-bold" for="ctrl-nik">NIK <span class="text-danger">*</span></label>
 							<div class="input-group">
 								<div class="input-group-prepend">
 									<span class="input-group-text"><i class="fa fa-user"></i></span>
 								</div>
-								<input value="<?php echo htmlspecialchars(get_form_field_value('email')); ?>" placeholder="Contoh: user@bintang7.com atau NIK (misal: 12345)" required id="ctrl-email" class="form-control" name="email" type="text" />
+								<input value="<?php echo htmlspecialchars(get_form_field_value('nik')); ?>" placeholder="Contoh: K00001043" required id="ctrl-nik" class="form-control" name="nik" type="text" />
 							</div>
 						</div>
+                        <div class="form-group"><label for="reset-password">Password Baru</label><input id="reset-password" name="password" type="password" class="form-control" required minlength="8" autocomplete="new-password"></div>
+                        <div class="form-group"><label for="reset-confirmation">Konfirmasi Password Baru</label><input id="reset-confirmation" name="confirm_password" type="password" class="form-control" required minlength="8" autocomplete="new-password"></div>
 						<div class="mt-4 text-center">
 							<button class="btn btn-primary btn-block py-2" type="submit">
-								Lanjut Atur Ulang Password <i class="fa fa-arrow-right ml-1"></i>
+								Simpan Password Baru <i class="fa fa-arrow-right ml-1"></i>
 							</button>
 						</div>
 					</form>

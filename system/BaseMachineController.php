@@ -7,6 +7,7 @@
  * buat histori kenapa/gimana refactor ini dikerjain.
  */
 require_once dirname(__DIR__) . '/helpers/CheckSheetPeriod.php';
+require_once dirname(__DIR__) . '/helpers/OperationalCalendar.php';
 
 abstract class BaseMachineController extends SecureController
 {
@@ -1067,7 +1068,9 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$this->view->signed_units = $signed_units;
 		$this->view->deactivated_units = $deactive_map;
 		try {
-			$this->view->operational_day_flag = $this->GetModel()->where('operational_date', $today)->getOne('operational_calendar');
+			$calendarRow = $this->GetModel()->where('operational_date', $today)->getOne('operational_calendar');
+			$flags = OperationalCalendar::flags($today, $today, $calendarRow ? array($calendarRow) : array());
+			$this->view->operational_day_flag = $flags[$today] ?? null;
 		} catch (Throwable $e) { $this->view->operational_day_flag = null; }
 		$this->view->page_title = "Add New AM {$this->displayName}";
 		return $this->render_view("$table/add.php", array('parts' => $this->partsForAdd(), 'deactivated_units' => $deactive_map, 'signed_units' => $signed_units));
@@ -1180,7 +1183,8 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		$holiday_days = array();
 		try {
 			$holiday_rows = $db->where('operational_date', $start, '>=')->where('operational_date', $end, '<=')->get('operational_calendar');
-			foreach (($holiday_rows ?: array()) as $holiday) {
+			$calendarSignature = QrSignatureHelper::getPeriodSignature($this->machineKey, $mesin, $month, $year, $period);
+			foreach (OperationalCalendar::flags($start, $end, $holiday_rows ?: array(), OperationalCalendar::automaticAllowed($calendarSignature)) as $holiday) {
 				$holiday_days[intval((new DateTime($holiday['operational_date']))->format('j'))] = $holiday;
 			}
 		} catch (Throwable $e) { $holiday_days = array(); }
@@ -1678,10 +1682,14 @@ if ($has_shift_history) { $fields[] = "$sql.shift"; }
 		// harus ikut terikat ke hash TTD. Key hanya ditambahkan bila ada data agar
 		// signature lama pada periode tanpa flag tetap kompatibel.
 		try {
-			$calendar_flags = $db->rawQuery(
-				'SELECT operational_date, label, notes FROM operational_calendar WHERE operational_date >= ? AND operational_date <= ? ORDER BY operational_date ASC',
+			$calendar_rows = $db->rawQuery(
+				'SELECT * FROM operational_calendar WHERE operational_date >= ? AND operational_date <= ? ORDER BY operational_date ASC',
 				array($start, $end)
 			);
+			$calendarSignature = QrSignatureHelper::getPeriodSignature($this->machineKey, $mesin, $month, $year, $period);
+			$autoCalendar = OperationalCalendar::automaticAllowed($calendarSignature);
+			$calendar_flags = array_values(OperationalCalendar::flags($start, $end, $calendar_rows ?: array(), $autoCalendar));
+			if ($autoCalendar && $end >= OperationalCalendar::AUTO_FROM) $document_payload['calendar_policy'] = OperationalCalendar::POLICY;
 			if (!empty($calendar_flags)) {
 				$document_payload['operational_calendar'] = $calendar_flags;
 			}

@@ -122,7 +122,7 @@ class IndexController extends BaseController
 			$request = $this->request;
 			$db = $this->GetModel();
 			$tablename = $this->tablename;
-			$fields = $this->fields = array("nama", "email", "username", "area", "password"); //registration fields
+			$fields = $this->fields = array("nama", "username", "area", "password"); //registration fields
 			$postdata = $this->format_request_data($formdata);
 			$cpassword = $postdata['confirm_password'];
 			$password = $postdata['password'];
@@ -131,14 +131,12 @@ class IndexController extends BaseController
 			}
 			$this->rules_array = array(
 				'nama' => 'required',
-				'email' => 'required|valid_email',
 				'username' => 'required',
 				'area' => 'required',
 				'password' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
-				'email' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 			);
@@ -163,11 +161,6 @@ class IndexController extends BaseController
 			// Self-register selalu menjadi Operator Produksi. Nilai role dari request
 			// tidak masuk whitelist, sehingga manipulasi form tidak dapat mengubahnya.
 			$modeldata['user_role_id'] = $this->modeldata['user_role_id'] = 5;
-			//Check if Duplicate Record Already Exit In The Database
-			$db->where("email", $modeldata['email']);
-			if ($db->has($tablename)) {
-				$this->view->page_error[] = $modeldata['email'] . " Already exist!";
-			}
 			//Check if Duplicate Record Already Exit In The Database
 			$db->where("username", $modeldata['username']);
 			if ($db->has($tablename)) {

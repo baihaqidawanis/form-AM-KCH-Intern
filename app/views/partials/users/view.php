@@ -67,10 +67,7 @@ $show_export_btn = $this->show_export_btn;
                                             </span>
                                         </td>
                                     </tr>
-                                    <tr  class="td-email">
-                                        <th class="title"> Email: </th>
-                                        <td class="value"> <?php echo $data['email']; ?></td>
-                                    </tr>
+
                                     <tr  class="td-username">
                                         <th class="title"> Username: </th>
                                         <td class="value">

@@ -92,7 +92,7 @@ class CheckSheetSpreadsheetExporter
         $sheet->freezePane('A7');
 
         $nextRow = self::buildHeader($sheet, $d, $totalCols, $days);
-        $nextRow = self::buildColumnHeaders($sheet, $nextRow, $days, $totalCols);
+        $nextRow = self::buildColumnHeaders($sheet, $nextRow, $days, $totalCols, $d['holiday_days'] ?? []);
         $nextRow = self::buildDataRows($sheet, $d, $nextRow, $days, $totalCols);
         $lastRow = self::buildFooter($sheet, $d, $nextRow, $days, $totalCols);
         $sheet->getPageSetup()->setPrintArea('A1:' . self::colLetter($totalCols - 1) . $lastRow);
@@ -204,11 +204,11 @@ class CheckSheetSpreadsheetExporter
 
     // ─── Column headers (row 6) ────────────────────────────────────────────────
 
-    private static function buildColumnHeaders($sheet, int $row, array $days, int $totalCols): int
+    private static function buildColumnHeaders($sheet, int $row, array $days, int $totalCols, array $holidays = []): int
     {
-        $sheet->getRowDimension($row)->setRowHeight(self::ROW_HEADER_HEIGHT);
+        $sheet->getRowDimension($row)->setRowHeight($holidays ? 28 : self::ROW_HEADER_HEIGHT);
         $headers = ['Gambar','No','Nama Part','Alat','Metode','Standar','Durasi','Pelaksanaan'];
-        foreach ($days as $day) { $headers[] = (string)$day; }
+        foreach ($days as $day) { $headers[] = (string)$day . (isset($holidays[$day]) ? "\nOFF" : ''); }
         foreach ($headers as $i => $h) {
             $cell = self::colLetter($i) . $row;
             $sheet->setCellValue($cell, $h);
@@ -216,7 +216,7 @@ class CheckSheetSpreadsheetExporter
                 'font'      => ['bold' => true, 'size' => 8, 'color' => ['argb' => self::COLOR_BLACK]],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER,
                                 'vertical'   => Alignment::VERTICAL_CENTER, 'wrapText' => true],
-                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => self::COLOR_HEADER]],
+                'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => ($i >= 8 && isset($holidays[$days[$i - 8]])) ? 'FFE2E3E5' : self::COLOR_HEADER]],
                 'borders'   => self::thinBorders(),
             ]);
         }
@@ -309,6 +309,9 @@ class CheckSheetSpreadsheetExporter
                             'borders'   => self::thinBorders(),
                         ]);
                     }
+                    if (isset($d['holiday_days'][$day]) && !$isTakenOut && !isset($d['deactivated_days'][$day])) {
+                        self::applyStyle($sheet, $col . $row, ['fill'=>['fillType'=>Fill::FILL_SOLID, 'startColor'=>['argb'=>'FFE2E3E5']]]);
+                    }
                 }
 
                 $centerAlign = ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER];
@@ -355,6 +358,7 @@ class CheckSheetSpreadsheetExporter
         $sheet->mergeCells('A' . $row . ':H' . $row);
         foreach ($days as $i => $day) {
             $col = self::colLetter(8 + $i);
+            if (isset($d['holiday_days'][$day]) && !isset($d['deactivated_days'][$day])) self::applyStyle($sheet, $col . $row, ['fill'=>['fillType'=>Fill::FILL_SOLID, 'startColor'=>['argb'=>'FFE2E3E5']]]);
             $pinfo = $d['daily_paraf'][$day] ?? null;
             $hasParaf = !isset($d['deactivated_days'][$day]) && $pinfo && is_valid_base64_png_data_uri($pinfo['paraf_image'] ?? null);
             $val = isset($d['deactivated_days'][$day]) ? 'DEAKTIF' : ($pinfo ? ($pinfo['full_name'] ?? $pinfo['user_create']) . PHP_EOL . ($pinfo['submitted_date'] ?? '') . PHP_EOL . ($pinfo['submitted_time'] ?? '') : '');
@@ -387,7 +391,7 @@ class CheckSheetSpreadsheetExporter
 
         // Keterangan row
         $sheet->getRowDimension($row)->setRowHeight(18);
-        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin / shift belum berlaku / versi part tidak digunakan';
+        $ket = 'Keterangan: (' . self::symbol('ok') . ') OK | (' . self::symbol('nok') . ') NOK | (' . self::symbol('process') . ') On Process RTWT Mesin | (' . self::symbol('deactive') . ') Deaktivasi Mesin / shift belum berlaku / versi part tidak digunakan | OFF: Holiday/Off (tetap dapat diisi)';
         $doc = 'CR-PR-PR-1203.00 (26 Jan 2026)' . "\n" . 'Halaman: 1/1';
         $refCol = self::colLetter($totalCols - 4);
         $sheet->setCellValue('A' . $row, $ket);

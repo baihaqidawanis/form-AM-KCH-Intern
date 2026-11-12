@@ -246,3 +246,9 @@ WHERE mp."field_name" = 'body_mesin'
 ON CONFLICT ("master_part_id", "mesin_id") DO NOTHING;
 
 COMMIT;
+
+-- Explicit working days override the automatic Saturday/Sunday flags.
+ALTER TABLE operational_calendar ADD COLUMN IF NOT EXISTS is_working_day boolean NOT NULL DEFAULT false;
+
+-- NIK-based accounts no longer require email.
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;

@@ -173,7 +173,7 @@ class UsersController extends SecureController{
 			$tablename = $this->tablename;
 			$request = $this->request;
 			//fillable fields
-			$fields = $this->fields = array("nama","email","username","area","password","account_status","user_role_id");
+			$fields = $this->fields = array("nama","username","area","password","account_status","user_role_id");
 			$postdata = $this->format_request_data($formdata);
 			$cpassword = $postdata['confirm_password'];
 			$password = $postdata['password'];
@@ -182,14 +182,12 @@ class UsersController extends SecureController{
 			}
 			$this->rules_array = array(
 				'nama' => 'required',
-				'email' => 'required|valid_email',
 				'username' => 'required',
 				'area' => 'required',
 				'password' => 'required',
 			);
 			$this->sanitize_array = array(
 				'nama' => 'sanitize_string',
-				'email' => 'sanitize_string',
 				'username' => 'sanitize_string',
 				'area' => 'sanitize_string',
 			);
@@ -209,11 +207,6 @@ class UsersController extends SecureController{
 			}
 			//update modeldata with the password hash
 			$modeldata['password'] = $this->modeldata['password'] = password_hash($password_text , PASSWORD_DEFAULT);
-			//Check if Duplicate Record Already Exit In The Database
-			$db->where("email", $modeldata['email']);
-			if($db->has($tablename)){
-				$this->view->page_error[] = $modeldata['email']." Already exist!";
-			}
 			//Check if Duplicate Record Already Exit In The Database
 			$db->where("username", $modeldata['username']);
 			if($db->has($tablename)){

@@ -44,19 +44,6 @@ $redirect_to = $this->redirect_to;
                                         </div>
                                     </div>
                                     <div class="form-group ">
-                                        <div class="row">
-                                            <div class="col-sm-4">
-                                                <label class="control-label" for="email">Email <span class="text-danger">*</span></label>
-                                            </div>
-                                            <div class="col-sm-8">
-                                                <div class="">
-                                                    <input id="ctrl-email"  value="<?php  echo $this->set_field_value('email',""); ?>" type="email" placeholder="Enter Email"  required="" name="email"  data-url="api/json/users_email_value_exist/" data-loading-msg="Checking availability ..." data-available-msg="Available" data-unavailable-msg="Not available" class="form-control  ctrl-check-duplicate" />
-                                                        <div class="check-status"></div> 
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group ">
                                             <div class="row">
                                                 <div class="col-sm-4">
                                                     <label class="control-label" for="username">NIK <span class="text-danger">*</span></label>
